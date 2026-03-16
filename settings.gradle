@@ -1,0 +1,33 @@
+rootProject.name = 'occount-backend'
+
+include 'core:core-common'
+
+include 'domains:member:member-domain'
+include 'domains:member:member-application'
+include 'domains:member:member-api'
+include 'domains:member:member-infrastructure'
+
+include 'domains:product:product-domain'
+include 'domains:product:product-application'
+include 'domains:product:product-api'
+include 'domains:product:product-infrastructure'
+
+include 'domains:order:order-domain'
+include 'domains:order:order-application'
+include 'domains:order:order-api'
+include 'domains:order:order-infrastructure'
+
+include 'domains:payment:payment-domain'
+include 'domains:payment:payment-application'
+include 'domains:payment:payment-api'
+include 'domains:payment:payment-infrastructure'
+
+include 'domains:point:point-domain'
+include 'domains:point:point-application'
+include 'domains:point:point-infrastructure'
+include 'domains:point:point-api'
+
+include 'gateway:api-gateway'
+
+include 'modules:db'
+include 'modules:kafka'
