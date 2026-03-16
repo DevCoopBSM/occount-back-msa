@@ -1,0 +1,58 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowedOriginPatterns: '*'
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders: '*'
+                exposedHeaders:
+                  - Authorization
+                allowCredentials: true
+          routes:
+            - id: member-api
+              uri: ${MEMBER_API_URL}
+              predicates:
+                - Path=/api/v3/auth/**,/api/v3/users/**
+            - id: product-api
+              uri: ${PRODUCT_API_URL}
+              predicates:
+                - Path=/api/v3/items/**
+            - id: order-api
+              uri: ${ORDER_API_URL}
+              predicates:
+                - Path=/api/v3/orders/**
+            - id: payment-api
+              uri: ${PAYMENT_API_URL}
+              predicates:
+                - Path=/api/v3/payments/**
+            - id: point-api
+              uri: ${POINT_API_URL}
+              predicates:
+                - Path=/api/v3/points/**
+
+jwt:
+  access-expiration-time: ${JWT_ACCESS_EXPIRATION_TIME}
+  kiosk-expiration-time: ${JWT_KIOSK_EXPIRATION_TIME}
+  prefix: ${JWT_PREFIX}
+  header: ${JWT_HEADER}
+  secret-key: ${JWT_SECRET_KEY}
+
+management:
+  endpoints:
+    web:
+      base-path: /api/v3/actuator
+      exposure:
+        include: health
