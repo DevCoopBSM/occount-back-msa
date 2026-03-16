@@ -1,0 +1,39 @@
+server:
+  servlet:
+    context-path: /api/v3
+
+spring:
+  application:
+    name: payment-api
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+jwt:
+  access-expiration-time: ${JWT_ACCESS_EXPIRATION_TIME}
+  kiosk-expiration-time: ${JWT_KIOSK_EXPIRATION_TIME}
+  prefix: ${JWT_PREFIX}
+  header: ${JWT_HEADER}
+  secret-key: ${JWT_SECRET_KEY}
+
+payment:
+  api:
+    url: ${PAYMENT_API_URL}
+    secret: ${PAYMENT_API_SECRET_KEY}
+member:
+  read-api:
+    url: ${MEMBER_API_URL:http://localhost:8081/api/v3}
+
+point:
+  api:
+    url: ${POINT_API_URL:http://localhost:8086/api/v3}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
