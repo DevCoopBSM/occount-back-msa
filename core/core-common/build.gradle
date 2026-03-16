@@ -1,0 +1,7 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    compileOnly 'jakarta.servlet:jakarta.servlet-api'
+}
