@@ -1,0 +1,305 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: occount-mysql
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: occount-kafka
+    restart: unless-stopped
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,PLAINTEXT_HOST://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: occount-kafka-ui
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8083:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: ${KAFKA_UI_CLUSTER_NAME}
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${KAFKA_UI_BOOTSTRAP_SERVERS}
+
+  mock-api:
+    image: wiremock/wiremock:3.9.2
+    container_name: occount-mock-api
+    restart: unless-stopped
+    command:
+      - --global-response-templating
+      - --verbose
+    ports:
+      - "18080:8080"
+    volumes:
+      - ./docker/wiremock:/home/wiremock
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_MODULE: :gateway:api-gateway
+        APP_BUILD_DIR: gateway/api-gateway/build/libs
+        APP_JAR_NAME: api-gateway.jar
+    container_name: occount-api-gateway
+    restart: unless-stopped
+    depends_on:
+      member-api:
+        condition: service_healthy
+      product-api:
+        condition: service_healthy
+      order-api:
+        condition: service_healthy
+      payment-api:
+        condition: service_healthy
+      point-api:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/v3/actuator/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+    environment:
+      MEMBER_API_URL: http://member-api:8080
+      PRODUCT_API_URL: http://product-api:8080
+      ORDER_API_URL: http://order-api:8080
+      PAYMENT_API_URL: http://payment-api:8080
+      POINT_API_URL: http://point-api:8080
+      JAVA_OPTS: ${JAVA_OPTS}
+
+  member-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_MODULE: :domains:member:member-api
+        APP_BUILD_DIR: domains/member/member-api/build/libs
+        APP_JAR_NAME: member-api.jar
+    container_name: occount-member-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      mock-api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/v3/actuator/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_ACCESS_EXPIRATION_TIME: ${JWT_ACCESS_EXPIRATION_TIME}
+      JWT_KIOSK_EXPIRATION_TIME: ${JWT_KIOSK_EXPIRATION_TIME}
+      JWT_PREFIX: ${JWT_PREFIX}
+      JWT_HEADER: ${JWT_HEADER}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+      JAVA_OPTS: ${JAVA_OPTS}
+
+  product-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_MODULE: :domains:product:product-api
+        APP_BUILD_DIR: domains/product/product-api/build/libs
+        APP_JAR_NAME: product-api.jar
+    container_name: occount-product-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      mock-api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/v3/actuator/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      OCCOUNT_TOSS_API_URL: ${OCCOUNT_TOSS_API_URL}
+      JWT_ACCESS_EXPIRATION_TIME: ${JWT_ACCESS_EXPIRATION_TIME}
+      JWT_KIOSK_EXPIRATION_TIME: ${JWT_KIOSK_EXPIRATION_TIME}
+      JWT_PREFIX: ${JWT_PREFIX}
+      JWT_HEADER: ${JWT_HEADER}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+      JAVA_OPTS: ${JAVA_OPTS}
+
+  order-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_MODULE: :domains:order:order-api
+        APP_BUILD_DIR: domains/order/order-api/build/libs
+        APP_JAR_NAME: order-api.jar
+    container_name: occount-order-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/v3/actuator/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_ACCESS_EXPIRATION_TIME: ${JWT_ACCESS_EXPIRATION_TIME}
+      JWT_KIOSK_EXPIRATION_TIME: ${JWT_KIOSK_EXPIRATION_TIME}
+      JWT_PREFIX: ${JWT_PREFIX}
+      JWT_HEADER: ${JWT_HEADER}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+      JAVA_OPTS: ${JAVA_OPTS}
+
+  payment-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_MODULE: :domains:payment:payment-api
+        APP_BUILD_DIR: domains/payment/payment-api/build/libs
+        APP_JAR_NAME: payment-api.jar
+    container_name: occount-payment-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      mock-api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/v3/actuator/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_ACCESS_EXPIRATION_TIME: ${JWT_ACCESS_EXPIRATION_TIME}
+      JWT_KIOSK_EXPIRATION_TIME: ${JWT_KIOSK_EXPIRATION_TIME}
+      JWT_PREFIX: ${JWT_PREFIX}
+      JWT_HEADER: ${JWT_HEADER}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      PAYMENT_API_URL: ${PAYMENT_API_URL}
+      PAYMENT_API_SECRET_KEY: ${PAYMENT_API_SECRET_KEY}
+      MEMBER_API_URL: http://member-api:8080/api/v3
+      POINT_API_URL: http://point-api:8080/api/v3
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+      JAVA_OPTS: ${JAVA_OPTS}
+
+  point-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_MODULE: :domains:point:point-api
+        APP_BUILD_DIR: domains/point/point-api/build/libs
+        APP_JAR_NAME: point-api.jar
+    container_name: occount-point-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/v3/actuator/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_ACCESS_EXPIRATION_TIME: ${JWT_ACCESS_EXPIRATION_TIME}
+      JWT_KIOSK_EXPIRATION_TIME: ${JWT_KIOSK_EXPIRATION_TIME}
+      JWT_PREFIX: ${JWT_PREFIX}
+      JWT_HEADER: ${JWT_HEADER}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+      JAVA_OPTS: ${JAVA_OPTS}
+
+volumes:
+  mysql-data:
+  kafka-data:
