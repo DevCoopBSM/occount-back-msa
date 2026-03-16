@@ -1,0 +1,15 @@
+plugins {
+    id 'java-library'
+    id 'org.jetbrains.kotlin.plugin.jpa'
+}
+
+dependencies {
+    implementation project(':domains:point:point-application')
+    implementation project(':domains:member:member-infrastructure')
+    implementation project(':modules:db')
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.kafka:spring-kafka'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+}
