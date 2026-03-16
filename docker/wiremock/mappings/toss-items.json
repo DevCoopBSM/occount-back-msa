@@ -1,0 +1,31 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/items"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "items": [
+        {
+          "itemId": 1,
+          "name": "테스트 콜라",
+          "category": "음료",
+          "price": 1500,
+          "barcode": "880000000001"
+        },
+        {
+          "itemId": 2,
+          "name": "테스트 과자",
+          "category": "과자",
+          "price": 1200,
+          "barcode": "880000000002"
+        }
+      ]
+    }
+  }
+}
+
