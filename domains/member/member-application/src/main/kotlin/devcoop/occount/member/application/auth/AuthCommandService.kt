@@ -6,6 +6,7 @@ import devcoop.occount.member.application.user.UserNotFoundException
 import devcoop.occount.member.application.user.UserRepository
 import devcoop.occount.member.domain.user.User
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -25,27 +26,27 @@ class AuthCommandService(
 
     @Transactional
     fun register(request: MemberRegisterRequest) {
-        if (userRepository.existsByUserEmail(request.userEmail)) {
+        val user = try {
+            userRepository.save(
+                User(
+                    userCiNumber = request.userCiNumber,
+                    username = request.userName,
+                    phone = request.userPhone,
+                    userEmail = request.userEmail,
+                    encodedPassword = passwordEncoder.encode(request.password),
+                    encodedPin = passwordEncoder.encode(defaultPin),
+                )
+            )
+        } catch (_: DataIntegrityViolationException) {
             throw UserAlreadyExistsException()
         }
 
-        val user = User(
-            userCiNumber = request.userCiNumber,
-            username = request.userName,
-            phone = request.userPhone,
-            userEmail = request.userEmail,
-            encodedPassword = passwordEncoder.encode(request.password),
-            encodedPin = passwordEncoder.encode(defaultPin),
-        )
-        val savedUser = userRepository.save(user)
-
         eventPublisher.publish(
             topic = DomainTopics.MEMBER_REGISTERED,
-            key = savedUser.getId().toString(),
+            key = user.getId().toString(),
             eventType = MEMBER_REGISTERED_EVENT_TYPE,
             payload = mapOf(
-                "userId" to savedUser.getId(),
-                "email" to request.userEmail,
+                "userId" to user.getId(),
             ),
         )
     }
