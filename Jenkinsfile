@@ -62,39 +62,24 @@ spec:
                         returnStdout: true
                     ).trim()
 
-                    // 우선순위:
-                    // 1) GIT_PREVIOUS_SUCCESSFUL_COMMIT (Jenkins git plugin 제공) — 가장 정확
-                    // 2) HEAD~1 존재 시 — 일반적인 경우
-                    // 3) 둘 다 없으면(첫 빌드 등) → 전체 서비스 빌드
+                    def tasks   = [] as Set
+                    def targets = [] as Set
+
                     def changedFiles = sh(
                         script: '''
                             if [ -n "$GIT_PREVIOUS_SUCCESSFUL_COMMIT" ]; then
                                 git diff --name-only $GIT_PREVIOUS_SUCCESSFUL_COMMIT $GIT_COMMIT
-                            elif git rev-parse HEAD~1 >/dev/null 2>&1; then
-                                git diff --name-only HEAD~1 HEAD
                             else
-                                echo "__BUILD_ALL__"
+                                git diff --name-only HEAD~1 HEAD
                             fi
                         ''',
                         returnStdout: true
                     ).trim().split('\n') as List
 
-                    def tasks   = [] as Set
-                    def targets = [] as Set
-
-                    def buildAll = { reason ->
-                        echo "${reason} → building all services"
+                    if (changedFiles.any { it.startsWith('core/') || it.startsWith('modules/') }) {
+                        echo "Common module changed → building all services"
                         SERVICES.each { svc -> tasks << svc.task; targets << svc.name }
-                    }
-
-                    if (changedFiles == ['__BUILD_ALL__'] || changedFiles.findAll { it.trim() }.isEmpty()) {
-                        // diff 자체를 구할 수 없는 경우 (첫 빌드 등)
-                        buildAll('No diff available')
-                    } else if (changedFiles.any { it.startsWith('core/') || it.startsWith('modules/') }) {
-                        // 공통 모듈 변경 → 전체 서비스 영향
-                        buildAll('Common module changed')
                     } else {
-                        // 서비스별 경로 매칭
                         SERVICES.each { svc ->
                             if (changedFiles.any { f -> f.startsWith(svc.path) }) {
                                 tasks   << svc.task
