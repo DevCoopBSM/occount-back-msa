@@ -1,10 +1,10 @@
 def SERVICES = [
-    [paths: ['gateway/', 'core/', 'modules/'],          task: ':gateway:api-gateway:build',           name: 'api-gateway',  dir: 'gateway/api-gateway'],
-    [paths: ['domains/member/', 'core/', 'modules/'],   task: ':domains:member:member-api:build',      name: 'member-api',   dir: 'domains/member/member-api'],
-    [paths: ['domains/product/', 'core/', 'modules/'],  task: ':domains:product:product-api:build',    name: 'product-api',  dir: 'domains/product/product-api'],
-    [paths: ['domains/order/', 'core/', 'modules/'],    task: ':domains:order:order-api:build',        name: 'order-api',    dir: 'domains/order/order-api'],
-    [paths: ['domains/payment/', 'core/', 'modules/'],  task: ':domains:payment:payment-api:build',    name: 'payment-api',  dir: 'domains/payment/payment-api'],
-    [paths: ['domains/point/', 'core/', 'modules/'],    task: ':domains:point:point-api:build',        name: 'point-api',    dir: 'domains/point/point-api'],
+    [path: 'gateway/',         task: ':gateway:api-gateway:build',        name: 'api-gateway',  dir: 'gateway/api-gateway'],
+    [path: 'domains/member/',  task: ':domains:member:member-api:build',  name: 'member-api',   dir: 'domains/member/member-api'],
+    [path: 'domains/product/', task: ':domains:product:product-api:build',name: 'product-api',  dir: 'domains/product/product-api'],
+    [path: 'domains/order/',   task: ':domains:order:order-api:build',    name: 'order-api',    dir: 'domains/order/order-api'],
+    [path: 'domains/payment/', task: ':domains:payment:payment-api:build',name: 'payment-api',  dir: 'domains/payment/payment-api'],
+    [path: 'domains/point/',   task: ':domains:point:point-api:build',    name: 'point-api',    dir: 'domains/point/point-api'],
 ]
 
 pipeline {
@@ -82,19 +82,25 @@ spec:
                     def tasks   = [] as Set
                     def targets = [] as Set
 
-                    // fallback: 변경 감지 불가 또는 감지 결과 없음 → 전체 빌드
-                    if (changedFiles == ['__BUILD_ALL__'] || changedFiles.findAll { it.trim() }.isEmpty()) {
-                        echo "No diff available → building all services"
+                    def buildAll = { reason ->
+                        echo "${reason} → building all services"
                         SERVICES.each { svc -> tasks << svc.task; targets << svc.name }
+                    }
+
+                    if (changedFiles == ['__BUILD_ALL__'] || changedFiles.findAll { it.trim() }.isEmpty()) {
+                        // diff 자체를 구할 수 없는 경우 (첫 빌드 등)
+                        buildAll('No diff available')
+                    } else if (changedFiles.any { it.startsWith('core/') || it.startsWith('modules/') }) {
+                        // 공통 모듈 변경 → 전체 서비스 영향
+                        buildAll('Common module changed')
                     } else {
+                        // 서비스별 경로 매칭
                         SERVICES.each { svc ->
-                            def hit = svc.paths.any { p -> changedFiles.any { f -> f.startsWith(p) } }
-                            if (hit) {
+                            if (changedFiles.any { f -> f.startsWith(svc.path) }) {
                                 tasks   << svc.task
                                 targets << svc.name
                             }
                         }
-                        // 감지는 됐지만 매칭 서비스 없음(e.g. README만 수정) → 전체 빌드 skip
                         if (targets.isEmpty()) {
                             echo "No service-related changes detected → skipping build"
                         }
