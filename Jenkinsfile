@@ -62,13 +62,18 @@ spec:
                         returnStdout: true
                     ).trim()
 
-                    // HEAD~1이 없는 경우(첫 빌드, shallow clone) 전체 파일 목록으로 fallback
+                    // 우선순위:
+                    // 1) GIT_PREVIOUS_SUCCESSFUL_COMMIT (Jenkins git plugin 제공) — 가장 정확
+                    // 2) HEAD~1 존재 시 — 일반적인 경우
+                    // 3) 둘 다 없으면(첫 빌드 등) → 전체 서비스 빌드
                     def changedFiles = sh(
                         script: '''
-                            if git rev-parse HEAD~1 >/dev/null 2>&1; then
+                            if [ -n "$GIT_PREVIOUS_SUCCESSFUL_COMMIT" ]; then
+                                git diff --name-only $GIT_PREVIOUS_SUCCESSFUL_COMMIT $GIT_COMMIT
+                            elif git rev-parse HEAD~1 >/dev/null 2>&1; then
                                 git diff --name-only HEAD~1 HEAD
                             else
-                                git ls-files
+                                echo "__BUILD_ALL__"
                             fi
                         ''',
                         returnStdout: true
@@ -77,11 +82,21 @@ spec:
                     def tasks   = [] as Set
                     def targets = [] as Set
 
-                    SERVICES.each { svc ->
-                        def hit = svc.paths.any { p -> changedFiles.any { f -> f.startsWith(p) } }
-                        if (hit) {
-                            tasks   << svc.task
-                            targets << svc.name
+                    // fallback: 변경 감지 불가 또는 감지 결과 없음 → 전체 빌드
+                    if (changedFiles == ['__BUILD_ALL__'] || changedFiles.findAll { it.trim() }.isEmpty()) {
+                        echo "No diff available → building all services"
+                        SERVICES.each { svc -> tasks << svc.task; targets << svc.name }
+                    } else {
+                        SERVICES.each { svc ->
+                            def hit = svc.paths.any { p -> changedFiles.any { f -> f.startsWith(p) } }
+                            if (hit) {
+                                tasks   << svc.task
+                                targets << svc.name
+                            }
+                        }
+                        // 감지는 됐지만 매칭 서비스 없음(e.g. README만 수정) → 전체 빌드 skip
+                        if (targets.isEmpty()) {
+                            echo "No service-related changes detected → skipping build"
                         }
                     }
 
