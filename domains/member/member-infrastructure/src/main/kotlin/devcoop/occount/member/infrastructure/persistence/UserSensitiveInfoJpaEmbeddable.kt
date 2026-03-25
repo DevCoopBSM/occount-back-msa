@@ -1,4 +1,4 @@
-package devcoop.occount.db.user
+package devcoop.occount.member.infrastructure.persistence
 
 import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
@@ -7,9 +7,6 @@ import jakarta.persistence.Embeddable
 class UserSensitiveInfoJpaEmbeddable(
     @field:Column(unique = true)
     private var userCiNumber: String? = null,
-    @field:Column(unique = true)
-    private var userFingerPrint: String? = null,
 ) {
     fun getUserCiNumber() = userCiNumber
-    fun getUserFingerPrint() = userFingerPrint
 }

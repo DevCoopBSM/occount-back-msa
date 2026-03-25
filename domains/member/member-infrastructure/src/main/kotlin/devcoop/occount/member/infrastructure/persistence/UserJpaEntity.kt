@@ -1,4 +1,4 @@
-package devcoop.occount.db.user
+package devcoop.occount.member.infrastructure.persistence
 
 import jakarta.persistence.Embedded
 import jakarta.persistence.Entity
