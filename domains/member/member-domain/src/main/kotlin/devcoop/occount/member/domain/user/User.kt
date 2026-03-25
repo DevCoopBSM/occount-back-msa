@@ -29,7 +29,6 @@ data class User(
         ),
         userSensitiveInfo = UserSensitiveInfo(
             ciNumber = userCiNumber,
-            fingerPrint = null,
         ),
     )
 
@@ -75,9 +74,5 @@ data class User(
 
     fun getCiNumber(): String? {
         return userSensitiveInfo.ciNumber
-    }
-
-    fun getFingerPrint(): String? {
-        return userSensitiveInfo.fingerPrint
     }
 }
