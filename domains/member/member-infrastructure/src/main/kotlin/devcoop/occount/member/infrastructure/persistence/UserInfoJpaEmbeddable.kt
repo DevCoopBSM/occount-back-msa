@@ -1,4 +1,4 @@
-package devcoop.occount.db.user
+package devcoop.occount.member.infrastructure.persistence
 
 import devcoop.occount.member.domain.user.UserType
 import jakarta.persistence.Column
