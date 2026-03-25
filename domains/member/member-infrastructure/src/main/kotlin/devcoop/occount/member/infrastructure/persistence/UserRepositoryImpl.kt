@@ -15,17 +15,17 @@ class UserRepositoryImpl(
     }
 
     override fun findByUserBarcode(userBarcode: String): User? {
-        return userPersistenceRepository.findByUserInfoUserBarcode(userBarcode)
+        return userPersistenceRepository.findByUserBarcode(userBarcode)
             ?.let(UserPersistenceMapper::toDomain)
     }
 
     override fun findByUserEmail(userEmail: String): User? {
-        return userPersistenceRepository.findByUserAccountInfoUserEmail(userEmail)
+        return userPersistenceRepository.findByUserEmail(userEmail)
             ?.let(UserPersistenceMapper::toDomain)
     }
 
     override fun existsByUserEmail(userEmail: String): Boolean {
-        return userPersistenceRepository.existsByUserAccountInfoUserEmail(userEmail)
+        return userPersistenceRepository.existsByUserEmail(userEmail)
     }
 
     override fun save(user: User): User {
