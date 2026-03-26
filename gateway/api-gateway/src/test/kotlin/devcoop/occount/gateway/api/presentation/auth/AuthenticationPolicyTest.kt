@@ -20,8 +20,8 @@ class AuthenticationPolicyTest {
     }
 
     @Test
-    fun `items management path requires admin access`() {
-        assertEquals(AuthenticationRule.Access.ADMIN_ONLY, policy.resolveAccess(HttpMethod.GET, "/api/v3/items"))
+    fun `items list path is public`() {
+        assertEquals(AuthenticationRule.Access.PERMIT_ALL, policy.resolveAccess(HttpMethod.GET, "/api/v3/items"))
     }
 
     @Test
