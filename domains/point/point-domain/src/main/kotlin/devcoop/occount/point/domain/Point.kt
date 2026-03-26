@@ -3,7 +3,6 @@ package devcoop.occount.point.domain
 data class Point(
     val userId: Long,
     val balance: Int = 0,
-    val version: Long = 0L,
 ) {
     fun charge(amount: Int): Point {
         validateAmount(amount)

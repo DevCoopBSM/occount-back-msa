@@ -1,4 +1,4 @@
-package devcoop.occount.point.application.point
+package devcoop.occount.point.application.output
 
 import devcoop.occount.point.domain.Point
 

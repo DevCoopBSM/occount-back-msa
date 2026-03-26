@@ -1,6 +1,6 @@
 package devcoop.occount.point.infrastructure.persistence
 
-import devcoop.occount.point.application.point.PointRepository
+import devcoop.occount.point.application.output.PointRepository
 import devcoop.occount.point.domain.Point
 import org.springframework.stereotype.Repository
 
