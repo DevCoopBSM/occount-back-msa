@@ -11,7 +11,7 @@ import org.springframework.web.client.RestClient
 
 @Component
 class HttpMemberPaymentReadClient(
-    @Qualifier("memberReadApiRestClient") private val memberReadApiRestClient: RestClient,
+    @param:Qualifier("memberReadApiRestClient") private val memberReadApiRestClient: RestClient,
 ) : MemberPaymentReadPort {
     override fun getUser(userId: Long): PaymentUserInfo {
         return try {
