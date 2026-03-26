@@ -108,7 +108,9 @@ class GatewayAuthenticationFilterTest {
 
     @Test
     fun `admin only request returns forbidden for non admin user`() {
-        val request = MockServerHttpRequest.get("/api/v3/items").header(HttpHeaders.AUTHORIZATION, "Bearer user-token").build()
+        val request = MockServerHttpRequest.post("/api/v3/items/sync")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer user-token")
+            .build()
         val exchange = MockServerWebExchange.from(request)
         val chain = GatewayFilterChain { Mono.empty<Void>() }
         val expected = Mono.empty<Void>()

@@ -7,7 +7,7 @@ import org.springframework.web.client.RestClient
 
 @Component
 class HttpPointWalletClient(
-    @Qualifier("pointApiRestClient") private val pointApiRestClient: RestClient,
+    @param:Qualifier("pointApiRestClient") private val pointApiRestClient: RestClient,
 ) : PointWalletPort {
     override fun getBalance(userId: Long): Int {
         return pointApiRestClient.get()

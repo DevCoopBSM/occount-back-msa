@@ -1,7 +1,7 @@
 package devcoop.occount.db.item
 
-import devcoop.occount.product.application.item.ItemRepository
-import devcoop.occount.product.domain.item.Item
+import devcoop.occount.item.application.item.ItemRepository
+import devcoop.occount.item.domain.item.Item
 import org.springframework.stereotype.Repository
 
 @Repository

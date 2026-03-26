@@ -1,6 +1,6 @@
 package devcoop.occount.payment.application.payment
 
-import devcoop.occount.payment.application.dto.request.ProductInfo
+import devcoop.occount.payment.application.dto.request.ItemInfo
 import devcoop.occount.payment.application.dto.response.PgResponse
 import devcoop.occount.payment.domain.ChargeLog
 import devcoop.occount.payment.domain.PaymentLog
@@ -197,7 +197,7 @@ class PaymentServiceTest {
     private class FakeCardPaymentPort : CardPaymentPort {
         val approvedAmounts = mutableListOf<Int>()
 
-        override fun approve(amount: Int, products: List<ProductInfo>): PgResponse {
+        override fun approve(amount: Int, items: List<ItemInfo>): PgResponse {
             approvedAmounts += amount
             return PgResponse(
                 success = true,
