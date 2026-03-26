@@ -1,7 +1,7 @@
 package devcoop.occount.payment.infrastructure.pg
 
 import devcoop.occount.payment.application.dto.request.PgRequest
-import devcoop.occount.payment.application.dto.request.ProductInfo
+import devcoop.occount.payment.application.dto.request.ItemInfo
 import devcoop.occount.payment.application.dto.response.PgResponse
 import devcoop.occount.payment.application.payment.CardPaymentPort
 import devcoop.occount.payment.domain.exception.InvalidPaymentRequestException
@@ -19,9 +19,9 @@ class PgCardPaymentClient(
 ) : CardPaymentPort {
     private val log = LoggerFactory.getLogger(PgCardPaymentClient::class.java)
 
-    override fun approve(amount: Int, products: List<ProductInfo>): PgResponse {
-        val request = PgRequest(amount = amount, products = products)
-        log.info("카드결제 요청 - 금액: {}원, 상품 수: {}개", amount, products.size)
+    override fun approve(amount: Int, items: List<ItemInfo>): PgResponse {
+        val request = PgRequest(amount = amount, items = items)
+        log.info("카드결제 요청 - 금액: {}원, 상품 수: {}개", amount, items.size)
 
         return try {
             val response = paymentRestClient.post()

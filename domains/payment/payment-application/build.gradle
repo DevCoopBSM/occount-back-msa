@@ -6,6 +6,7 @@ dependencies {
     api project(':domains:payment:payment-domain')
 
     implementation project(':core:core-common')
+    implementation 'com.fasterxml.jackson.core:jackson-annotations'
     implementation 'org.slf4j:slf4j-api'
     implementation 'org.springframework:spring-context'
     implementation 'org.springframework:spring-tx'

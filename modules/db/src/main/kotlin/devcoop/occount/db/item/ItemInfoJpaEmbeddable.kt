@@ -1,6 +1,6 @@
 package devcoop.occount.db.item
 
-import devcoop.occount.product.domain.item.Category
+import devcoop.occount.item.domain.item.Category
 import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EnumType

@@ -1,6 +1,6 @@
 package devcoop.occount.payment.application.payment
 
-import devcoop.occount.payment.application.dto.request.ProductInfo
+import devcoop.occount.payment.application.dto.request.ItemInfo
 import devcoop.occount.payment.domain.ChargeLog
 import devcoop.occount.payment.domain.PaymentLog
 import devcoop.occount.payment.domain.exception.InsufficientPointsException
@@ -66,7 +66,7 @@ class PaymentService(
     private fun chargePoints(user: PaymentUserInfo, chargeRequest: ChargeRequest): PaymentResponse {
         val approved = cardPaymentPort.approve(
             amount = chargeRequest.amount,
-            products = listOf(toChargeProduct(chargeRequest.amount)),
+            items = listOf(toChargeItem(chargeRequest.amount)),
         )
         val pointChange = chargePointBalance(user.userId, chargeRequest.amount)
 
@@ -137,7 +137,7 @@ class PaymentService(
 
         val approved = cardPaymentPort.approve(
             amount = cardAmount,
-            products = paymentDetails.items.map(::toProductInfo),
+            items = paymentDetails.items.map(::toItemInfo),
         )
         val afterBalance = pointWalletPort.deduct(user.userId, pointsUsed)
         val pointChange = PointBalanceChange(
@@ -207,8 +207,8 @@ class PaymentService(
         )
     }
 
-    private fun toChargeProduct(amount: Int): ProductInfo {
-        return toProductInfo(
+    private fun toChargeItem(amount: Int): ItemInfo {
+        return toItemInfo(
             PaymentItem(
                 itemId = "CHARGE",
                 itemName = "포인트 충전",
@@ -219,8 +219,8 @@ class PaymentService(
         )
     }
 
-    private fun toProductInfo(item: PaymentItem): ProductInfo {
-        return ProductInfo(
+    private fun toItemInfo(item: PaymentItem): ItemInfo {
+        return ItemInfo(
             name = item.itemName,
             price = item.itemPrice,
             quantity = item.quantity,

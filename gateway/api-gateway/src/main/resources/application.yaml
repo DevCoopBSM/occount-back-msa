@@ -26,8 +26,8 @@ spring:
               uri: ${MEMBER_API_URL}
               predicates:
                 - Path=/api/v3/auth/**,/api/v3/users/**
-            - id: product-api
-              uri: ${PRODUCT_API_URL}
+            - id: item-api
+              uri: ${ITEM_API_URL}
               predicates:
                 - Path=/api/v3/items/**
             - id: order-api
