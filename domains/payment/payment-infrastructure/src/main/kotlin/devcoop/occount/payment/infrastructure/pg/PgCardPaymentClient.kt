@@ -15,7 +15,7 @@ import org.springframework.web.client.RestClient
 
 @Component
 class PgCardPaymentClient(
-    @Qualifier("pgClient") private val paymentRestClient: RestClient,
+    @param:Qualifier("pgClient") private val paymentRestClient: RestClient,
 ) : CardPaymentPort {
     private val log = LoggerFactory.getLogger(PgCardPaymentClient::class.java)
 

@@ -110,6 +110,7 @@ class ArchitectureBoundaryTest {
             "org.springframework.web",
             "org.springframework.http",
             "com.fasterxml.jackson",
+            "tools.jackson",
             "io.jsonwebtoken",
             "feign.",
         )
