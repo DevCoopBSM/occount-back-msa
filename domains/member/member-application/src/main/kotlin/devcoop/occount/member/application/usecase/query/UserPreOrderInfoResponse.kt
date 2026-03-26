@@ -1,4 +1,4 @@
-package devcoop.occount.member.application.user
+package devcoop.occount.member.application.usecase.query
 
 import devcoop.occount.member.domain.user.User
 

@@ -1,6 +1,6 @@
 package devcoop.occount.member.infrastructure.jwt
 
-import devcoop.occount.member.application.auth.TokenGenerator
+import devcoop.occount.member.application.output.TokenGenerator
 import io.jsonwebtoken.Jwts
 import org.springframework.stereotype.Component
 import java.util.Date

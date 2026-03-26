@@ -1,4 +1,4 @@
-package devcoop.occount.member.application.auth
+package devcoop.occount.member.application.output
 
 interface TokenGenerator {
     fun createAccessToken(userId: Long, role: String): String
