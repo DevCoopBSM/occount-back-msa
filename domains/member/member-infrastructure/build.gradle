@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     implementation project(':core:core-common')
+    implementation project(':domains:member:member-domain')
     implementation project(':domains:member:member-application')
 
     implementation 'org.springframework.security:spring-security-core'
