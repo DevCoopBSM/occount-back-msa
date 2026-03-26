@@ -19,7 +19,6 @@ class AuthenticationPolicy {
         rule("/api/v3/payments/**").authenticated()
         rule("/api/v3/points/**").authenticated()
 
-        rule(HttpMethod.GET, "/api/v3/items").adminOnly()
         rule(HttpMethod.POST, "/api/v3/items/sync").adminOnly()
         rule(HttpMethod.PUT, "/api/v3/items/{id}").adminOnly()
         rule(HttpMethod.DELETE, "/api/v3/items/{id}").adminOnly()
