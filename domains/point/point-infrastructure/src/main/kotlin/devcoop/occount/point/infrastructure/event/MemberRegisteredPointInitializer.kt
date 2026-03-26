@@ -4,7 +4,6 @@ import devcoop.occount.core.common.event.DomainEventHeaders
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.db.outbox.ConsumedEventJpaEntity
 import devcoop.occount.db.outbox.ConsumedEventRepository
-import devcoop.occount.member.infrastructure.event.MemberRegisteredEvent
 import devcoop.occount.point.application.point.PointService
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.messaging.handler.annotation.Header

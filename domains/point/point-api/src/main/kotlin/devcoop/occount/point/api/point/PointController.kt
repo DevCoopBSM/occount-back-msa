@@ -7,13 +7,7 @@ import devcoop.occount.point.application.point.PointService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.ResponseStatus
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/points")
@@ -26,26 +20,13 @@ class PointController(
         return pointService.getBalance(authPrincipal.userId)
     }
 
-    @GetMapping("/{userId}/balance")
-    fun getBalanceByUserId(@PathVariable userId: Long): PointBalanceResponse {
-        return pointService.getBalance(userId)
-    }
-
-    @PostMapping("/{userId}/charge")
+    @PostMapping("/charge")
     @ResponseStatus(HttpStatus.OK)
     fun charge(
-        @PathVariable userId: Long,
         @Valid @RequestBody request: PointAmountRequest,
+        httpServletRequest: HttpServletRequest,
     ): PointBalanceResponse {
-        return pointService.charge(userId, request.amount)
-    }
-
-    @PostMapping("/{userId}/deduct")
-    @ResponseStatus(HttpStatus.OK)
-    fun deduct(
-        @PathVariable userId: Long,
-        @Valid @RequestBody request: PointAmountRequest,
-    ): PointBalanceResponse {
-        return pointService.deduct(userId, request.amount)
+        val authPrincipal = RequestAuthPrincipalResolver.resolve(httpServletRequest)
+        return pointService.charge(authPrincipal.userId, request.amount)
     }
 }

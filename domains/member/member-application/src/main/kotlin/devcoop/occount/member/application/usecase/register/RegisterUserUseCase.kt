@@ -1,7 +1,9 @@
 package devcoop.occount.member.application.usecase.register
 
+import devcoop.occount.core.common.event.DomainEventTypes
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
+import devcoop.occount.member.application.event.MemberRegisteredEvent
 import devcoop.occount.member.application.exception.UserAlreadyExistsException
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.domain.user.User
@@ -19,10 +21,6 @@ class RegisterUserUseCase(
     @param:Value("\${app.default-pin}")
     private val defaultPin: String,
 ) {
-    private companion object {
-        const val MEMBER_REGISTERED_EVENT_TYPE = "MemberRegisteredEvent"
-    }
-
     @Transactional
     fun register(request: MemberRegisterRequest) {
         val user = try {
@@ -43,9 +41,9 @@ class RegisterUserUseCase(
         eventPublisher.publish(
             topic = DomainTopics.MEMBER_REGISTERED,
             key = user.getId().toString(),
-            eventType = MEMBER_REGISTERED_EVENT_TYPE,
-            payload = mapOf(
-                "userId" to user.getId(),
+            eventType = DomainEventTypes.MEMBER_REGISTERED,
+            payload = MemberRegisteredEvent(
+                userId = user.getId(),
             ),
         )
     }
