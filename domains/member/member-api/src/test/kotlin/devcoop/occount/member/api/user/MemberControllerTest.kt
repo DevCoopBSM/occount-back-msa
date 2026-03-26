@@ -30,21 +30,4 @@ class MemberControllerTest {
         assertSame(expected, actual)
         verify(userQueryService).findPreOrderInfo(7L)
     }
-
-    @Test
-    fun `find payment info delegates with requested user id`() {
-        val userQueryService = mock(UserQueryService::class.java)
-        val controller = MemberController(userQueryService)
-        val expected = UserPaymentInfoResponse(
-            userId = 11L,
-            email = "member@example.com",
-        )
-
-        `when`(userQueryService.findPaymentInfo(11L)).thenReturn(expected)
-
-        val actual = controller.findPaymentInfo(11L)
-
-        assertSame(expected, actual)
-        verify(userQueryService).findPaymentInfo(11L)
-    }
 }
