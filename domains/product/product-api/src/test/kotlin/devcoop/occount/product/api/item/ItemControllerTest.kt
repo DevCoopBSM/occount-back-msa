@@ -45,6 +45,7 @@ class ItemControllerTest {
                 ItemLookupResponse(
                     itemId = 1L,
                     name = "Snack",
+                    barcode = null,
                     price = 1500,
                 ),
             ),
@@ -65,6 +66,7 @@ class ItemControllerTest {
         val expected = ItemLookupResponse(
             itemId = 1L,
             name = "Snack",
+            barcode = "88012341234",
             price = 1500,
         )
 

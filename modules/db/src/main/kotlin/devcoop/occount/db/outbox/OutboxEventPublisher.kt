@@ -1,8 +1,8 @@
 package devcoop.occount.db.outbox
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import devcoop.occount.core.common.event.EventPublisher
 import org.springframework.stereotype.Component
+import tools.jackson.databind.ObjectMapper
 import java.time.Instant
 import java.util.UUID
 
