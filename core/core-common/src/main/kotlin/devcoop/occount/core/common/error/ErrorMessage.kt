@@ -28,6 +28,8 @@ enum class ErrorMessage(
     CARD_PAYMENT_FAILED("카드 결제에 실패했습니다."),
     PAYMENT_TIMEOUT("결제 시간이 초과되었습니다."),
     INVALID_PAYMENT_REQUEST("잘못된 결제 요청입니다."),
+    POINT_NOT_FOUND("포인트 정보를 조회할 수 없습니다."),
+    POINT_ALREADY_INITIALIZED_EXCEPTION("포인트 정보가 이미 초기화 되았습니다."),
     PAYMENT_TYPE_INVALID("지원하지 않는 결제 유형입니다."),
     POINT_CHARGE_FAILED("포인트 충전에 실패했습니다."),
     POINT_DEDUCTION_FAILED("포인트 차감에 실패했습니다."),

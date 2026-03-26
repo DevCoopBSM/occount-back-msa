@@ -1,6 +1,5 @@
 package devcoop.occount.point.infrastructure.event
 
-data class PointInitializedEvent(
+data class MemberRegisteredEvent(
     val userId: Long,
-    val balance: Int,
 )
