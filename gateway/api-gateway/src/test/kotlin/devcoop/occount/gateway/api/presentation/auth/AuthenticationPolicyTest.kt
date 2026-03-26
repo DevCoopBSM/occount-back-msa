@@ -2,9 +2,7 @@ package devcoop.occount.gateway.api.presentation.auth
 
 import devcoop.occount.gateway.api.presentation.AuthenticationPolicy
 import devcoop.occount.gateway.api.presentation.AuthenticationRule
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpMethod
 
@@ -22,12 +20,12 @@ class AuthenticationPolicyTest {
     }
 
     @Test
-    fun `items management path requires admin access`() {
-        assertEquals(AuthenticationRule.Access.ADMIN_ONLY, policy.resolveAccess(HttpMethod.GET, "/api/v3/items"))
+    fun `items list path is public`() {
+        assertEquals(AuthenticationRule.Access.PERMIT_ALL, policy.resolveAccess(HttpMethod.GET, "/api/v3/items"))
     }
 
     @Test
-    fun `public product lookup is bypassed`() {
+    fun `public item lookup is bypassed`() {
         assertEquals(AuthenticationRule.Access.PERMIT_ALL, policy.resolveAccess(HttpMethod.GET, "/api/v3/items/88012341234"))
     }
 

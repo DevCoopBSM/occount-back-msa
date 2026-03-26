@@ -3,5 +3,5 @@ plugins {
 }
 
 dependencies {
-    api project(':domains:product:product-domain')
+    api project(':domains:item:item-domain')
 }

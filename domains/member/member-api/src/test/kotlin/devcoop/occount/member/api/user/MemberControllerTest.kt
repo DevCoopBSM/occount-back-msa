@@ -1,8 +1,8 @@
 package devcoop.occount.member.api.user
 
 import devcoop.occount.core.common.auth.AuthHeaders
-import devcoop.occount.member.application.user.UserPreOrderInfoResponse
-import devcoop.occount.member.application.user.UserQueryService
+import devcoop.occount.member.application.usecase.query.UserPreOrderInfoResponse
+import devcoop.occount.member.application.usecase.query.UserQueryService
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -29,22 +29,5 @@ class MemberControllerTest {
 
         assertSame(expected, actual)
         verify(userQueryService).findPreOrderInfo(7L)
-    }
-
-    @Test
-    fun `find payment info delegates with requested user id`() {
-        val userQueryService = mock(UserQueryService::class.java)
-        val controller = MemberController(userQueryService)
-        val expected = UserPaymentInfoResponse(
-            userId = 11L,
-            email = "member@example.com",
-        )
-
-        `when`(userQueryService.findPaymentInfo(11L)).thenReturn(expected)
-
-        val actual = controller.findPaymentInfo(11L)
-
-        assertSame(expected, actual)
-        verify(userQueryService).findPaymentInfo(11L)
     }
 }

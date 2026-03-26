@@ -1,6 +1,9 @@
 package devcoop.occount.payment.application.dto.request
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 data class PgRequest(
     val amount: Int,
-    val products: List<ProductInfo>
+    @param:JsonProperty("products")
+    val items: List<ItemInfo>
 )

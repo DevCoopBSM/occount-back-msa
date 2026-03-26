@@ -1,0 +1,24 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+bootJar {
+    archiveFileName.set('item-api.jar')
+}
+
+dependencies {
+    implementation project(':core:core-common')
+    implementation project(':domains:item:item-application')
+    implementation project(':domains:item:item-infrastructure')
+    implementation project(':modules:db')
+    implementation project(':modules:kafka')
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'tools.jackson.module:jackson-module-kotlin'
+
+    runtimeOnly 'com.mysql:mysql-connector-j'
+}

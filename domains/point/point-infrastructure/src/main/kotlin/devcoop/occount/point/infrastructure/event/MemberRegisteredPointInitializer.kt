@@ -1,23 +1,22 @@
 package devcoop.occount.point.infrastructure.event
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import devcoop.occount.core.common.event.DomainEventHeaders
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.db.outbox.ConsumedEventJpaEntity
 import devcoop.occount.db.outbox.ConsumedEventRepository
-import devcoop.occount.member.infrastructure.event.MemberRegisteredEvent
-import devcoop.occount.point.application.point.PointService
+import devcoop.occount.point.application.usecase.initialize.InitializePointUseCase
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.readValue
 import java.time.Instant
 
 @Component
 class MemberRegisteredPointInitializer(
     private val objectMapper: ObjectMapper,
-    private val pointService: PointService,
+    private val initializePointUseCase: InitializePointUseCase,
     private val consumedEventRepository: ConsumedEventRepository,
 ) {
     @Transactional
@@ -35,7 +34,7 @@ class MemberRegisteredPointInitializer(
         }
 
         val event = objectMapper.readValue<MemberRegisteredEvent>(payload)
-        pointService.initialize(event.userId)
+        initializePointUseCase.initialize(event.userId)
 
         markProcessed(consumerName, eventId)
     }

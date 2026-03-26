@@ -7,7 +7,6 @@ object PointPersistenceMapper {
         return Point(
             userId = entity.getUserId(),
             balance = entity.getBalance(),
-            version = entity.getVersion(),
         )
     }
 
@@ -15,7 +14,6 @@ object PointPersistenceMapper {
         return PointJpaEntity(
             userId = domain.userId,
             balance = domain.balance,
-            version = domain.version,
         )
     }
 }

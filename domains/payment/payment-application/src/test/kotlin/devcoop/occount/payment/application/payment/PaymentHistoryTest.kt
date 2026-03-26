@@ -40,7 +40,7 @@ class PaymentHistoryTest {
             cardPaymentPort = object : CardPaymentPort {
                 override fun approve(
                     amount: Int,
-                    products: List<devcoop.occount.payment.application.dto.request.ProductInfo>,
+                    items: List<devcoop.occount.payment.application.dto.request.ItemInfo>,
                 ): devcoop.occount.payment.application.dto.response.PgResponse = error("unused")
             },
         )
