@@ -1,6 +1,5 @@
 package devcoop.occount.gateway.api.presentation
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import devcoop.occount.core.common.error.ErrorResponse
 import devcoop.occount.core.common.error.ErrorMessage
 import devcoop.occount.core.common.exception.BusinessBaseException
@@ -9,6 +8,7 @@ import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
+import tools.jackson.databind.ObjectMapper
 
 @Component
 class AuthenticationFailureWriter(
