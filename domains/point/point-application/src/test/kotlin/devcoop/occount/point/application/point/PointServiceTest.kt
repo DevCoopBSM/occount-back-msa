@@ -1,104 +1,121 @@
 package devcoop.occount.point.application.point
 
-import devcoop.occount.core.common.event.DomainTopics
-import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.point.domain.Point
+import org.springframework.dao.DuplicateKeyException
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 class PointServiceTest {
     @Test
-    fun `initialize creates point and publishes initialized event`() {
+    fun `initialize saves new point`() {
         val repository = FakePointRepository()
-        val eventPublisher = RecordingEventPublisher()
-        val service = PointService(repository, eventPublisher)
+        val service = PointService(repository)
 
-        val point = service.initialize(1L)
+        service.initialize(1L)
 
-        assertEquals(0, point.balance)
         assertEquals(1, repository.savedPoints.size)
-        assertEquals(1, eventPublisher.events.size)
-        assertEquals(DomainTopics.POINT_INITIALIZED, eventPublisher.events.single().topic)
-        assertEquals("PointInitializedEvent", eventPublisher.events.single().eventType)
-        val payload = eventPublisher.events.single().payload as Map<*, *>
-        assertEquals(1L, payload["userId"])
-        assertEquals(0, payload["balance"])
+        assertEquals(Point(userId = 1L, balance = 0), repository.savedPoints.single())
     }
 
     @Test
-    fun `initialize returns existing point without publishing event`() {
+    fun `initialize converts duplicate key exception to PointAlreadyInitializedException`() {
+        val repository = FakePointRepository(
+            saveException = DuplicateKeyException("duplicate"),
+        )
+        val service = PointService(repository)
+
+        assertFailsWith<PointAlreadyInitializedException> {
+            service.initialize(1L)
+        }
+    }
+
+    @Test
+    fun `getBalance returns existing point balance`() {
         val repository = FakePointRepository(
             points = mutableMapOf(1L to Point(userId = 1L, balance = 50)),
         )
-        val eventPublisher = RecordingEventPublisher()
-        val service = PointService(repository, eventPublisher)
+        val service = PointService(repository)
 
-        val point = service.initialize(1L)
+        val response = service.getBalance(1L)
 
-        assertEquals(50, point.balance)
-        assertTrue(repository.savedPoints.isEmpty())
-        assertTrue(eventPublisher.events.isEmpty())
+        assertEquals(50, response.balance)
     }
 
     @Test
-    fun `charge saves updated point and publishes balance changed event`() {
+    fun `getBalance throws PointNotFound when point does not exist`() {
         val repository = FakePointRepository()
-        val eventPublisher = RecordingEventPublisher()
-        val service = PointService(repository, eventPublisher)
+        val service = PointService(repository)
+
+        assertFailsWith<PointNotFound> {
+            service.getBalance(1L)
+        }
+    }
+
+    @Test
+    fun `charge saves updated point`() {
+        val repository = FakePointRepository(
+            points = mutableMapOf(1L to Point(userId = 1L, balance = 30)),
+        )
+        val service = PointService(repository)
 
         val response = service.charge(1L, 70)
 
-        assertEquals(70, response.balance)
+        assertEquals(100, response.balance)
         assertEquals(1, repository.savedPoints.size)
-        assertEquals(DomainTopics.POINT_BALANCE_CHANGED, eventPublisher.events.single().topic)
-        assertEquals("PointBalanceChangedEvent", eventPublisher.events.single().eventType)
-        val payload = eventPublisher.events.single().payload as Map<*, *>
-        assertEquals(70, payload["balance"])
-        assertEquals(70, payload["changedAmount"])
+        assertEquals(Point(userId = 1L, balance = 100), repository.savedPoints.single())
     }
 
     @Test
-    fun `deduct publishes negative changed amount`() {
+    fun `deduct saves updated point`() {
         val repository = FakePointRepository(
             points = mutableMapOf(1L to Point(userId = 1L, balance = 100)),
         )
-        val eventPublisher = RecordingEventPublisher()
-        val service = PointService(repository, eventPublisher)
+        val service = PointService(repository)
 
         val response = service.deduct(1L, 25)
 
         assertEquals(75, response.balance)
-        val payload = eventPublisher.events.single().payload as Map<*, *>
-        assertEquals(-25, payload["changedAmount"])
+        assertEquals(Point(userId = 1L, balance = 75), repository.savedPoints.single())
+    }
+
+    @Test
+    fun `charge throws PointNotFound when point does not exist`() {
+        val repository = FakePointRepository()
+        val service = PointService(repository)
+
+        assertFailsWith<PointNotFound> {
+            service.charge(1L, 10)
+        }
+    }
+
+    @Test
+    fun `deduct throws PointNotFound when point does not exist`() {
+        val repository = FakePointRepository()
+        val service = PointService(repository)
+
+        assertFailsWith<PointNotFound> {
+            service.deduct(1L, 10)
+        }
     }
 
     private class FakePointRepository(
         private val points: MutableMap<Long, Point> = mutableMapOf(),
+        private val findException: RuntimeException? = null,
+        private val saveException: RuntimeException? = null,
     ) : PointRepository {
         val savedPoints = mutableListOf<Point>()
 
-        override fun findByUserId(userId: Long): Point? = points[userId]
+        override fun findByUserId(userId: Long): Point? {
+            findException?.let { throw it }
+            return points[userId]
+        }
 
         override fun save(point: Point): Point {
+            saveException?.let { throw it }
             points[point.userId] = point
             savedPoints += point
             return point
         }
     }
-
-    private class RecordingEventPublisher : EventPublisher {
-        val events = mutableListOf<PublishedEvent>()
-
-        override fun publish(topic: String, key: String, eventType: String, payload: Any) {
-            events += PublishedEvent(topic, key, eventType, payload)
-        }
-    }
-
-    private data class PublishedEvent(
-        val topic: String,
-        val key: String,
-        val eventType: String,
-        val payload: Any,
-    )
 }
