@@ -1,7 +1,7 @@
 def SERVICES = [
     [path: 'gateway/',         task: ':gateway:api-gateway:build',        name: 'api-gateway',  dir: 'gateway/api-gateway'],
     [path: 'domains/member/',  task: ':domains:member:member-api:build',  name: 'member-api',   dir: 'domains/member/member-api'],
-    [path: 'domains/product/', task: ':domains:product:product-api:build',name: 'product-api',  dir: 'domains/product/product-api'],
+    [path: 'domains/item/',    task: ':domains:item:item-api:build',      name: 'item-api',     dir: 'domains/item/item-api'],
     [path: 'domains/order/',   task: ':domains:order:order-api:build',    name: 'order-api',    dir: 'domains/order/order-api'],
     [path: 'domains/payment/', task: ':domains:payment:payment-api:build',name: 'payment-api',  dir: 'domains/payment/payment-api'],
     [path: 'domains/point/',   task: ':domains:point:point-api:build',    name: 'point-api',    dir: 'domains/point/point-api'],

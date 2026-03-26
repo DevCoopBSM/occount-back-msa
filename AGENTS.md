@@ -14,7 +14,7 @@ This is a Gradle multi-module Kotlin/Spring Boot backend.
 - `./gradlew test --console=plain`: runs JUnit 5 test suites.
 - `./gradlew :gateway:api-gateway:bootRun --console=plain`: starts the auth gateway locally.
 - `./gradlew :domains:member:member-api:bootRun --console=plain`: starts the member API locally.
-- `./gradlew :domains:product:product-api:bootRun --console=plain`: starts the product API locally.
+- `./gradlew :domains:item:item-api:bootRun --console=plain`: starts the item API locally.
 - `./gradlew :domains:order:order-api:bootRun --console=plain`: starts the order API locally.
 - `./gradlew :domains:payment:payment-api:bootRun --console=plain`: starts the payment API locally.
 - `./gradlew clean build --console=plain`: full build, including packaging.

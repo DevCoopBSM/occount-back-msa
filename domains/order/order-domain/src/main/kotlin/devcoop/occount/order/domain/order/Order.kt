@@ -1,7 +1,7 @@
 package devcoop.occount.order.domain.order
 
-import devcoop.occount.product.domain.item.Item
-import devcoop.occount.product.domain.item.ItemNotFoundException
+import devcoop.occount.item.domain.item.Item
+import devcoop.occount.item.domain.item.ItemNotFoundException
 
 class Order(
     private var items: Map<Long, Item>

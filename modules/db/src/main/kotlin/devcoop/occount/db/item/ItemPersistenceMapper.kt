@@ -1,8 +1,8 @@
 package devcoop.occount.db.item
 
-import devcoop.occount.product.domain.item.Item
-import devcoop.occount.product.domain.item.ItemInfo
-import devcoop.occount.product.domain.item.Stock
+import devcoop.occount.item.domain.item.Item
+import devcoop.occount.item.domain.item.ItemInfo
+import devcoop.occount.item.domain.item.Stock
 
 object ItemPersistenceMapper {
     fun toDomain(entity: ItemJpaEntity): Item {
