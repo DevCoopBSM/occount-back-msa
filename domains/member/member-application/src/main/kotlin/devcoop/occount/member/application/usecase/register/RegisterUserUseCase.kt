@@ -1,9 +1,9 @@
-package devcoop.occount.member.application.auth
+package devcoop.occount.member.application.usecase.register
 
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.member.application.user.UserNotFoundException
-import devcoop.occount.member.application.user.UserRepository
+import devcoop.occount.member.application.exception.UserAlreadyExistsException
+import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.domain.user.User
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.dao.DataIntegrityViolationException
@@ -12,10 +12,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class AuthCommandService(
+class RegisterUserUseCase(
     private val userRepository: UserRepository,
     private val eventPublisher: EventPublisher,
-    private val tokenGenerator: TokenGenerator,
     private val passwordEncoder: PasswordEncoder,
     @param:Value("\${app.default-pin}")
     private val defaultPin: String,
@@ -49,29 +48,5 @@ class AuthCommandService(
                 "userId" to user.getId(),
             ),
         )
-    }
-
-    fun login(request: MemberLoginRequest): String {
-        val user = userRepository.findByUserEmail(request.userEmail)
-            ?: throw UserNotFoundException()
-
-        passwordValidate(request.password, user.getPassword())
-
-        return tokenGenerator.createAccessToken(user.getId(), user.getRole().name)
-    }
-
-    fun login(request: KioskLoginRequest): String {
-        val user = userRepository.findByUserBarcode(request.userBarcode)
-            ?: throw UserNotFoundException()
-
-        passwordValidate(request.userPin, user.getUserPin())
-
-        return tokenGenerator.createKioskToken(user.getId(), user.getRole().name)
-    }
-
-    fun passwordValidate(requestPassword: String, expectedPassword: String) {
-        if(!passwordEncoder.matches(requestPassword, expectedPassword)) {
-            throw InvalidPasswordException()
-        }
     }
 }

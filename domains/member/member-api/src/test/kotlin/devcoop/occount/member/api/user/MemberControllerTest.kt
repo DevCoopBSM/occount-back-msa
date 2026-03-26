@@ -1,8 +1,8 @@
 package devcoop.occount.member.api.user
 
 import devcoop.occount.core.common.auth.AuthHeaders
-import devcoop.occount.member.application.user.UserPreOrderInfoResponse
-import devcoop.occount.member.application.user.UserQueryService
+import devcoop.occount.member.application.usecase.query.UserPreOrderInfoResponse
+import devcoop.occount.member.application.usecase.query.UserQueryService
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock

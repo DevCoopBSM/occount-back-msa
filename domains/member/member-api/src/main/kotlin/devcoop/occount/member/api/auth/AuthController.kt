@@ -1,9 +1,9 @@
 package devcoop.occount.member.api.auth
 
-import devcoop.occount.member.application.auth.KioskLoginRequest
-import devcoop.occount.member.application.auth.AuthCommandService
-import devcoop.occount.member.application.auth.MemberLoginRequest
-import devcoop.occount.member.application.auth.MemberRegisterRequest
+import devcoop.occount.member.application.usecase.login.KioskLoginRequest
+import devcoop.occount.member.application.usecase.login.LoginUserUseCase
+import devcoop.occount.member.application.usecase.login.MemberLoginRequest
+import devcoop.occount.member.application.usecase.register.MemberRegisterRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.http.HttpHeaders
@@ -18,11 +18,11 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/auth")
 class AuthController(
-    private val authCommandService: AuthCommandService,
+    private val loginUserUseCase: LoginUserUseCase,
 ) {
     @PostMapping("/register")
     fun register(@Valid @RequestBody request: MemberRegisterRequest): ResponseEntity<Void> {
-        authCommandService.register(request)
+        loginUserUseCase.register(request)
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
@@ -32,7 +32,7 @@ class AuthController(
         @Valid @RequestBody request: MemberLoginRequest,
         response: HttpServletResponse,
     ) {
-        val token = authCommandService.login(request)
+        val token = loginUserUseCase.login(request)
         response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer $token")
     }
 
@@ -42,7 +42,7 @@ class AuthController(
         @Valid @RequestBody request: KioskLoginRequest,
         response: HttpServletResponse,
     ) {
-        val token = authCommandService.login(request)
+        val token = loginUserUseCase.login(request)
         response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer $token")
     }
 }

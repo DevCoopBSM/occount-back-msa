@@ -1,4 +1,4 @@
-package devcoop.occount.member.application.auth
+package devcoop.occount.member.application.usecase.login
 
 import jakarta.validation.constraints.NotBlank
 
