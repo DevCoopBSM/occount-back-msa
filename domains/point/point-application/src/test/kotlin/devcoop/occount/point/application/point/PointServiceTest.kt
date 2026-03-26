@@ -1,6 +1,7 @@
 package devcoop.occount.point.application.point
 
 import devcoop.occount.point.domain.Point
+import org.junit.jupiter.api.DisplayName
 import org.springframework.dao.DuplicateKeyException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -8,6 +9,7 @@ import kotlin.test.assertFailsWith
 
 class PointServiceTest {
     @Test
+    @DisplayName("포인트 초기화 시 새 포인트를 저장한다")
     fun `initialize saves new point`() {
         val repository = FakePointRepository()
         val service = PointService(repository)
@@ -19,6 +21,7 @@ class PointServiceTest {
     }
 
     @Test
+    @DisplayName("포인트 초기화 시 중복 키 예외는 PointAlreadyInitializedException으로 변환된다")
     fun `initialize converts duplicate key exception to PointAlreadyInitializedException`() {
         val repository = FakePointRepository(
             saveException = DuplicateKeyException("duplicate"),
@@ -31,6 +34,7 @@ class PointServiceTest {
     }
 
     @Test
+    @DisplayName("잔액 조회 시 기존 포인트의 잔액을 반환한다")
     fun `getBalance returns existing point balance`() {
         val repository = FakePointRepository(
             points = mutableMapOf(1L to Point(userId = 1L, balance = 50)),
@@ -43,6 +47,7 @@ class PointServiceTest {
     }
 
     @Test
+    @DisplayName("잔액 조회 시 포인트가 없으면 PointNotFound가 발생한다")
     fun `getBalance throws PointNotFound when point does not exist`() {
         val repository = FakePointRepository()
         val service = PointService(repository)
@@ -53,6 +58,7 @@ class PointServiceTest {
     }
 
     @Test
+    @DisplayName("충전 시 변경된 포인트를 저장한다")
     fun `charge saves updated point`() {
         val repository = FakePointRepository(
             points = mutableMapOf(1L to Point(userId = 1L, balance = 30)),
@@ -67,6 +73,7 @@ class PointServiceTest {
     }
 
     @Test
+    @DisplayName("차감 시 변경된 포인트를 저장한다")
     fun `deduct saves updated point`() {
         val repository = FakePointRepository(
             points = mutableMapOf(1L to Point(userId = 1L, balance = 100)),
@@ -80,6 +87,7 @@ class PointServiceTest {
     }
 
     @Test
+    @DisplayName("충전 시 포인트가 없으면 PointNotFound가 발생한다")
     fun `charge throws PointNotFound when point does not exist`() {
         val repository = FakePointRepository()
         val service = PointService(repository)
@@ -90,6 +98,7 @@ class PointServiceTest {
     }
 
     @Test
+    @DisplayName("차감 시 포인트가 없으면 PointNotFound가 발생한다")
     fun `deduct throws PointNotFound when point does not exist`() {
         val repository = FakePointRepository()
         val service = PointService(repository)
