@@ -4,6 +4,7 @@ import devcoop.occount.member.application.usecase.login.KioskLoginRequest
 import devcoop.occount.member.application.usecase.login.LoginUserUseCase
 import devcoop.occount.member.application.usecase.login.MemberLoginRequest
 import devcoop.occount.member.application.usecase.register.MemberRegisterRequest
+import devcoop.occount.member.application.usecase.register.RegisterUserUseCase
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.http.HttpHeaders
@@ -19,10 +20,11 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/auth")
 class AuthController(
     private val loginUserUseCase: LoginUserUseCase,
+    private val registerUserUseCase: RegisterUserUseCase,
 ) {
     @PostMapping("/register")
     fun register(@Valid @RequestBody request: MemberRegisterRequest): ResponseEntity<Void> {
-        loginUserUseCase.register(request)
+        registerUserUseCase.register(request)
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
