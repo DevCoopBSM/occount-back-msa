@@ -1,5 +1,8 @@
-package devcoop.occount.point.application.point
+package devcoop.occount.point.application
 
+import devcoop.occount.point.application.exception.PointAlreadyInitializedException
+import devcoop.occount.point.application.exception.PointNotFound
+import devcoop.occount.point.application.output.PointRepository
 import devcoop.occount.point.domain.Point
 import org.junit.jupiter.api.DisplayName
 import org.springframework.dao.DuplicateKeyException

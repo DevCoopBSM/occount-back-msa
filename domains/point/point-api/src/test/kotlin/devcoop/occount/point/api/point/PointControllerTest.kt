@@ -1,9 +1,8 @@
 package devcoop.occount.point.api.point
 
 import devcoop.occount.core.common.auth.AuthHeaders
-import devcoop.occount.point.application.point.PointAmountRequest
-import devcoop.occount.point.application.point.PointBalanceResponse
-import devcoop.occount.point.application.point.PointService
+import devcoop.occount.point.application.usecase.deduct.DeductPointRequest
+import devcoop.occount.point.application.query.balance.PointBalanceResponse
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -36,7 +35,7 @@ class PointControllerTest {
     fun `charge delegates to point service`() {
         val pointService = mock(PointService::class.java)
         val controller = PointController(pointService)
-        val request = PointAmountRequest(amount = 500)
+        val request = DeductPointRequest(amount = 500)
         val httpRequest = MockHttpServletRequest().apply {
             addHeader(AuthHeaders.AUTHENTICATED_USER_ID, "3")
         }
