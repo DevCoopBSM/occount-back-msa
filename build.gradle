@@ -2,7 +2,6 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '2.3.10' apply false
     id 'org.jetbrains.kotlin.plugin.spring' version '2.3.10' apply false
     id 'org.jetbrains.kotlin.plugin.jpa' version '2.3.10' apply false
-    id 'org.jetbrains.kotlin.kapt' version '2.3.10' apply false
     id 'org.springframework.boot' version '4.0.3' apply false
     id 'io.spring.dependency-management' version '1.1.7' apply false
 }
@@ -38,17 +37,8 @@ subprojects {
         }
     }
 
-    configurations {
-        compileOnly {
-            extendsFrom annotationProcessor
-        }
-    }
-
     dependencies {
         implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}"
-
-        compileOnly 'org.projectlombok:lombok'
-        annotationProcessor 'org.projectlombok:lombok'
 
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:${kotlinVersion}"
