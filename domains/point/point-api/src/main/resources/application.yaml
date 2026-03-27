@@ -12,6 +12,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  kafka:
+    bootstrap-servers: occount-kafka:9092
 
 jwt:
   access-expiration-time: ${JWT_ACCESS_EXPIRATION_TIME}
