@@ -3,6 +3,8 @@ plugins {
 }
 
 dependencies {
+    implementation project(':core:core-common')
+    implementation project(':domains:payment:payment-domain')
     implementation project(':domains:payment:payment-application')
 
     implementation 'org.springframework.boot:spring-boot-starter'

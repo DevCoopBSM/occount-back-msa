@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     implementation project(':core:core-common')
+    implementation project(':domains:item:item-domain')
     implementation project(':domains:item:item-application')
 
     implementation 'org.springframework.boot:spring-boot-starter'
