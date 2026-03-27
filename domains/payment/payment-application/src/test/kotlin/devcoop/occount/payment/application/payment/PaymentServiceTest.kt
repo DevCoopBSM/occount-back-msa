@@ -1,9 +1,13 @@
 package devcoop.occount.payment.application.payment
 
-import devcoop.occount.payment.application.dto.request.ItemInfo
-import devcoop.occount.payment.application.dto.response.PgResponse
+import devcoop.occount.payment.application.dto.request.ItemCommand
+import devcoop.occount.payment.application.dto.response.CardResult
+import devcoop.occount.payment.application.dto.response.PgResult
+import devcoop.occount.payment.application.dto.response.TransactionResult
 import devcoop.occount.payment.domain.ChargeLog
+import devcoop.occount.payment.domain.ChargeLogRepository
 import devcoop.occount.payment.domain.PaymentLog
+import devcoop.occount.payment.domain.PaymentLogRepository
 import devcoop.occount.payment.domain.exception.InsufficientPointsException
 import devcoop.occount.payment.domain.exception.InvalidPaymentRequestException
 import devcoop.occount.payment.domain.type.CardType
@@ -197,13 +201,13 @@ class PaymentServiceTest {
     private class FakeCardPaymentPort : CardPaymentPort {
         val approvedAmounts = mutableListOf<Int>()
 
-        override fun approve(amount: Int, items: List<ItemInfo>): PgResponse {
+        override fun approve(amount: Int, items: List<ItemCommand>): PgResult {
             approvedAmounts += amount
-            return PgResponse(
+            return PgResult(
                 success = true,
                 message = "ok",
                 errorCode = null,
-                transaction = devcoop.occount.payment.application.dto.response.TransactionInfo(
+                transaction = TransactionResult(
                     messageNumber = null,
                     typeCode = null,
                     cardNumber = "1234",
@@ -219,7 +223,7 @@ class PaymentServiceTest {
                     rejectCode = null,
                     rejectMessage = null,
                 ),
-                card = devcoop.occount.payment.application.dto.response.CardInfo(
+                card = CardResult(
                     acquirerCode = "ACQ",
                     acquirerName = "Acquirer",
                     issuerCode = "ISS",

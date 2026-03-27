@@ -1,14 +1,15 @@
 package devcoop.occount.payment.api.payment
 
 import devcoop.occount.core.common.auth.AuthHeaders
+import devcoop.occount.payment.application.payment.ChargeLogResult
 import devcoop.occount.payment.application.payment.PaymentRequest
+import devcoop.occount.payment.application.payment.PaymentLogResult
+import devcoop.occount.payment.application.payment.PointTransactionResult
 import devcoop.occount.payment.application.payment.PaymentResponse
 import devcoop.occount.payment.application.payment.PaymentService
-import devcoop.occount.payment.domain.ChargeLog
-import devcoop.occount.payment.domain.PaymentLog
 import devcoop.occount.payment.domain.type.PaymentType
+import devcoop.occount.payment.domain.type.RefundState
 import devcoop.occount.payment.domain.type.TransactionType
-import devcoop.occount.payment.domain.vo.PointTransaction
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -55,10 +56,17 @@ class PaymentControllerTest {
         val paymentService = mock(PaymentService::class.java)
         val controller = PaymentController(paymentService)
         val history = listOf(
-            PaymentLog(
+            PaymentLogResult(
+                paymentId = 1L,
                 userId = 9L,
+                paymentDate = LocalDateTime.of(2026, 3, 1, 12, 0),
                 paymentType = PaymentType.POINT,
                 totalAmount = 3000,
+                pointTransaction = null,
+                cardInfo = null,
+                transactionInfo = null,
+                managedEmail = null,
+                eventType = null,
             ),
         )
 
@@ -81,10 +89,19 @@ class PaymentControllerTest {
         val startDate = LocalDateTime.of(2026, 3, 1, 0, 0)
         val endDate = LocalDateTime.of(2026, 3, 31, 23, 59)
         val charges = listOf(
-            ChargeLog(
+            ChargeLogResult(
+                chargeId = 1L,
                 userId = 9L,
+                chargeDate = LocalDateTime.of(2026, 3, 15, 12, 0),
                 chargeAmount = 5000,
-                pointTransaction = PointTransaction(0, 5000, 5000),
+                pointTransaction = PointTransactionResult(0, 5000, 5000),
+                cardInfo = null,
+                transactionInfo = null,
+                managedEmail = null,
+                reason = null,
+                refundState = RefundState.NONE,
+                refundDate = null,
+                refundRequesterId = null,
             ),
         )
 
