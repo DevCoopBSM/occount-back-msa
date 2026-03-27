@@ -7,15 +7,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.scheduling.annotation.EnableScheduling
 
 @EnableScheduling
-@EntityScan(basePackages = ["devcoop.occount.db", "devcoop.occount.point.infrastructure.persistence"])
-@EnableJpaRepositories(basePackages = ["devcoop.occount.db", "devcoop.occount.point.infrastructure.persistence"])
+@EntityScan(basePackages = ["devcoop.occount"])
+@EnableJpaRepositories(basePackages = ["devcoop.occount"])
 @SpringBootApplication(
-    scanBasePackages = [
-        "devcoop.occount.point",
-        "devcoop.occount.db",
-        "devcoop.occount.kafka.config",
-        "devcoop.occount.kafka.outbox",
-    ],
+    scanBasePackages = ["devcoop.occount"],
 )
 class PointApiApplication
 

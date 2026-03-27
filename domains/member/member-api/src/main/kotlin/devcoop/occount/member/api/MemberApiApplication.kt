@@ -8,23 +8,11 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.scheduling.annotation.EnableScheduling
 
 @EnableScheduling
-@EntityScan(basePackages = [
-    "devcoop.occount.db",
-    "devcoop.occount.member.infrastructure",
-])
-@EnableJpaRepositories(basePackages = [
-    "devcoop.occount.db",
-    "devcoop.occount.member.infrastructure",
-])
+@EntityScan(basePackages = ["devcoop.occount"])
+@EnableJpaRepositories(basePackages = ["devcoop.occount"])
 @SpringBootApplication(
     exclude = [UserDetailsServiceAutoConfiguration::class],
-    scanBasePackages = [
-        "devcoop.occount.member.api",
-        "devcoop.occount.member.application",
-        "devcoop.occount.member.infrastructure",
-        "devcoop.occount.db",
-        "devcoop.occount.kafka",
-    ],
+    scanBasePackages = ["devcoop.occount"],
 )
 class MemberApiApplication
 
