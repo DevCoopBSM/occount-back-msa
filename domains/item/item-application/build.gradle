@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    api project(':domains:item:item-domain')
+    implementation project(':domains:item:item-domain')
 
     implementation project(':core:core-common')
     implementation 'org.springframework:spring-context'

@@ -3,5 +3,5 @@ plugins {
 }
 
 dependencies {
-    api project(':core:core-common')
+    implementation project(':core:core-common')
 }
