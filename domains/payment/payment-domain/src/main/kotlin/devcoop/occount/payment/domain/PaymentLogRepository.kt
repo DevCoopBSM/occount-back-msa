@@ -1,6 +1,5 @@
-package devcoop.occount.payment.application.payment
+package devcoop.occount.payment.domain
 
-import devcoop.occount.payment.domain.PaymentLog
 import devcoop.occount.payment.domain.type.PaymentType
 import java.time.LocalDateTime
 
