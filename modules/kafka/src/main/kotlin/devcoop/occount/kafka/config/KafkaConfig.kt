@@ -1,7 +1,8 @@
 package devcoop.occount.kafka.config
 
+import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringSerializer
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.annotation.EnableKafka
@@ -11,15 +12,18 @@ import org.springframework.kafka.core.ProducerFactory
 
 @EnableKafka
 @Configuration
-class KafkaConfig(private val kafkaProperties: KafkaProperties) {
+class KafkaConfig {
+
+    @Value("\${spring.kafka.bootstrap-servers}")
+    private lateinit var bootstrapServers: String
 
     @Bean
-    fun producerFactory(): ProducerFactory<String, String> {
-        val props = kafkaProperties.buildProducerProperties(null)
-        props["key.serializer"] = StringSerializer::class.java
-        props["value.serializer"] = StringSerializer::class.java
-        return DefaultKafkaProducerFactory(props)
-    }
+    fun producerFactory(): ProducerFactory<String, String> =
+        DefaultKafkaProducerFactory(mapOf(
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+        ))
 
     @Bean
     fun kafkaTemplate(): KafkaTemplate<String, String> =
