@@ -1,6 +1,5 @@
-package devcoop.occount.payment.application.payment
+package devcoop.occount.payment.domain
 
-import devcoop.occount.payment.domain.ChargeLog
 import devcoop.occount.payment.domain.type.RefundState
 import java.time.LocalDateTime
 

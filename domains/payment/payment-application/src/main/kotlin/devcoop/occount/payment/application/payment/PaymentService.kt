@@ -2,7 +2,9 @@ package devcoop.occount.payment.application.payment
 
 import devcoop.occount.payment.application.dto.request.ItemInfo
 import devcoop.occount.payment.domain.ChargeLog
+import devcoop.occount.payment.domain.ChargeLogRepository
 import devcoop.occount.payment.domain.PaymentLog
+import devcoop.occount.payment.domain.PaymentLogRepository
 import devcoop.occount.payment.domain.exception.InsufficientPointsException
 import devcoop.occount.payment.domain.exception.InvalidPaymentRequestException
 import devcoop.occount.payment.domain.type.EventType

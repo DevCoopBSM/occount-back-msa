@@ -10,5 +10,4 @@ dependencies {
     implementation project(':domains:item:item-domain')
     implementation project(':domains:item:item-application')
     implementation project(':domains:payment:payment-domain')
-    implementation project(':domains:payment:payment-application')
 }

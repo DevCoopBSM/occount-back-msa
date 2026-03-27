@@ -1,6 +1,6 @@
 package devcoop.occount.db.payment
 
-import devcoop.occount.payment.application.payment.PaymentLogRepository
+import devcoop.occount.payment.domain.PaymentLogRepository
 import devcoop.occount.payment.domain.PaymentLog
 import devcoop.occount.payment.domain.type.PaymentType
 import devcoop.occount.db.payment.PaymentLogPersistenceRepository
