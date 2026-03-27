@@ -1,0 +1,22 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+bootJar {
+    archiveFileName.set('member-api.jar')
+}
+
+dependencies {
+    implementation project(':domains:member:member-api')
+    implementation project(':domains:member:member-infrastructure')
+    implementation project(':modules:db')
+    implementation project(':modules:kafka')
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'tools.jackson.module:jackson-module-kotlin'
+
+    runtimeOnly 'com.mysql:mysql-connector-j'
+}
