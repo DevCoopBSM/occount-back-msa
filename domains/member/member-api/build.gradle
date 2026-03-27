@@ -22,5 +22,4 @@ dependencies {
     implementation 'tools.jackson.module:jackson-module-kotlin'
 
     runtimeOnly 'com.mysql:mysql-connector-j'
-    testImplementation 'org.springframework.security:spring-security-test'
 }
