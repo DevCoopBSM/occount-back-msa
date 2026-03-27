@@ -3,7 +3,7 @@ package devcoop.occount.gateway.api
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = ["devcoop.occount"])
 class ApiGatewayApplication
 
 fun main(args: Array<String>) {

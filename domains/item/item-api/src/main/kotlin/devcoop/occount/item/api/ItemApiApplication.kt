@@ -7,14 +7,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.scheduling.annotation.EnableScheduling
 
 @EnableScheduling
-@EntityScan(basePackages = ["devcoop.occount.db"])
-@EnableJpaRepositories(basePackages = ["devcoop.occount.db"])
+@EntityScan(basePackages = ["devcoop.occount"])
+@EnableJpaRepositories(basePackages = ["devcoop.occount"])
 @SpringBootApplication(
-    scanBasePackages = [
-        "devcoop.occount.item",
-        "devcoop.occount.db",
-        "devcoop.occount.kafka",
-    ],
+    scanBasePackages = ["devcoop.occount"],
 )
 class ItemApiApplication
 
