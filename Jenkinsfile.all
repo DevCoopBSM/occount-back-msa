@@ -1,10 +1,10 @@
 def SERVICES = [
-    [task: ':gateway:api-gateway:build',        name: 'api-gateway',  dir: 'gateway/api-gateway'],
-    [task: ':domains:member:member-api:build',  name: 'member-api',   dir: 'domains/member/member-api'],
-    [task: ':domains:item:item-api:build',      name: 'item-api',     dir: 'domains/item/item-api'],
-    [task: ':domains:order:order-api:build',    name: 'order-api',    dir: 'domains/order/order-api'],
-    [task: ':domains:payment:payment-api:build',name: 'payment-api',  dir: 'domains/payment/payment-api'],
-    [task: ':domains:point:point-api:build',    name: 'point-api',    dir: 'domains/point/point-api'],
+    [task: ':gateway:api-gateway:bootJar',                  name: 'api-gateway',  dir: 'gateway/api-gateway'],
+    [task: ':domains:member:member-bootstrap:bootJar',       name: 'member-api',   dir: 'domains/member/member-bootstrap'],
+    [task: ':domains:item:item-bootstrap:bootJar',           name: 'item-api',     dir: 'domains/item/item-bootstrap'],
+    [task: ':domains:order:order-bootstrap:bootJar',         name: 'order-api',    dir: 'domains/order/order-bootstrap'],
+    [task: ':domains:payment:payment-bootstrap:bootJar',     name: 'payment-api',  dir: 'domains/payment/payment-bootstrap'],
+    [task: ':domains:point:point-bootstrap:bootJar',         name: 'point-api',    dir: 'domains/point/point-bootstrap'],
 ]
 
 pipeline {
