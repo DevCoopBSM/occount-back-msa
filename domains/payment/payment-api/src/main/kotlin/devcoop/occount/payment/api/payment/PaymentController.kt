@@ -1,11 +1,11 @@
 package devcoop.occount.payment.api.payment
 
 import devcoop.occount.core.common.auth.RequestAuthPrincipalResolver
+import devcoop.occount.payment.application.payment.ChargeLogResult
 import devcoop.occount.payment.application.payment.PaymentRequest
+import devcoop.occount.payment.application.payment.PaymentLogResult
 import devcoop.occount.payment.application.payment.PaymentResponse
 import devcoop.occount.payment.application.payment.PaymentService
-import devcoop.occount.payment.domain.ChargeLog
-import devcoop.occount.payment.domain.PaymentLog
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
@@ -35,7 +35,7 @@ class PaymentController(
 
     @GetMapping("/history")
     @ResponseStatus(HttpStatus.OK)
-    fun getPaymentHistory(httpRequest: HttpServletRequest): List<PaymentLog> {
+    fun getPaymentHistory(httpRequest: HttpServletRequest): List<PaymentLogResult> {
         val authPrincipal = RequestAuthPrincipalResolver.resolve(httpRequest)
         return paymentService.getPaymentHistory(authPrincipal.userId)
     }
@@ -46,14 +46,14 @@ class PaymentController(
         httpRequest: HttpServletRequest,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: LocalDateTime,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime,
-    ): List<PaymentLog> {
+    ): List<PaymentLogResult> {
         val authPrincipal = RequestAuthPrincipalResolver.resolve(httpRequest)
         return paymentService.getPaymentHistoryByDateRange(authPrincipal.userId, startDate, endDate)
     }
 
     @GetMapping("/charges")
     @ResponseStatus(HttpStatus.OK)
-    fun getChargeHistory(httpRequest: HttpServletRequest): List<ChargeLog> {
+    fun getChargeHistory(httpRequest: HttpServletRequest): List<ChargeLogResult> {
         val authPrincipal = RequestAuthPrincipalResolver.resolve(httpRequest)
         return paymentService.getChargeHistory(authPrincipal.userId)
     }
@@ -64,7 +64,7 @@ class PaymentController(
         httpRequest: HttpServletRequest,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: LocalDateTime,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime,
-    ): List<ChargeLog> {
+    ): List<ChargeLogResult> {
         val authPrincipal = RequestAuthPrincipalResolver.resolve(httpRequest)
         return paymentService.getChargeHistoryByDateRange(authPrincipal.userId, startDate, endDate)
     }

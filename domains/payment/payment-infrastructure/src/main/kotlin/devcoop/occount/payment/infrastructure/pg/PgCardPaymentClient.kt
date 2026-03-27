@@ -1,8 +1,8 @@
 package devcoop.occount.payment.infrastructure.pg
 
-import devcoop.occount.payment.application.dto.request.PgRequest
-import devcoop.occount.payment.application.dto.request.ItemInfo
-import devcoop.occount.payment.application.dto.response.PgResponse
+import devcoop.occount.payment.application.dto.request.ItemCommand
+import devcoop.occount.payment.application.dto.request.PgCommand
+import devcoop.occount.payment.application.dto.response.PgResult
 import devcoop.occount.payment.application.payment.CardPaymentPort
 import devcoop.occount.payment.domain.exception.InvalidPaymentRequestException
 import devcoop.occount.payment.domain.exception.PaymentFailedException
@@ -19,8 +19,8 @@ class PgCardPaymentClient(
 ) : CardPaymentPort {
     private val log = LoggerFactory.getLogger(PgCardPaymentClient::class.java)
 
-    override fun approve(amount: Int, items: List<ItemInfo>): PgResponse {
-        val request = PgRequest(amount = amount, items = items)
+    override fun approve(amount: Int, items: List<ItemCommand>): PgResult {
+        val request = PgCommand(amount = amount, items = items)
         log.info("카드결제 요청 - 금액: {}원, 상품 수: {}개", amount, items.size)
 
         return try {
@@ -39,7 +39,7 @@ class PgCardPaymentClient(
                     log.error("결제 요청 타임아웃 발생")
                     throw PaymentTimeoutException()
                 }
-                .body(PgResponse::class.java)
+                .body(PgResult::class.java)
 
             if (response != null) {
                 log.info(

@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'org.jetbrains.kotlin.plugin.jpa'
 }
 
 dependencies {
@@ -8,5 +9,6 @@ dependencies {
     implementation project(':domains:payment:payment-application')
 
     implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework:spring-web'
 }

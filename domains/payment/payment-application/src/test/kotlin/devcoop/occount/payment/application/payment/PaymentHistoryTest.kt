@@ -1,7 +1,11 @@
 package devcoop.occount.payment.application.payment
 
+import devcoop.occount.payment.application.dto.request.ItemCommand
+import devcoop.occount.payment.application.dto.response.PgResult
 import devcoop.occount.payment.domain.ChargeLog
+import devcoop.occount.payment.domain.ChargeLogRepository
 import devcoop.occount.payment.domain.PaymentLog
+import devcoop.occount.payment.domain.PaymentLogRepository
 import devcoop.occount.payment.domain.type.PaymentType
 import devcoop.occount.payment.domain.type.RefundState
 import devcoop.occount.payment.domain.vo.PointTransaction
@@ -40,13 +44,51 @@ class PaymentHistoryTest {
             cardPaymentPort = object : CardPaymentPort {
                 override fun approve(
                     amount: Int,
-                    items: List<devcoop.occount.payment.application.dto.request.ItemInfo>,
-                ): devcoop.occount.payment.application.dto.response.PgResponse = error("unused")
+                    items: List<ItemCommand>,
+                ): PgResult = error("unused")
             },
         )
 
-        assertEquals(paymentLogs, service.getPaymentHistory(1L))
-        assertEquals(chargeLogs, service.getChargeHistory(1L))
+        assertEquals(
+            listOf(
+                PaymentLogResult(
+                    paymentId = paymentLogs.single().getPaymentId(),
+                    userId = paymentLogs.single().getUserId(),
+                    paymentDate = paymentLogs.single().getPaymentDate(),
+                    paymentType = paymentLogs.single().getPaymentType(),
+                    totalAmount = paymentLogs.single().getTotalAmount(),
+                    pointTransaction = null,
+                    cardInfo = null,
+                    transactionInfo = null,
+                    managedEmail = null,
+                    eventType = paymentLogs.single().getEventType(),
+                ),
+            ),
+            service.getPaymentHistory(1L),
+        )
+        assertEquals(
+            listOf(
+                ChargeLogResult(
+                    chargeId = chargeLogs.single().getChargeId(),
+                    userId = chargeLogs.single().getUserId(),
+                    chargeDate = chargeLogs.single().getChargeDate(),
+                    chargeAmount = chargeLogs.single().getChargeAmount(),
+                    pointTransaction = PointTransactionResult(
+                        beforePoint = 0,
+                        transactionPoint = 1000,
+                        afterPoint = 1000,
+                    ),
+                    cardInfo = null,
+                    transactionInfo = null,
+                    managedEmail = null,
+                    reason = null,
+                    refundState = RefundState.NONE,
+                    refundDate = null,
+                    refundRequesterId = null,
+                ),
+            ),
+            service.getChargeHistory(1L),
+        )
     }
 
     private class StubPaymentLogRepository(
