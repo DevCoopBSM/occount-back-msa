@@ -8,6 +8,7 @@ bootJar {
 
 dependencies {
     implementation project(':core:core-common')
+    implementation project(':domains:point:point-domain')
     implementation project(':domains:point:point-application')
     implementation project(':domains:point:point-infrastructure')
     implementation project(':modules:db')
