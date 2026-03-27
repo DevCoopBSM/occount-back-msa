@@ -1,17 +1,12 @@
 package devcoop.occount.payment.application.payment
 
-import devcoop.occount.payment.application.dto.request.ItemInfo
-import devcoop.occount.payment.domain.ChargeLog
+import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.domain.ChargeLogRepository
-import devcoop.occount.payment.domain.PaymentLog
 import devcoop.occount.payment.domain.PaymentLogRepository
 import devcoop.occount.payment.domain.exception.InsufficientPointsException
 import devcoop.occount.payment.domain.exception.InvalidPaymentRequestException
-import devcoop.occount.payment.domain.type.EventType
 import devcoop.occount.payment.domain.type.PaymentType
-import devcoop.occount.payment.domain.type.RefundState
 import devcoop.occount.payment.domain.type.TransactionType
-import devcoop.occount.payment.domain.vo.PointTransaction
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -37,50 +32,53 @@ class PaymentService(
         }
     }
 
-    fun getPaymentHistory(userId: Long): List<PaymentLog> {
+    fun getPaymentHistory(userId: Long): List<PaymentLogResult> {
         return paymentLogRepository.findByUserId(userId)
+            .map(PaymentLogResult::from)
     }
 
     fun getPaymentHistoryByDateRange(
         userId: Long,
         startDate: LocalDateTime,
         endDate: LocalDateTime,
-    ): List<PaymentLog> {
+    ): List<PaymentLogResult> {
         return paymentLogRepository.findByUserIdAndPaymentDateBetween(userId, startDate, endDate)
+            .map(PaymentLogResult::from)
     }
 
-    fun getPaymentByType(paymentType: PaymentType): List<PaymentLog> {
+    fun getPaymentByType(paymentType: PaymentType): List<PaymentLogResult> {
         return paymentLogRepository.findByPaymentType(paymentType)
+            .map(PaymentLogResult::from)
     }
 
-    fun getChargeHistory(userId: Long): List<ChargeLog> {
+    fun getChargeHistory(userId: Long): List<ChargeLogResult> {
         return chargeLogRepository.findByUserId(userId)
+            .map(ChargeLogResult::from)
     }
 
     fun getChargeHistoryByDateRange(
         userId: Long,
         startDate: LocalDateTime,
         endDate: LocalDateTime,
-    ): List<ChargeLog> {
+    ): List<ChargeLogResult> {
         return chargeLogRepository.findByUserIdAndChargeDateBetween(userId, startDate, endDate)
+            .map(ChargeLogResult::from)
     }
 
     private fun chargePoints(user: PaymentUserInfo, chargeRequest: ChargeRequest): PaymentResponse {
         val approved = cardPaymentPort.approve(
             amount = chargeRequest.amount,
-            items = listOf(toChargeItem(chargeRequest.amount)),
+            items = listOf(ItemCommand.charge(chargeRequest.amount)),
         )
         val pointChange = chargePointBalance(user.userId, chargeRequest.amount)
 
         chargeLogRepository.save(
-            ChargeLog(
-                userId = user.userId,
+            PaymentMapper.toChargeLog(
+                user = user,
                 chargeAmount = chargeRequest.amount,
-                pointTransaction = pointTransaction(pointChange),
-                cardInfo = approved.card?.let(::toDomainCardInfo),
-                transactionInfo = approved.transaction?.let(::toDomainTransactionInfo),
-                managedEmail = user.email,
-                refundState = RefundState.NONE,
+                pointChange = pointChange,
+                cardResult = approved.card,
+                transactionResult = approved.transaction,
             ),
         )
 
@@ -106,14 +104,7 @@ class PaymentService(
         )
 
         paymentLogRepository.save(
-            PaymentLog(
-                userId = user.userId,
-                paymentType = PaymentType.POINT,
-                totalAmount = paymentDetails.totalAmount,
-                pointTransaction = pointTransaction(pointChange),
-                managedEmail = user.email,
-                eventType = EventType.NONE,
-            ),
+            PaymentMapper.toPointPaymentLog(user, paymentDetails, pointChange),
         )
 
         return PaymentResponse.forPayment(
@@ -139,7 +130,7 @@ class PaymentService(
 
         val approved = cardPaymentPort.approve(
             amount = cardAmount,
-            items = paymentDetails.items.map(::toItemInfo),
+            items = paymentDetails.items.map(ItemCommand::from),
         )
         val afterBalance = pointWalletPort.deduct(user.userId, pointsUsed)
         val pointChange = PointBalanceChange(
@@ -149,15 +140,12 @@ class PaymentService(
         )
 
         paymentLogRepository.save(
-            PaymentLog(
-                userId = user.userId,
-                paymentType = PaymentType.MIXED,
-                totalAmount = paymentDetails.totalAmount,
-                pointTransaction = pointTransaction(pointChange),
-                cardInfo = approved.card?.let(::toDomainCardInfo),
-                transactionInfo = approved.transaction?.let(::toDomainTransactionInfo),
-                managedEmail = user.email,
-                eventType = EventType.NONE,
+            PaymentMapper.toMixedPaymentLog(
+                user = user,
+                paymentDetails = paymentDetails,
+                pointChange = pointChange,
+                cardResult = approved.card,
+                transactionResult = approved.transaction,
             ),
         )
 
@@ -199,65 +187,5 @@ class PaymentService(
                 }
             }
         }
-    }
-
-    private fun pointTransaction(change: PointBalanceChange): PointTransaction {
-        return PointTransaction(
-            beforePoint = change.beforeBalance,
-            transactionPoint = change.changedAmount,
-            afterPoint = change.afterBalance,
-        )
-    }
-
-    private fun toChargeItem(amount: Int): ItemInfo {
-        return toItemInfo(
-            PaymentItem(
-                itemId = "CHARGE",
-                itemName = "포인트 충전",
-                itemPrice = amount,
-                quantity = 1,
-                totalPrice = amount,
-            ),
-        )
-    }
-
-    private fun toItemInfo(item: PaymentItem): ItemInfo {
-        return ItemInfo(
-            name = item.itemName,
-            price = item.itemPrice,
-            quantity = item.quantity,
-            total = item.totalPrice,
-        )
-    }
-
-    private fun toDomainTransactionInfo(
-        dto: devcoop.occount.payment.application.dto.response.TransactionInfo,
-    ): devcoop.occount.payment.domain.vo.TransactionInfo {
-        return devcoop.occount.payment.domain.vo.TransactionInfo(
-            transactionId = dto.transactionId,
-            approvalNumber = dto.approvalNumber,
-            cardNumber = dto.cardNumber,
-            amount = dto.amount,
-            installmentMonths = dto.installmentMonths,
-            approvalDate = dto.approvalDate,
-            approvalTime = dto.approvalTime,
-            terminalId = dto.terminalId,
-            merchantNumber = dto.merchantNumber,
-        )
-    }
-
-    private fun toDomainCardInfo(
-        dto: devcoop.occount.payment.application.dto.response.CardInfo,
-    ): devcoop.occount.payment.domain.vo.CardInfo {
-        return devcoop.occount.payment.domain.vo.CardInfo(
-            issuerCode = dto.issuerCode,
-            issuerName = dto.issuerName,
-            acquirerCode = dto.acquirerCode,
-            acquirerName = dto.acquirerName,
-            cardType = dto.cardType,
-            cardCategory = dto.cardCategory,
-            cardName = dto.cardName,
-            cardBrand = dto.cardBrand,
-        )
     }
 }

@@ -1,25 +1,12 @@
 plugins {
-    id 'org.springframework.boot'
-}
-
-bootJar {
-    archiveFileName.set('payment-api.jar')
+    id 'java-library'
 }
 
 dependencies {
-    implementation project(':domains:payment:payment-domain')
     implementation project(':domains:payment:payment-application')
-    implementation project(':domains:payment:payment-infrastructure')
-    implementation project(':modules:db')
-    implementation project(':modules:kafka')
     implementation project(':core:core-common')
 
-    implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'tools.jackson.module:jackson-module-kotlin'
 
-    runtimeOnly 'com.mysql:mysql-connector-j'
+    testImplementation project(':domains:payment:payment-domain')
 }
