@@ -1,7 +1,8 @@
-package devcoop.occount.payment.application.payment
+package devcoop.occount.payment.application.query.chargelog
 
 import devcoop.occount.payment.application.dto.response.CardResult
 import devcoop.occount.payment.application.dto.response.TransactionResult
+import devcoop.occount.payment.application.shared.PointTransactionResult
 import devcoop.occount.payment.domain.ChargeLog
 import devcoop.occount.payment.domain.type.RefundState
 import java.time.LocalDateTime

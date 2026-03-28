@@ -1,4 +1,4 @@
-package devcoop.occount.payment.application.payment
+package devcoop.occount.payment.application.output
 
 interface PointWalletPort {
     fun getBalance(userId: Long): Int

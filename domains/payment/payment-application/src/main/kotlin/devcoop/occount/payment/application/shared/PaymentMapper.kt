@@ -1,4 +1,4 @@
-package devcoop.occount.payment.application.payment
+package devcoop.occount.payment.application.shared
 
 import devcoop.occount.payment.application.dto.response.CardResult
 import devcoop.occount.payment.application.dto.response.TransactionResult

@@ -1,4 +1,4 @@
-package devcoop.occount.payment.application.payment
+package devcoop.occount.payment.application.shared
 
 import devcoop.occount.payment.domain.vo.PointTransaction
 
