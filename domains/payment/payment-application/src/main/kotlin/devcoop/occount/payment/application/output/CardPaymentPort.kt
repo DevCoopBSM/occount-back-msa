@@ -1,4 +1,4 @@
-package devcoop.occount.payment.application.payment
+package devcoop.occount.payment.application.output
 
 import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.dto.response.PgResult

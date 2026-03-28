@@ -1,8 +1,8 @@
 package devcoop.occount.payment.infrastructure.member
 
-import devcoop.occount.payment.application.payment.MemberPaymentReadPort
-import devcoop.occount.payment.application.payment.PaymentUserInfo
-import devcoop.occount.payment.application.payment.PaymentUserNotFoundException
+import devcoop.occount.payment.application.output.MemberPaymentReadPort
+import devcoop.occount.payment.application.shared.PaymentUserInfo
+import devcoop.occount.payment.application.shared.PaymentUserNotFoundException
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component

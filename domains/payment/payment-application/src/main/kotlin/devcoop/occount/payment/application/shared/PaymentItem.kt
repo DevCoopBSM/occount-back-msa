@@ -1,4 +1,4 @@
-package devcoop.occount.payment.application.payment
+package devcoop.occount.payment.application.shared
 
 data class PaymentItem(
     val itemId: String,

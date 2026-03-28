@@ -1,6 +1,6 @@
 package devcoop.occount.payment.infrastructure.point
 
-import devcoop.occount.payment.application.payment.PointWalletPort
+import devcoop.occount.payment.application.output.PointWalletPort
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
