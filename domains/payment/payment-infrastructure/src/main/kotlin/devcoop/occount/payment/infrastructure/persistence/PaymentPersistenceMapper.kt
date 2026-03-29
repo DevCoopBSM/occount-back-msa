@@ -1,9 +1,9 @@
 package devcoop.occount.payment.infrastructure.persistence
 
 import devcoop.occount.payment.domain.PaymentLog
-import devcoop.occount.point.domain.vo.CardInfo
-import devcoop.occount.point.domain.vo.PointTransaction
-import devcoop.occount.point.domain.vo.TransactionInfo
+import devcoop.occount.payment.domain.vo.CardInfo
+import devcoop.occount.payment.domain.vo.PointTransaction
+import devcoop.occount.payment.domain.vo.TransactionInfo
 
 object PaymentPersistenceMapper {
     fun toDomain(entity: PaymentLogJpaEntity): PaymentLog {
