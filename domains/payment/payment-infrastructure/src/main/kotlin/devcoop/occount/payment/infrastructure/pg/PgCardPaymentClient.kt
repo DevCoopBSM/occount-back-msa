@@ -3,7 +3,7 @@ package devcoop.occount.payment.infrastructure.pg
 import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.dto.request.PgCommand
 import devcoop.occount.payment.application.dto.response.PgResult
-import devcoop.occount.payment.application.payment.CardPaymentPort
+import devcoop.occount.payment.application.output.CardPaymentPort
 import devcoop.occount.payment.domain.exception.InvalidPaymentRequestException
 import devcoop.occount.payment.domain.exception.PaymentFailedException
 import devcoop.occount.payment.domain.exception.PaymentTimeoutException
