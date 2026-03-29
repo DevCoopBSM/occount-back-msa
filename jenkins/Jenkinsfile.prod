@@ -60,7 +60,7 @@ spec:
     }
 
     environment {
-        HARBOR_URL    = '192.168.5.161:8443'
+        HARBOR_URL    = "${env.HARBOR_URL}"
         IMAGE_PREFIX  = "${HARBOR_URL}/occount"
         VALUES_FILE   = 'values.yaml'
         MANIFEST_REPO = 'git@github.com:DevCoopBSM/dev-k8s.git'
