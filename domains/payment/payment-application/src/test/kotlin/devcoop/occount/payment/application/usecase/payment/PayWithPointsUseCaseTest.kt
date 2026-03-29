@@ -1,10 +1,8 @@
 package devcoop.occount.payment.application.usecase.payment
 
-import devcoop.occount.payment.application.output.MemberPaymentReadPort
 import devcoop.occount.payment.application.output.PointWalletPort
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentItem
-import devcoop.occount.payment.application.shared.PaymentUserInfo
 import devcoop.occount.payment.domain.PaymentLog
 import devcoop.occount.payment.domain.PaymentLogRepository
 import devcoop.occount.payment.domain.exception.InsufficientPointsException
@@ -20,7 +18,6 @@ class PayWithPointsUseCaseTest {
     fun `payment uses points only and stores payment history`() {
         val paymentLogRepository = FakePaymentLogRepository()
         val useCase = PayWithPointsUseCase(
-            memberPaymentReadPort = FakeMemberPaymentReadPort(),
             pointWalletPort = FakePointWalletPort(balance = 120),
             paymentLogRepository = paymentLogRepository,
         )
@@ -40,7 +37,6 @@ class PayWithPointsUseCaseTest {
     @Test
     fun `payment fails when points are insufficient`() {
         val useCase = PayWithPointsUseCase(
-            memberPaymentReadPort = FakeMemberPaymentReadPort(),
             pointWalletPort = FakePointWalletPort(balance = 30),
             paymentLogRepository = FakePaymentLogRepository(),
         )
@@ -65,21 +61,10 @@ class PayWithPointsUseCaseTest {
         )
     }
 
-    private class FakeMemberPaymentReadPort : MemberPaymentReadPort {
-        override fun getUser(userId: Long): PaymentUserInfo {
-            return PaymentUserInfo(userId = userId, email = "user@test.com")
-        }
-    }
-
     private class FakePointWalletPort(balance: Int) : PointWalletPort {
         private var currentBalance = balance
 
         override fun getBalance(userId: Long): Int = currentBalance
-
-        override fun charge(userId: Long, amount: Int): Int {
-            currentBalance += amount
-            return currentBalance
-        }
 
         override fun deduct(userId: Long, amount: Int): Int {
             currentBalance -= amount

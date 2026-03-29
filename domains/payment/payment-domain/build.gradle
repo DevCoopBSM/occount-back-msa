@@ -4,4 +4,5 @@ plugins {
 
 dependencies {
     implementation project(':core:core-common')
+    implementation project(':domains:point:point-domain')
 }

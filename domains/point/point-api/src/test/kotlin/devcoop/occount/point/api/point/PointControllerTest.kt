@@ -2,8 +2,9 @@ package devcoop.occount.point.api.point
 
 import devcoop.occount.core.common.auth.AuthHeaders
 import devcoop.occount.point.api.dto.request.ChargePointCommand
-import devcoop.occount.point.application.query.balance.PointBalanceResponse
 import devcoop.occount.point.application.query.balance.GetPointBalanceQueryService
+import devcoop.occount.point.application.query.balance.PointBalanceResponse
+import devcoop.occount.point.application.query.chargelog.GetChargeHistoryQueryService
 import devcoop.occount.point.application.usecase.charge.ChargePointRequest
 import devcoop.occount.point.application.usecase.charge.ChargePointUseCase
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -15,13 +16,18 @@ import org.mockito.Mockito.`when`
 import org.springframework.mock.web.MockHttpServletRequest
 
 class PointControllerTest {
+    private val getPointBalanceQueryService = mock(GetPointBalanceQueryService::class.java)
+    private val chargePointUseCase = mock(ChargePointUseCase::class.java)
+    private val getChargeHistoryQueryService = mock(GetChargeHistoryQueryService::class.java)
+    private val controller = PointController(
+        getPointBalanceQueryService = getPointBalanceQueryService,
+        chargePointUseCase = chargePointUseCase,
+        getChargeHistoryQueryService = getChargeHistoryQueryService,
+    )
+
     @Test
     @DisplayName("인증된 사용자 헤더로 잔액 조회를 위임한다")
     fun `authenticated balance query uses authenticated user id header`() {
-        val getPointBalanceQueryService = mock(GetPointBalanceQueryService::class.java)
-        val chargePointUseCase = mock(ChargePointUseCase::class.java)
-        val controller = PointController(getPointBalanceQueryService, chargePointUseCase)
-
         `when`(getPointBalanceQueryService.getBalance(4L)).thenReturn(PointBalanceResponse(balance = 800))
 
         val httpRequest = MockHttpServletRequest().apply {
@@ -35,22 +41,17 @@ class PointControllerTest {
     }
 
     @Test
-    @DisplayName("충전 요청을 포인트 서비스에 위임한다")
-    fun `charge delegates to point service`() {
-        val getPointBalanceQueryService = mock(GetPointBalanceQueryService::class.java)
-        val chargePointUseCase = mock(ChargePointUseCase::class.java)
-        val controller = PointController(getPointBalanceQueryService, chargePointUseCase)
-        val request = ChargePointCommand(amount = 500)
+    @DisplayName("카드 충전 요청을 포인트 충전 유스케이스에 위임한다")
+    fun `charge delegates to charge point use case`() {
+        val request = ChargePointCommand(amount = 5000)
+        val chargeRequest = ChargePointRequest(userId = 3L, amount = 5000)
+
         val httpRequest = MockHttpServletRequest().apply {
             addHeader(AuthHeaders.AUTHENTICATED_USER_ID, "3")
         }
-        val chargeRequest = ChargePointRequest(userId = 3L, amount = 500)
 
-        `when`(chargePointUseCase.charge(chargeRequest)).thenReturn(PointBalanceResponse(balance = 500))
+        controller.charge(request, httpRequest)
 
-        val actual = controller.charge(request, httpRequest)
-
-        assertEquals(PointBalanceResponse(balance = 500), actual)
         verify(chargePointUseCase).charge(chargeRequest)
     }
 }

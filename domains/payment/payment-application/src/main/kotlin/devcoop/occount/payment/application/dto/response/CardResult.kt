@@ -1,7 +1,7 @@
 package devcoop.occount.payment.application.dto.response
 
-import devcoop.occount.payment.domain.type.CardType
-import devcoop.occount.payment.domain.vo.CardInfo
+import devcoop.occount.point.domain.type.CardType
+import devcoop.occount.point.domain.vo.CardInfo
 
 data class CardResult(
     val acquirerCode: String?,

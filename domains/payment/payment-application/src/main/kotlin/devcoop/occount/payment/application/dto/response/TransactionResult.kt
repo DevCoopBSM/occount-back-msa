@@ -1,6 +1,6 @@
 package devcoop.occount.payment.application.dto.response
 
-import devcoop.occount.payment.domain.vo.TransactionInfo
+import devcoop.occount.point.domain.vo.TransactionInfo
 
 data class TransactionResult(
     val messageNumber: String?,

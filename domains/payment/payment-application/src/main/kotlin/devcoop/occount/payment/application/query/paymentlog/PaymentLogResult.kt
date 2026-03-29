@@ -17,7 +17,6 @@ data class PaymentLogResult(
     val pointTransaction: PointTransactionResult?,
     val cardInfo: CardResult?,
     val transactionInfo: TransactionResult?,
-    val managedEmail: String?,
     val eventType: EventType?,
 ) {
     companion object {
@@ -31,7 +30,6 @@ data class PaymentLogResult(
                 pointTransaction = paymentLog.getPointTransaction()?.let(PointTransactionResult::from),
                 cardInfo = paymentLog.getCardInfo()?.let(CardResult::from),
                 transactionInfo = paymentLog.getTransactionInfo()?.let(TransactionResult::from),
-                managedEmail = paymentLog.getManagedEmail(),
                 eventType = paymentLog.getEventType(),
             )
         }
