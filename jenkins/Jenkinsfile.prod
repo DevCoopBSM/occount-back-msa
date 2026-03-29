@@ -164,7 +164,6 @@ DOCKERFILE_EOF"""
                                         --dockerfile=${svc.dir}/.ci-Dockerfile \\
                                         --destination=${env.IMAGE_PREFIX}/${svc.name}:${env.GIT_COMMIT_SHORT} \\
                                         --snapshot-mode=redo \\
-                                        --use-new-run \\
                                         --skip-tls-verify \\
                                         --skip-tls-verify-pull
                                 """
