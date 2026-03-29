@@ -5,13 +5,13 @@ import devcoop.occount.payment.application.dto.response.CardResult
 import devcoop.occount.payment.application.dto.response.PgResult
 import devcoop.occount.payment.application.dto.response.TransactionResult
 import devcoop.occount.payment.application.output.CardPaymentPort
-import devcoop.occount.payment.application.output.PointWalletPort
+import devcoop.occount.payment.application.output.WalletPort
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentItem
 import devcoop.occount.payment.domain.PaymentLog
 import devcoop.occount.payment.domain.PaymentLogRepository
 import devcoop.occount.payment.domain.exception.InvalidPaymentRequestException
-import devcoop.occount.point.domain.type.CardType
+import devcoop.occount.payment.domain.type.CardType
 import devcoop.occount.payment.domain.type.PaymentType
 import java.time.LocalDateTime
 import kotlin.test.Test
@@ -24,7 +24,7 @@ class MixedPaymentUseCaseTest {
         val paymentLogRepository = FakePaymentLogRepository()
         val cardPaymentPort = FakeCardPaymentPort()
         val useCase = MixedPaymentUseCase(
-            pointWalletPort = FakePointWalletPort(balance = 30),
+            pointWalletPort = FakeWalletPort(balance = 30),
             cardPaymentPort = cardPaymentPort,
             paymentLogRepository = paymentLogRepository,
         )
@@ -45,7 +45,7 @@ class MixedPaymentUseCaseTest {
     @Test
     fun `mixed rejects request when it is not actually a mixed payment`() {
         val useCase = MixedPaymentUseCase(
-            pointWalletPort = FakePointWalletPort(balance = 80),
+            pointWalletPort = FakeWalletPort(balance = 80),
             cardPaymentPort = FakeCardPaymentPort(),
             paymentLogRepository = FakePaymentLogRepository(),
         )
@@ -70,7 +70,7 @@ class MixedPaymentUseCaseTest {
         )
     }
 
-    private class FakePointWalletPort(balance: Int) : PointWalletPort {
+    private class FakeWalletPort(balance: Int) : WalletPort {
         private var currentBalance = balance
 
         override fun getBalance(userId: Long): Int = currentBalance

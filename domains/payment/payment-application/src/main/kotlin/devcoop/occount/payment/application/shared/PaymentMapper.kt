@@ -5,7 +5,7 @@ import devcoop.occount.payment.application.dto.response.TransactionResult
 import devcoop.occount.payment.domain.PaymentLog
 import devcoop.occount.payment.domain.type.EventType
 import devcoop.occount.payment.domain.type.PaymentType
-import devcoop.occount.point.domain.vo.PointTransaction
+import devcoop.occount.payment.domain.vo.PointTransaction
 
 object PaymentMapper {
     fun toPointPaymentLog(

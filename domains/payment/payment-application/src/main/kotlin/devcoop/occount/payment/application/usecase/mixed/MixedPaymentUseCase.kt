@@ -2,7 +2,7 @@ package devcoop.occount.payment.application.usecase.mixed
 
 import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.output.CardPaymentPort
-import devcoop.occount.payment.application.output.PointWalletPort
+import devcoop.occount.payment.application.output.WalletPort
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentMapper
 import devcoop.occount.payment.application.shared.PaymentResponse
@@ -16,7 +16,7 @@ import kotlin.math.min
 
 @Service
 class MixedPaymentUseCase(
-    private val pointWalletPort: PointWalletPort,
+    private val pointWalletPort: WalletPort,
     private val cardPaymentPort: CardPaymentPort,
     private val paymentLogRepository: PaymentLogRepository,
 ) {

@@ -4,7 +4,6 @@ plugins {
 
 dependencies {
     implementation project(':domains:payment:payment-domain')
-    implementation project(':domains:point:point-domain')
 
     implementation project(':core:core-common')
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
