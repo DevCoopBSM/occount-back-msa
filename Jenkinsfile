@@ -1,9 +1,16 @@
 def SERVICES = [
-    [path: 'gateway/',         task: ':gateway:api-gateway:bootJar',                  name: 'api-gateway',  dir: 'gateway/api-gateway'],
-    [path: 'domains/member/',  task: ':domains:member:member-bootstrap:bootJar',       name: 'member-api',   dir: 'domains/member/member-bootstrap'],
-    [path: 'domains/item/',    task: ':domains:item:item-bootstrap:bootJar',           name: 'item-api',     dir: 'domains/item/item-bootstrap'],
-    [path: 'domains/order/',   task: ':domains:order:order-bootstrap:bootJar',         name: 'order-api',    dir: 'domains/order/order-bootstrap'],
-    [path: 'domains/payment/', task: ':domains:payment:payment-bootstrap:bootJar',     name: 'payment-api',  dir: 'domains/payment/payment-bootstrap'],
+    [path: 'gateway/',         task: ':gateway:api-gateway:bootJar',               name: 'api-gateway',  dir: 'gateway/api-gateway',               yamlKey: 'apiGateway'],
+    [path: 'domains/member/',  task: ':domains:member:member-bootstrap:bootJar',    name: 'member-api',   dir: 'domains/member/member-bootstrap',    yamlKey: 'memberApi'],
+    [path: 'domains/item/',    task: ':domains:item:item-bootstrap:bootJar',        name: 'item-api',     dir: 'domains/item/item-bootstrap',         yamlKey: 'itemApi'],
+    [path: 'domains/order/',   task: ':domains:order:order-bootstrap:bootJar',      name: 'order-api',    dir: 'domains/order/order-bootstrap',       yamlKey: 'orderApi'],
+    [path: 'domains/payment/', task: ':domains:payment:payment-bootstrap:bootJar',  name: 'payment-api',  dir: 'domains/payment/payment-bootstrap',   yamlKey: 'paymentApi'],
+    [path: 'domains/point/',   task: ':domains:point:point-bootstrap:bootJar',      name: 'point-api',    dir: 'domains/point/point-bootstrap',       yamlKey: 'pointApi'],
+]
+
+def TRIGGER_ALL_PATHS = [
+    'build.gradle', 'build.gradle.kts',
+    'settings.gradle', 'settings.gradle.kts',
+    'gradle.properties', 'gradle/', 'buildSrc/',
 ]
 
 pipeline {
@@ -13,9 +20,15 @@ pipeline {
 apiVersion: v1
 kind: Pod
 spec:
+  dnsConfig:
+    options:
+    - name: ndots
+      value: "1"
+  nodeSelector:
+    kubernetes.io/hostname: worker-1
   containers:
   - name: gradle
-    image: gradle:8.5-jdk21
+    image: gradle:8.5-jdk21-alpine
     command: ['sleep']
     args: ['infinity']
     volumeMounts:
@@ -29,7 +42,7 @@ spec:
     - name: harbor-creds
       mountPath: /kaniko/.docker
   - name: jnlp
-    image: jenkins/inbound-agent:latest
+    image: jenkins/inbound-agent:3355.v388858a_47b_33-16
   volumes:
   - name: harbor-creds
     secret:
@@ -43,16 +56,19 @@ spec:
         }
     }
 
+    parameters {
+        booleanParam(name: 'FORCE_ALL', defaultValue: false, description: '전체 서비스 강제 빌드')
+    }
+
     environment {
-        HARBOR_URL   = 'harbor.harbor.svc'
-        IMAGE_PREFIX = "${HARBOR_URL}/occount"
+        HARBOR_URL    = '192.168.5.161:8443'
+        IMAGE_PREFIX  = "${HARBOR_URL}/occount-dev"
+        VALUES_FILE   = 'values-dev.yaml'
+        MANIFEST_REPO = 'git@github.com:DevCoopBSM/dev-k8s.git'
     }
 
     stages {
 
-        // ---------------------------------------------------------------
-        // 1. 변경 감지 — 변경된 서비스의 Gradle 태스크 목록 수집
-        // ---------------------------------------------------------------
         stage('Detect Changes') {
             steps {
                 script {
@@ -61,108 +77,145 @@ spec:
                         returnStdout: true
                     ).trim()
 
-                    def tasks   = [] as Set
-                    def targets = [] as Set
+                    echo "Commit: ${env.GIT_COMMIT_SHORT}"
+
+                    if (params.FORCE_ALL) {
+                        env.CHANGED_SERVICES = SERVICES.collect { it.name }.join(',')
+                        return
+                    }
 
                     def changedFiles = sh(
-                        script: '''
-                            if [ -n "$GIT_PREVIOUS_SUCCESSFUL_COMMIT" ]; then
-                                git diff --name-only $GIT_PREVIOUS_SUCCESSFUL_COMMIT $GIT_COMMIT
-                            else
-                                git diff --name-only HEAD~1 HEAD
-                            fi
-                        ''',
+                        script: 'git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "__ALL__"',
                         returnStdout: true
-                    ).trim().split('\n') as List
+                    ).trim()
 
-                    if (changedFiles.any { it.startsWith('core/') || it.startsWith('modules/') }) {
-                        echo "Common module changed → building all services"
-                        SERVICES.each { svc -> tasks << svc.task; targets << svc.name }
-                    } else {
-                        SERVICES.each { svc ->
-                            if (changedFiles.any { f -> f.startsWith(svc.path) }) {
-                                tasks   << svc.task
-                                targets << svc.name
-                            }
-                        }
-                        if (targets.isEmpty()) {
-                            echo "No service-related changes detected → skipping build"
-                        }
+                    if (changedFiles == '__ALL__') {
+                        env.CHANGED_SERVICES = SERVICES.collect { it.name }.join(',')
+                        return
                     }
 
-                    env.GRADLE_TASKS  = tasks.join(' ')
-                    env.BUILD_TARGETS = targets.join(',')
-                    echo "Changed services : ${targets}"
-                    echo "Gradle tasks     : ${env.GRADLE_TASKS}"
+                    def fileList = changedFiles.split('\n') as List
+                    def triggerAll = TRIGGER_ALL_PATHS.any { path ->
+                        fileList.any { f -> f.startsWith(path) || f == path }
+                    }
+
+                    if (triggerAll) {
+                        env.CHANGED_SERVICES = SERVICES.collect { it.name }.join(',')
+                        return
+                    }
+
+                    def changed = SERVICES.findAll { svc ->
+                        fileList.any { f -> f.startsWith(svc.path) }
+                    }.collect { it.name }
+
+                    env.CHANGED_SERVICES = changed.isEmpty() ? '' : changed.join(',')
+                    echo "빌드 대상: ${env.CHANGED_SERVICES ?: '없음'}"
                 }
             }
         }
 
-        // ---------------------------------------------------------------
-        // 2. 변경된 모듈만 Gradle 빌드 (jar 생성)
-        //    buildNeeded → 해당 모듈이 의존하는 하위 프로젝트까지 자동 빌드
-        // ---------------------------------------------------------------
         stage('Gradle Build') {
-            when { expression { env.GRADLE_TASKS?.trim() } }
+            when { expression { env.CHANGED_SERVICES } }
             steps {
                 container('gradle') {
-                    sh "./gradlew ${env.GRADLE_TASKS} -x test --parallel --continue"
+                    script {
+                        def targets = SERVICES
+                            .findAll { env.CHANGED_SERVICES.split(',').contains(it.name) }
+                            .collect { it.task }
+                            .join(' ')
+                        sh "./gradlew ${targets} --no-daemon --parallel"
+                    }
                 }
             }
         }
 
-        // ---------------------------------------------------------------
-        // 3. Kaniko 이미지 빌드 & Harbor push — 동적 병렬 스테이지
-        // ---------------------------------------------------------------
         stage('Build & Push Images') {
-            when { expression { env.BUILD_TARGETS?.trim() } }
+            when { expression { env.CHANGED_SERVICES } }
             steps {
                 script {
-                    def targets        = env.BUILD_TARGETS.split(',') as List
-                    def parallelStages = [:]
+                    def svcsToBuild = SERVICES.findAll {
+                        env.CHANGED_SERVICES.split(',').contains(it.name)
+                    }
 
-                    SERVICES.each { svc ->
-                        if (targets.contains(svc.name)) {
-                            def s = svc  // 클로저 캡처용 로컬 복사
-                            parallelStages[s.name] = {
-                                container('kaniko') {
-                                    buildAndPush(s.name, s.dir)
-                                }
-                            }
+                    container('gradle') {
+                        svcsToBuild.each { svc ->
+                            def jarFile = sh(
+                                script: "ls ${env.WORKSPACE}/${svc.dir}/build/libs/*.jar 2>/dev/null | grep -v plain | tail -1",
+                                returnStdout: true
+                            ).trim()
+                            if (!jarFile) error "No JAR for ${svc.name}"
+                            def relativeJar = jarFile.replace("${env.WORKSPACE}/", "")
+                            sh """cat > ${svc.dir}/.ci-Dockerfile << 'DOCKERFILE_EOF'
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY ${relativeJar} /app/app.jar
+ENV JAVA_OPTS=
+EXPOSE 8080
+CMD exec java \$JAVA_OPTS -jar /app/app.jar
+DOCKERFILE_EOF"""
                         }
                     }
 
-                    parallel parallelStages
+                    parallel svcsToBuild.collectEntries { svc ->
+                        ["${svc.name}": {
+                            container('kaniko') {
+                                sh """
+                                    /kaniko/executor \\
+                                        --context=dir://${env.WORKSPACE} \\
+                                        --dockerfile=${svc.dir}/.ci-Dockerfile \\
+                                        --destination=${env.IMAGE_PREFIX}/${svc.name}:dev-${env.GIT_COMMIT_SHORT} \\
+                                        --snapshot-mode=redo \\
+                                        --use-new-run \\
+                                        --skip-tls-verify \\
+                                        --skip-tls-verify-pull
+                                """
+                            }
+                        }]
+                    }
+                }
+            }
+        }
+
+        stage('Update Manifest') {
+            when { expression { env.CHANGED_SERVICES } }
+            steps {
+                container('gradle') {
+                    withCredentials([sshUserPrivateKey(
+                        credentialsId: 'github-credentials',
+                        keyFileVariable: 'SSH_KEY'
+                    )]) {
+                        script {
+                            sh """
+                                apk add -q openssh-client yq
+                                mkdir -p ~/.ssh
+                                cp \$SSH_KEY ~/.ssh/id_ed25519
+                                chmod 600 ~/.ssh/id_ed25519
+                                ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+                                git clone ${env.MANIFEST_REPO} /tmp/dev-k8s-update
+                            """
+                            SERVICES
+                                .findAll { env.CHANGED_SERVICES.split(',').contains(it.name) }
+                                .each { svc ->
+                                    sh "yq e '.apps.${svc.yamlKey}.image.tag = \"dev-${env.GIT_COMMIT_SHORT}\"' -i /tmp/dev-k8s-update/helm/occount/${env.VALUES_FILE}"
+                                }
+                            sh """
+                                cd /tmp/dev-k8s-update
+                                git config user.email "jenkins@devcoop.local"
+                                git config user.name "Jenkins CI"
+                                git add helm/occount/${env.VALUES_FILE}
+                                git diff --cached --quiet || git commit -m "chore(dev): bump [${env.CHANGED_SERVICES}] to dev-${env.GIT_COMMIT_SHORT}"
+                                git push ${env.MANIFEST_REPO} main
+                            """
+                        }
+                    }
                 }
             }
         }
     }
 
     post {
-        always {
-            node('') {
-                cleanWs()
-            }
-        }
-        success { echo "Build succeeded: ${env.GIT_COMMIT_SHORT}" }
-        failure { echo "Build failed: ${env.GIT_COMMIT_SHORT}" }
+        always { cleanWs() }
+        success { echo "Done: [${env.CHANGED_SERVICES ?: 'no changes'}] → ${env.GIT_COMMIT_SHORT}" }
+        failure { echo "Failed: ${env.GIT_COMMIT_SHORT}" }
     }
-}
-
-def buildAndPush(String serviceName, String moduleDir) {
-    def image = "${env.IMAGE_PREFIX}/${serviceName}:${env.GIT_COMMIT_SHORT}"
-    sh """
-        /kaniko/executor \\
-            --context=dir://${env.WORKSPACE}/${moduleDir} \\
-            --dockerfile=${env.WORKSPACE}/${moduleDir}/Dockerfile \\
-            --destination=${image} \\
-            --cache=true \\
-            --cache-repo=${env.HARBOR_URL}/occount/cache \\
-            --snapshotMode=redo \\
-            --use-new-run \\
-            --skip-tls-verify \\
-            --insecure \\
-            --insecure-pull
-    """
-    echo "Pushed: ${image}"
 }
