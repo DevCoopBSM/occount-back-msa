@@ -26,11 +26,6 @@ include 'domains:payment:payment-api'
 include 'domains:payment:payment-infrastructure'
 include 'domains:payment:payment-bootstrap'
 
-include 'domains:point:point-domain'
-include 'domains:point:point-application'
-include 'domains:point:point-infrastructure'
-include 'domains:point:point-api'
-include 'domains:point:point-bootstrap'
 
 include 'gateway:api-gateway'
 
