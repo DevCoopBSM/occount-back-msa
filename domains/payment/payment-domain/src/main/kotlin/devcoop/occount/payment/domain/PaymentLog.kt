@@ -3,9 +3,9 @@ package devcoop.occount.payment.domain
 import devcoop.occount.payment.domain.type.EventType
 import devcoop.occount.payment.domain.type.PaymentType
 import devcoop.occount.payment.domain.type.RefundState
-import devcoop.occount.point.domain.vo.CardInfo
-import devcoop.occount.point.domain.vo.PointTransaction
-import devcoop.occount.point.domain.vo.TransactionInfo
+import devcoop.occount.payment.domain.vo.CardInfo
+import devcoop.occount.payment.domain.vo.PointTransaction
+import devcoop.occount.payment.domain.vo.TransactionInfo
 import java.time.LocalDateTime
 
 class PaymentLog(
