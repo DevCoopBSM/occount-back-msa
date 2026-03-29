@@ -1,6 +1,6 @@
 package devcoop.occount.payment.application.usecase.payment
 
-import devcoop.occount.payment.application.output.PointWalletPort
+import devcoop.occount.payment.application.output.WalletPort
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentMapper
 import devcoop.occount.payment.application.shared.PaymentResponse
@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Service
 class PayWithPointsUseCase(
-    private val pointWalletPort: PointWalletPort,
+    private val pointWalletPort: WalletPort,
     private val paymentLogRepository: PaymentLogRepository,
 ) {
     @Transactional

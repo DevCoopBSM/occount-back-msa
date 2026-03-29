@@ -1,6 +1,6 @@
 package devcoop.occount.payment.application.usecase.payment
 
-import devcoop.occount.payment.application.output.PointWalletPort
+import devcoop.occount.payment.application.output.WalletPort
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentItem
 import devcoop.occount.payment.domain.PaymentLog
@@ -18,7 +18,7 @@ class PayWithPointsUseCaseTest {
     fun `payment uses points only and stores payment history`() {
         val paymentLogRepository = FakePaymentLogRepository()
         val useCase = PayWithPointsUseCase(
-            pointWalletPort = FakePointWalletPort(balance = 120),
+            pointWalletPort = FakeWalletPort(balance = 120),
             paymentLogRepository = paymentLogRepository,
         )
 
@@ -37,7 +37,7 @@ class PayWithPointsUseCaseTest {
     @Test
     fun `payment fails when points are insufficient`() {
         val useCase = PayWithPointsUseCase(
-            pointWalletPort = FakePointWalletPort(balance = 30),
+            pointWalletPort = FakeWalletPort(balance = 30),
             paymentLogRepository = FakePaymentLogRepository(),
         )
 
@@ -61,7 +61,7 @@ class PayWithPointsUseCaseTest {
         )
     }
 
-    private class FakePointWalletPort(balance: Int) : PointWalletPort {
+    private class FakeWalletPort(balance: Int) : WalletPort {
         private var currentBalance = balance
 
         override fun getBalance(userId: Long): Int = currentBalance
