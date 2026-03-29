@@ -30,6 +30,10 @@ member:
   read-api:
     url: ${MEMBER_API_URL:http://localhost:8081/api/v3}
 
+point:
+  api:
+    url: ${POINT_API_URL:http://localhost:8086/api/v3}
+
 management:
   endpoints:
     web:
