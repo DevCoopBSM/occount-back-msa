@@ -4,7 +4,6 @@ def SERVICES = [
     [task: ':domains:item:item-bootstrap:bootJar',       name: 'item-api',     dir: 'domains/item/item-bootstrap',       yamlKey: 'itemApi'],
     [task: ':domains:order:order-bootstrap:bootJar',     name: 'order-api',    dir: 'domains/order/order-bootstrap',     yamlKey: 'orderApi'],
     [task: ':domains:payment:payment-bootstrap:bootJar', name: 'payment-api',  dir: 'domains/payment/payment-bootstrap', yamlKey: 'paymentApi'],
-    [task: ':domains:point:point-bootstrap:bootJar',     name: 'point-api',    dir: 'domains/point/point-bootstrap',     yamlKey: 'pointApi'],
 ]
 
 pipeline {
