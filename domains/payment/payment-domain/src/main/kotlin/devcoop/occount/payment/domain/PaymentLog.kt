@@ -2,7 +2,6 @@ package devcoop.occount.payment.domain
 
 import devcoop.occount.payment.domain.type.EventType
 import devcoop.occount.payment.domain.type.PaymentType
-import devcoop.occount.payment.domain.type.RefundState
 import devcoop.occount.payment.domain.vo.CardInfo
 import devcoop.occount.payment.domain.vo.PointTransaction
 import devcoop.occount.payment.domain.vo.TransactionInfo
@@ -17,10 +16,8 @@ class PaymentLog(
     private var pointTransaction: PointTransaction? = null,
     private var cardInfo: CardInfo? = null,
     private var transactionInfo: TransactionInfo? = null,
+    private var managedEmail: String? = null,
     private var eventType: EventType? = EventType.NONE,
-    private var refundState: RefundState = RefundState.NONE,
-    private var refundDate: LocalDateTime? = null,
-    private var refundRequesterId: String? = null,
 ) {
     fun getPaymentId(): Long = paymentId
     fun getUserId(): Long = userId
@@ -30,20 +27,8 @@ class PaymentLog(
     fun getPointTransaction(): PointTransaction? = pointTransaction
     fun getCardInfo(): CardInfo? = cardInfo
     fun getTransactionInfo(): TransactionInfo? = transactionInfo
+    fun getManagedEmail(): String? = managedEmail
     fun getEventType(): EventType? = eventType
-    fun getRefundState(): RefundState = refundState
-    fun getRefundDate(): LocalDateTime? = refundDate
-    fun getRefundRequesterId(): String? = refundRequesterId
-
-    fun requestRefund(requesterId: String) {
-        this.refundState = RefundState.REQUESTED
-        this.refundRequesterId = requesterId
-    }
-
-    fun completeRefund() {
-        this.refundState = RefundState.COMPLETED
-        this.refundDate = LocalDateTime.now()
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

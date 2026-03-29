@@ -2,7 +2,6 @@ package devcoop.occount.payment.infrastructure.persistence
 
 import devcoop.occount.payment.domain.type.EventType
 import devcoop.occount.payment.domain.type.PaymentType
-import devcoop.occount.payment.domain.type.RefundState
 import jakarta.persistence.Column
 import jakarta.persistence.Embedded
 import jakarta.persistence.Entity
@@ -38,16 +37,11 @@ class PaymentLogJpaEntity(
     private var cardInfo: CardInfoJpaEmbeddable? = null,
     @Embedded
     private var transactionInfo: TransactionInfoJpaEmbeddable? = null,
+    @field:Column(name = "managed_email")
+    private var managedEmail: String? = null,
     @Enumerated(EnumType.STRING)
     @field:Column(name = "event_type")
     private var eventType: EventType? = EventType.NONE,
-    @Enumerated(EnumType.STRING)
-    @field:Column(name = "refund_state", nullable = false)
-    private var refundState: RefundState = RefundState.NONE,
-    @field:Column(name = "refund_date")
-    private var refundDate: LocalDateTime? = null,
-    @field:Column(name = "refund_requester_id")
-    private var refundRequesterId: String? = null,
 ) {
     fun getPaymentId() = paymentId
     fun getUserId() = userId
@@ -57,8 +51,6 @@ class PaymentLogJpaEntity(
     fun getPointTransaction() = pointTransaction
     fun getCardInfo() = cardInfo
     fun getTransactionInfo() = transactionInfo
+    fun getManagedEmail() = managedEmail
     fun getEventType() = eventType
-    fun getRefundState() = refundState
-    fun getRefundDate() = refundDate
-    fun getRefundRequesterId() = refundRequesterId
 }

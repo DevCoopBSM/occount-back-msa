@@ -1,6 +1,6 @@
 package devcoop.occount.payment.application.dto.request
 
-import devcoop.occount.payment.application.shared.PaymentItem
+import devcoop.occount.payment.application.payment.PaymentItem
 
 data class ItemCommand(
     val name: String,
