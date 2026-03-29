@@ -1,6 +1,6 @@
 package devcoop.occount.payment.infrastructure.persistence
 
-import devcoop.occount.point.domain.type.CardType
+import devcoop.occount.payment.domain.type.CardType
 import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EnumType
