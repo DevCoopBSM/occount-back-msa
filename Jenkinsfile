@@ -4,6 +4,7 @@ def SERVICES = [
     [path: 'domains/item/',    task: ':domains:item:item-bootstrap:bootJar',           name: 'item-api',     dir: 'domains/item/item-bootstrap'],
     [path: 'domains/order/',   task: ':domains:order:order-bootstrap:bootJar',         name: 'order-api',    dir: 'domains/order/order-bootstrap'],
     [path: 'domains/payment/', task: ':domains:payment:payment-bootstrap:bootJar',     name: 'payment-api',  dir: 'domains/payment/payment-bootstrap'],
+    [path: 'domains/point/',   task: ':domains:point:point-bootstrap:bootJar',         name: 'point-api',    dir: 'domains/point/point-bootstrap'],
 ]
 
 pipeline {

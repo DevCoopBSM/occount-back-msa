@@ -1,5 +1,6 @@
 package devcoop.occount.payment.infrastructure.persistence
 
+import devcoop.occount.payment.domain.ChargeLog
 import devcoop.occount.payment.domain.PaymentLog
 import devcoop.occount.payment.domain.vo.CardInfo
 import devcoop.occount.payment.domain.vo.PointTransaction
@@ -16,10 +17,8 @@ object PaymentPersistenceMapper {
             pointTransaction = entity.getPointTransaction()?.let(::toDomainPointTransaction),
             cardInfo = entity.getCardInfo()?.let(::toDomainCardInfo),
             transactionInfo = entity.getTransactionInfo()?.let(::toDomainTransactionInfo),
+            managedEmail = entity.getManagedEmail(),
             eventType = entity.getEventType(),
-            refundState = entity.getRefundState(),
-            refundDate = entity.getRefundDate(),
-            refundRequesterId = entity.getRefundRequesterId(),
         )
     }
 
@@ -33,7 +32,40 @@ object PaymentPersistenceMapper {
             pointTransaction = domain.getPointTransaction()?.let(::toEntityPointTransaction),
             cardInfo = domain.getCardInfo()?.let(::toEntityCardInfo),
             transactionInfo = domain.getTransactionInfo()?.let(::toEntityTransactionInfo),
+            managedEmail = domain.getManagedEmail(),
             eventType = domain.getEventType(),
+        )
+    }
+
+    fun toDomain(entity: ChargeLogJpaEntity): ChargeLog {
+        return ChargeLog(
+            chargeId = entity.getChargeId(),
+            userId = entity.getUserId(),
+            chargeDate = entity.getChargeDate(),
+            chargeAmount = entity.getChargeAmount(),
+            pointTransaction = toDomainPointTransaction(entity.getPointTransaction()),
+            cardInfo = entity.getCardInfo()?.let(::toDomainCardInfo),
+            transactionInfo = entity.getTransactionInfo()?.let(::toDomainTransactionInfo),
+            managedEmail = entity.getManagedEmail(),
+            reason = entity.getReason(),
+            refundState = entity.getRefundState(),
+            refundDate = entity.getRefundDate(),
+            refundRequesterId = entity.getRefundRequesterId(),
+        )
+    }
+
+    fun toEntity(domain: ChargeLog): ChargeLogJpaEntity {
+        return ChargeLogJpaEntity(
+            chargeId = domain.getChargeId(),
+            userId = domain.getUserId(),
+            paymentId = domain.getTransactionInfo()?.transactionId(),
+            chargeDate = domain.getChargeDate(),
+            chargeAmount = domain.getChargeAmount(),
+            pointTransaction = toEntityPointTransaction(domain.getPointTransaction()),
+            cardInfo = domain.getCardInfo()?.let(::toEntityCardInfo),
+            transactionInfo = domain.getTransactionInfo()?.let(::toEntityTransactionInfo),
+            managedEmail = domain.getManagedEmail(),
+            reason = domain.getReason(),
             refundState = domain.getRefundState(),
             refundDate = domain.getRefundDate(),
             refundRequesterId = domain.getRefundRequesterId(),
@@ -43,6 +75,7 @@ object PaymentPersistenceMapper {
     private fun toDomainPointTransaction(entity: PointTransactionJpaEmbeddable): PointTransaction {
         return PointTransaction(
             beforePoint = entity.getBeforePoint(),
+            transactionPoint = entity.getTransactionPoint(),
             afterPoint = entity.getAfterPoint(),
         )
     }
@@ -50,6 +83,7 @@ object PaymentPersistenceMapper {
     private fun toEntityPointTransaction(domain: PointTransaction): PointTransactionJpaEmbeddable {
         return PointTransactionJpaEmbeddable(
             beforePoint = domain.beforePoint(),
+            transactionPoint = domain.transactionPoint(),
             afterPoint = domain.afterPoint(),
         )
     }
