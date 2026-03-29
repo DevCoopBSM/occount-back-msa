@@ -44,7 +44,7 @@ spec:
     }
 
     environment {
-        HARBOR_URL   = 'harbor.harbor.svc'
+        HARBOR_URL   = "${env.HARBOR_URL}"
         IMAGE_PREFIX = "${HARBOR_URL}/occount"
     }
 
