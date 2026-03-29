@@ -1,6 +1,6 @@
 package devcoop.occount.point.application.query.balance
 
-import devcoop.occount.point.application.exception.PointNotFound
+import devcoop.occount.point.application.exception.PointNotFoundException
 import devcoop.occount.point.application.support.FakePointRepository
 import devcoop.occount.point.domain.Point
 import org.junit.jupiter.api.DisplayName
@@ -28,7 +28,7 @@ class GetPointBalanceQueryServiceTest {
         val repository = FakePointRepository()
         val queryService = GetPointBalanceQueryService(repository)
 
-        assertFailsWith<PointNotFound> {
+        assertFailsWith<PointNotFoundException> {
             queryService.getBalance(1L)
         }
     }

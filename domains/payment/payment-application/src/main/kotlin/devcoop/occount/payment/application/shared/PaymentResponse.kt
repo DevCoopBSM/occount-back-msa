@@ -13,22 +13,24 @@ data class PaymentResponse(
     val remainingPoints: Int?,
     val approvalNumber: String?,
     val transactionId: String?,
-    val message: String?
+    val message: String?,
+    val paymentLogId: Long? = null,
 ) {
     companion object {
-        fun forCharge(chargedAmount: Int, remainingPoints: Int, approvalNumber: String, transactionId: String): PaymentResponse {
+        fun forCharge(paymentLogId: Long, chargedAmount: Int, approvalNumber: String?, transactionId: String?): PaymentResponse {
             return PaymentResponse(
                 status = "success",
                 type = PaymentType.CARD,
+                paymentLogId = paymentLogId,
                 chargedAmount = chargedAmount,
                 totalAmount = chargedAmount,
-                remainingPoints = remainingPoints,
                 approvalNumber = approvalNumber,
                 transactionId = transactionId,
+                remainingPoints = null,
                 paymentAmount = null,
                 pointsUsed = null,
                 cardAmount = null,
-                message = null
+                message = null,
             )
         }
 

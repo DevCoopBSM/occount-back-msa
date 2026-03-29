@@ -1,6 +1,6 @@
 package devcoop.occount.point.application.usecase.deduct
 
-import devcoop.occount.point.application.exception.PointNotFound
+import devcoop.occount.point.application.exception.PointNotFoundException
 import devcoop.occount.point.application.query.balance.PointBalanceResponse
 import devcoop.occount.point.application.support.FakePointRepository
 import devcoop.occount.point.domain.Point
@@ -30,7 +30,7 @@ class DeductPointUseCaseTest {
         val repository = FakePointRepository()
         val useCase = DeductPointUseCase(repository)
 
-        assertFailsWith<PointNotFound> {
+        assertFailsWith<PointNotFoundException> {
             useCase.deduct(1L, 10)
         }
     }

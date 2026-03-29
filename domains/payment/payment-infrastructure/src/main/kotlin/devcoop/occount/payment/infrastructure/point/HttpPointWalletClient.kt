@@ -18,10 +18,6 @@ class HttpPointWalletClient(
             ?: 0
     }
 
-    override fun charge(userId: Long, amount: Int): Int {
-        return sendCommand("/points/{userId}/charge", userId, amount)
-    }
-
     override fun deduct(userId: Long, amount: Int): Int {
         return sendCommand("/points/{userId}/deduct", userId, amount)
     }

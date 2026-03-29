@@ -2,62 +2,40 @@ package devcoop.occount.payment.application.shared
 
 import devcoop.occount.payment.application.dto.response.CardResult
 import devcoop.occount.payment.application.dto.response.TransactionResult
-import devcoop.occount.payment.domain.ChargeLog
 import devcoop.occount.payment.domain.PaymentLog
 import devcoop.occount.payment.domain.type.EventType
 import devcoop.occount.payment.domain.type.PaymentType
-import devcoop.occount.payment.domain.type.RefundState
-import devcoop.occount.payment.domain.vo.PointTransaction
+import devcoop.occount.point.domain.vo.PointTransaction
 
 object PaymentMapper {
-    fun toChargeLog(
-        user: PaymentUserInfo,
-        chargeAmount: Int,
-        pointChange: PointBalanceChange,
-        cardResult: CardResult?,
-        transactionResult: TransactionResult?,
-    ): ChargeLog {
-        return ChargeLog(
-            userId = user.userId,
-            chargeAmount = chargeAmount,
-            pointTransaction = toPointTransaction(pointChange),
-            cardInfo = cardResult?.let(CardResult::toDomain),
-            transactionInfo = transactionResult?.let(TransactionResult::toDomain),
-            managedEmail = user.email,
-            refundState = RefundState.NONE,
-        )
-    }
-
     fun toPointPaymentLog(
-        user: PaymentUserInfo,
+        userId: Long,
         paymentDetails: PaymentDetails,
         pointChange: PointBalanceChange,
     ): PaymentLog {
         return PaymentLog(
-            userId = user.userId,
+            userId = userId,
             paymentType = PaymentType.POINT,
             totalAmount = paymentDetails.totalAmount,
             pointTransaction = toPointTransaction(pointChange),
-            managedEmail = user.email,
             eventType = EventType.NONE,
         )
     }
 
     fun toMixedPaymentLog(
-        user: PaymentUserInfo,
+        userId: Long,
         paymentDetails: PaymentDetails,
         pointChange: PointBalanceChange,
         cardResult: CardResult?,
         transactionResult: TransactionResult?,
     ): PaymentLog {
         return PaymentLog(
-            userId = user.userId,
+            userId = userId,
             paymentType = PaymentType.MIXED,
             totalAmount = paymentDetails.totalAmount,
             pointTransaction = toPointTransaction(pointChange),
             cardInfo = cardResult?.let(CardResult::toDomain),
             transactionInfo = transactionResult?.let(TransactionResult::toDomain),
-            managedEmail = user.email,
             eventType = EventType.NONE,
         )
     }
@@ -65,7 +43,6 @@ object PaymentMapper {
     fun toPointTransaction(change: PointBalanceChange): PointTransaction {
         return PointTransaction(
             beforePoint = change.beforeBalance,
-            transactionPoint = change.changedAmount,
             afterPoint = change.afterBalance,
         )
     }

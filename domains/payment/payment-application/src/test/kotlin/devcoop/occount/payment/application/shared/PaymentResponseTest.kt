@@ -7,19 +7,20 @@ import kotlin.test.assertNull
 
 class PaymentResponseTest {
     @Test
-    fun `for charge returns card response`() {
+    fun `for charge returns card response with paymentLogId`() {
         val response = PaymentResponse.forCharge(
+            paymentLogId = 42L,
             chargedAmount = 4000,
-            remainingPoints = 9000,
             approvalNumber = "APP-1",
             transactionId = "TX-1",
         )
 
         assertEquals("success", response.status)
         assertEquals(PaymentType.CARD, response.type)
+        assertEquals(42L, response.paymentLogId)
         assertEquals(4000, response.totalAmount)
         assertEquals(4000, response.chargedAmount)
-        assertEquals(9000, response.remainingPoints)
+        assertNull(response.remainingPoints)
         assertNull(response.pointsUsed)
     }
 

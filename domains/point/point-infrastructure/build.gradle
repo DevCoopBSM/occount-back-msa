@@ -9,8 +9,11 @@ dependencies {
     implementation project(':domains:point:point-application')
     implementation project(':modules:db')
 
+    implementation project(':domains:payment:payment-domain')
+
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'tools.jackson.module:jackson-module-kotlin'
 }

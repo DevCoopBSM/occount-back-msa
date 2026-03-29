@@ -1,6 +1,5 @@
 package devcoop.occount.payment.application.usecase.payment
 
-import devcoop.occount.payment.application.output.MemberPaymentReadPort
 import devcoop.occount.payment.application.output.PointWalletPort
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentMapper
@@ -14,20 +13,17 @@ import org.springframework.transaction.annotation.Transactional
 
 @Service
 class PayWithPointsUseCase(
-    private val memberPaymentReadPort: MemberPaymentReadPort,
     private val pointWalletPort: PointWalletPort,
     private val paymentLogRepository: PaymentLogRepository,
 ) {
     @Transactional
     fun execute(userId: Long, details: PaymentDetails): PaymentResponse {
-        val user = memberPaymentReadPort.getUser(userId)
-
-        val beforeBalance = pointWalletPort.getBalance(user.userId)
+        val beforeBalance = pointWalletPort.getBalance(userId)
         if (beforeBalance < details.totalAmount) {
             throw InsufficientPointsException()
         }
 
-        val afterBalance = pointWalletPort.deduct(user.userId, details.totalAmount)
+        val afterBalance = pointWalletPort.deduct(userId, details.totalAmount)
         val pointChange = PointBalanceChange(
             beforeBalance = beforeBalance,
             changedAmount = -details.totalAmount,
@@ -35,7 +31,7 @@ class PayWithPointsUseCase(
         )
 
         paymentLogRepository.save(
-            PaymentMapper.toPointPaymentLog(user, details, pointChange),
+            PaymentMapper.toPointPaymentLog(userId, details, pointChange),
         )
 
         return PaymentResponse.forPayment(

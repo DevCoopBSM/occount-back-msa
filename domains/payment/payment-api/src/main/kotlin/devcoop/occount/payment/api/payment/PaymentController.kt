@@ -1,14 +1,15 @@
 package devcoop.occount.payment.api.payment
 
 import devcoop.occount.core.common.auth.RequestAuthPrincipalResolver
-import devcoop.occount.payment.application.query.chargelog.ChargeLogResult
-import devcoop.occount.payment.application.query.chargelog.GetChargeHistoryQueryService
+import devcoop.occount.payment.api.dto.request.ChargeRequest
 import devcoop.occount.payment.application.query.paymentlog.GetPaymentHistoryQueryService
 import devcoop.occount.payment.application.query.paymentlog.PaymentLogResult
 import devcoop.occount.payment.application.shared.PaymentFacade
 import devcoop.occount.payment.application.shared.PaymentRequest
 import devcoop.occount.payment.application.shared.PaymentResponse
+import devcoop.occount.payment.application.usecase.charge.CardChargeUseCase
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
@@ -24,8 +25,8 @@ import java.time.LocalDateTime
 @RequestMapping("/payments")
 class PaymentController(
     private val paymentFacade: PaymentFacade,
+    private val cardChargeUseCase: CardChargeUseCase,
     private val getPaymentHistoryQueryService: GetPaymentHistoryQueryService,
-    private val getChargeHistoryQueryService: GetChargeHistoryQueryService,
 ) {
     @PostMapping("/execute")
     @ResponseStatus(HttpStatus.OK)
@@ -35,6 +36,16 @@ class PaymentController(
     ): PaymentResponse {
         val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
         return paymentFacade.execute(userId, request)
+    }
+
+    @PostMapping("/charge")
+    @ResponseStatus(HttpStatus.OK)
+    fun charge(
+        @Valid @RequestBody request: ChargeRequest,
+        httpRequest: HttpServletRequest,
+    ): PaymentResponse {
+        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
+        return cardChargeUseCase.execute(userId, request.amount)
     }
 
     @GetMapping("/history")
@@ -53,23 +64,5 @@ class PaymentController(
     ): List<PaymentLogResult> {
         val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
         return getPaymentHistoryQueryService.getPaymentHistoryByDateRange(userId, startDate, endDate)
-    }
-
-    @GetMapping("/charges")
-    @ResponseStatus(HttpStatus.OK)
-    fun getChargeHistory(httpRequest: HttpServletRequest): List<ChargeLogResult> {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return getChargeHistoryQueryService.getChargeHistory(userId)
-    }
-
-    @GetMapping("/charges/range")
-    @ResponseStatus(HttpStatus.OK)
-    fun getChargeHistoryByDateRange(
-        httpRequest: HttpServletRequest,
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: LocalDateTime,
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime,
-    ): List<ChargeLogResult> {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return getChargeHistoryQueryService.getChargeHistoryByDateRange(userId, startDate, endDate)
     }
 }

@@ -5,15 +5,13 @@ import devcoop.occount.payment.application.dto.response.CardResult
 import devcoop.occount.payment.application.dto.response.PgResult
 import devcoop.occount.payment.application.dto.response.TransactionResult
 import devcoop.occount.payment.application.output.CardPaymentPort
-import devcoop.occount.payment.application.output.MemberPaymentReadPort
 import devcoop.occount.payment.application.output.PointWalletPort
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentItem
-import devcoop.occount.payment.application.shared.PaymentUserInfo
 import devcoop.occount.payment.domain.PaymentLog
 import devcoop.occount.payment.domain.PaymentLogRepository
 import devcoop.occount.payment.domain.exception.InvalidPaymentRequestException
-import devcoop.occount.payment.domain.type.CardType
+import devcoop.occount.point.domain.type.CardType
 import devcoop.occount.payment.domain.type.PaymentType
 import java.time.LocalDateTime
 import kotlin.test.Test
@@ -26,7 +24,6 @@ class MixedPaymentUseCaseTest {
         val paymentLogRepository = FakePaymentLogRepository()
         val cardPaymentPort = FakeCardPaymentPort()
         val useCase = MixedPaymentUseCase(
-            memberPaymentReadPort = FakeMemberPaymentReadPort(),
             pointWalletPort = FakePointWalletPort(balance = 30),
             cardPaymentPort = cardPaymentPort,
             paymentLogRepository = paymentLogRepository,
@@ -48,7 +45,6 @@ class MixedPaymentUseCaseTest {
     @Test
     fun `mixed rejects request when it is not actually a mixed payment`() {
         val useCase = MixedPaymentUseCase(
-            memberPaymentReadPort = FakeMemberPaymentReadPort(),
             pointWalletPort = FakePointWalletPort(balance = 80),
             cardPaymentPort = FakeCardPaymentPort(),
             paymentLogRepository = FakePaymentLogRepository(),
@@ -74,21 +70,10 @@ class MixedPaymentUseCaseTest {
         )
     }
 
-    private class FakeMemberPaymentReadPort : MemberPaymentReadPort {
-        override fun getUser(userId: Long): PaymentUserInfo {
-            return PaymentUserInfo(userId = userId, email = "user@test.com")
-        }
-    }
-
     private class FakePointWalletPort(balance: Int) : PointWalletPort {
         private var currentBalance = balance
 
         override fun getBalance(userId: Long): Int = currentBalance
-
-        override fun charge(userId: Long, amount: Int): Int {
-            currentBalance += amount
-            return currentBalance
-        }
 
         override fun deduct(userId: Long, amount: Int): Int {
             currentBalance -= amount
