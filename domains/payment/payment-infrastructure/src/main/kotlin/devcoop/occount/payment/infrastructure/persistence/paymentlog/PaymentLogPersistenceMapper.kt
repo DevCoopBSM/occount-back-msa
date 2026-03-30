@@ -44,14 +44,16 @@ object PaymentLogPersistenceMapper {
     private fun toDomainPointTransaction(entity: PointTransactionJpaEmbeddable): PointTransaction {
         return PointTransaction(
             beforePoint = entity.getBeforePoint(),
+            changeAmount = entity.getChangePoint(),
             afterPoint = entity.getAfterPoint(),
         )
     }
 
     private fun toEntityPointTransaction(domain: PointTransaction): PointTransactionJpaEmbeddable {
         return PointTransactionJpaEmbeddable(
-            beforePoint = domain.beforePoint(),
-            afterPoint = domain.afterPoint(),,
+            beforePoint = domain.beforePoint,
+            changeAmount = domain.changeAmount,
+            afterPoint = domain.afterPoint,
         )
     }
 
