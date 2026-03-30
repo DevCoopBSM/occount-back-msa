@@ -18,11 +18,9 @@ import java.time.LocalDateTime
 
 class PaymentControllerTest {
     private val paymentFacade = mock(PaymentFacade::class.java)
-    private val cardChargeUseCase = mock(CardChargeUseCase::class.java)
     private val getPaymentHistoryQueryService = mock(GetPaymentHistoryQueryService::class.java)
     private val controller = PaymentController(
         paymentFacade = paymentFacade,
-        cardChargeUseCase = cardChargeUseCase,
         getPaymentHistoryQueryService = getPaymentHistoryQueryService,
     )
 
