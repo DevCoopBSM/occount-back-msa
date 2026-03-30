@@ -1,12 +1,14 @@
 package devcoop.occount.payment.application.usecase.payment
 
-import devcoop.occount.payment.application.output.WalletPort
+import devcoop.occount.payment.application.output.PaymentLogRepository
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentItem
-import devcoop.occount.payment.domain.PaymentLog
-import devcoop.occount.payment.domain.PaymentLogRepository
-import devcoop.occount.payment.domain.exception.InsufficientPointsException
-import devcoop.occount.payment.domain.type.PaymentType
+import devcoop.occount.payment.application.support.FakeWalletRepository
+import devcoop.occount.payment.application.usecase.wallet.deduct.DeductWalletUseCase
+import devcoop.occount.payment.domain.payment.PaymentLog
+import devcoop.occount.payment.domain.wallet.Wallet
+import devcoop.occount.payment.domain.wallet.InsufficientPointsException
+import devcoop.occount.payment.domain.payment.PaymentType
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,9 +18,12 @@ import kotlin.test.assertNull
 class PayWithPointsUseCaseTest {
     @Test
     fun `payment uses points only and stores payment history`() {
+        val walletRepository = FakeWalletRepository(
+            wallets = mutableMapOf(1L to Wallet(userId = 1L, point = 120)),
+        )
         val paymentLogRepository = FakePaymentLogRepository()
         val useCase = PayWithPointsUseCase(
-            pointWalletPort = FakeWalletPort(balance = 120),
+            deductWalletUseCase = DeductWalletUseCase(walletRepository),
             paymentLogRepository = paymentLogRepository,
         )
 
@@ -36,8 +41,11 @@ class PayWithPointsUseCaseTest {
 
     @Test
     fun `payment fails when points are insufficient`() {
+        val walletRepository = FakeWalletRepository(
+            wallets = mutableMapOf(1L to Wallet(userId = 1L, point = 30)),
+        )
         val useCase = PayWithPointsUseCase(
-            pointWalletPort = FakeWalletPort(balance = 30),
+            deductWalletUseCase = DeductWalletUseCase(walletRepository),
             paymentLogRepository = FakePaymentLogRepository(),
         )
 
@@ -59,17 +67,6 @@ class PayWithPointsUseCaseTest {
             ),
             totalAmount = totalAmount,
         )
-    }
-
-    private class FakeWalletPort(balance: Int) : WalletPort {
-        private var currentBalance = balance
-
-        override fun getBalance(userId: Long): Int = currentBalance
-
-        override fun deduct(userId: Long, amount: Int): Int {
-            currentBalance -= amount
-            return currentBalance
-        }
     }
 
     private class FakePaymentLogRepository : PaymentLogRepository {
