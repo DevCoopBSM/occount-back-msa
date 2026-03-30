@@ -9,9 +9,7 @@ interface ItemRepository {
 
     fun findAllByNameIn(names: List<String>): List<Item>
 
-    fun findAllIds(): List<Long>
-
-    fun existsItemByNameIsNotIn(names: List<String>): Boolean
+    fun findAllByItemIds(itemIds: List<Long>): List<Item>
 
     fun findById(id: Long): Item?
 

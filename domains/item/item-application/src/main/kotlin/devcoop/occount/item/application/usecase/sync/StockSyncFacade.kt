@@ -10,7 +10,7 @@ class StockSyncFacade(
     private val itemRepository: ItemRepository,
     private val tossItemPort: TossItemPort,
     private val syncItemsFromTossUseCase: SyncItemsFromTossUseCase,
-    private val applySoldItemQuantitiesUseCase: ApplySoldItemQuantitiesUseCase
+    private val applySoldItemQuantitiesUseCase: ApplySoldItemQuantitiesUseCase,
 ) {
     fun apply() {
         val soldItems = tossItemPort.getSoldItems()
@@ -18,11 +18,14 @@ class StockSyncFacade(
             return
         }
 
-        val soldItemNames = soldItems.map(SoldItemPayload::name)
+        val soldItemNames = soldItems.map(SoldItemPayload::name).toSet()
+        val existingSoldItemNames = itemRepository.findAllByNameIn(soldItemNames.toList())
+            .map { item -> item.getName() }
 
-        if (itemRepository.existsItemByNameIsNotIn(soldItemNames)) {
+        if (soldItemNames.any { it !in existingSoldItemNames }) {
             syncItemsFromTossUseCase.sync()
         }
+
         applySoldItemQuantitiesUseCase.apply(soldItems)
     }
 }

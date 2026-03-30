@@ -3,8 +3,6 @@ package devcoop.occount.item.application.usecase.sync
 import devcoop.occount.item.application.output.ItemRepository
 import devcoop.occount.item.application.output.TossItemPayload
 import devcoop.occount.item.application.output.TossItemPort
-import devcoop.occount.item.domain.item.Item
-import devcoop.occount.item.domain.item.ItemInfo
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -16,17 +14,22 @@ class SyncItemsFromTossUseCase(
     @Transactional
     fun sync() {
         val externalItems = tossItemPort.getItems()
+        if (externalItems.isEmpty()) {
+            return
+        }
 
-        val existing = itemRepository.findAll()
+        val existing = itemRepository.findAllByItemIds(
+            externalItems.map(TossItemPayload::itemId),
+        )
             .associateBy { it.getItemId() }
 
-        val newItems = externalItems.map { payload ->
+        val upsertItems = externalItems.map { payload ->
             val current = existing[payload.itemId]
 
             current?.update(payload.toItemInfo())
                 ?: payload.toItem()
         }
 
-        itemRepository.saveAll(newItems)
+        itemRepository.saveAll(upsertItems)
     }
 }
