@@ -20,6 +20,7 @@ enum class ErrorMessage(
     ITEM_STOCK_NEGATIVE("요청으로 인해 재고가 부족합니다. 재고 수량을 확인해주세요."),
     ITEM_NOT_FOUND("현재 등록되지 않은 상품입니다."),
     ITEM_NOT_SYNCHRONIZED("상품이 토스와 동기화되지 않았습니다."),
+    ITEM_CONCURRENT_UPDATE("다른 요청에 의해 상품이 변경되었습니다. 잠시 후 다시 시도해주세요."),
 
 
     PAYMENT_FAILED("결제 처리에 실패했습니다."),

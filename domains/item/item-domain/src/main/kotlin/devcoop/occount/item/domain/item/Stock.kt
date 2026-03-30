@@ -4,6 +4,7 @@ data class Stock(
     private val quantity: Int = 0,
 ) {
     fun getQuantity() = quantity
+    fun hasQuantity(quantity: Int) = this.quantity == quantity
 
     fun decreaseQuantity(orderQuantity: Int): Stock {
         validateQuantity(orderQuantity)

@@ -27,6 +27,9 @@ class ApplySoldItemQuantitiesUseCase(
                     quantity = payloads.sumOf(SoldItemPayload::quantity),
                 )
             }
+        if (aggregatedSoldItems.isEmpty()) {
+            return
+        }
         repeat(MAX_RETRY_COUNT) { attempt ->
             try {
                 transactionTemplate.executeWithoutResult {
@@ -42,6 +45,10 @@ class ApplySoldItemQuantitiesUseCase(
     }
 
     private fun applyOnce(soldItems: List<SoldItemPayload>) {
+        if (soldItems.isEmpty()) {
+            return
+        }
+
         val soldItemsByName = soldItems.associateBy(SoldItemPayload::name)
         val soldItemNames = soldItemsByName.keys.toList()
         val items = itemRepository.findAllByNameIn(soldItemNames)
@@ -57,7 +64,11 @@ class ApplySoldItemQuantitiesUseCase(
             )
         }
 
-        itemRepository.saveAll(updatedItems)
+        if (updatedItems.isEmpty()) {
+            return
+        }
+
+        itemRepository.saveStocks(updatedItems)
     }
 
     private companion object {

@@ -5,7 +5,8 @@ data class Item(
     private val itemInfo: ItemInfo,
     private val stock: Stock = Stock(),
     private val isActive: Boolean = true,
-    private val version: Long = 0L,
+    private val catalogVersion: Long = 0L,
+    private val stockVersion: Long = 0L,
 ) {
     fun getItemId() = itemId
     fun getName() = itemInfo.name()
@@ -14,10 +15,15 @@ data class Item(
     fun getBarcode() = itemInfo.barcode()
     fun getQuantity() = stock.getQuantity()
     fun isActive() = isActive
-    fun getVersion() = version
+    fun getCatalogVersion() = catalogVersion
+    fun getStockVersion() = stockVersion
 
     fun decreaseQuantity(orderQuantity: Int): Item {
         return copy(stock = stock.decreaseQuantity(orderQuantity))
+    }
+
+    fun updateQuantity(quantity: Int): Item {
+        return copy(stock = Stock(quantity))
     }
 
     fun update(itemInfo: ItemInfo, quantity: Int): Item {
@@ -36,6 +42,14 @@ data class Item(
 
     fun deactivate(): Item {
         return copy(isActive = false)
+    }
+
+    fun hasSameCatalog(itemInfo: ItemInfo): Boolean {
+        return this.itemInfo == itemInfo
+    }
+
+    fun hasSameQuantity(quantity: Int): Boolean {
+        return stock.hasQuantity(quantity)
     }
 
     override fun equals(other: Any?): Boolean {

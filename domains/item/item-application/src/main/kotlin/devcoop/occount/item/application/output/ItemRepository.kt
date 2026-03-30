@@ -17,5 +17,11 @@ interface ItemRepository {
 
     fun save(item: Item): Item
 
-    fun saveAll(items: List<Item>): List<Item>
+    fun saveCatalog(item: Item): Item
+
+    fun saveCatalogs(items: List<Item>): List<Item>
+
+    fun saveStock(item: Item): Item
+
+    fun saveStocks(items: List<Item>): List<Item>
 }
