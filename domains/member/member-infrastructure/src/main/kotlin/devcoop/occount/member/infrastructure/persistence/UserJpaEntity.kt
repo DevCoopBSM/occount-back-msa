@@ -29,9 +29,9 @@ class UserJpaEntity(
     @field:Column(unique = true)
     val cooperativeNumber: String? = null,
     @field:Column(nullable = false, unique = true)
-    val userEmail: String = "",
+    val email: String = "",
     @field:Column(nullable = false)
-    val userPassword: String = "",
+    val password: String = "",
     @Enumerated(EnumType.STRING)
     @field:Column(nullable = false)
     val role: Role = Role.ROLE_USER,

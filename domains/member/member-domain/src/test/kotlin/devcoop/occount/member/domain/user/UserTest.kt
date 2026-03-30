@@ -32,7 +32,7 @@ class UserTest {
             userCiNumber = "CI123",
             username = "홍길동",
             phone = "010-1234-5678",
-            userEmail = "test@test.com",
+            email = "test@test.com",
             encodedPassword = "encodedPassword",
             encodedPin = "encodedPin",
         )
@@ -48,7 +48,7 @@ class UserTest {
             userCiNumber = "CI123",
             username = "홍길동",
             phone = null,
-            userEmail = "test@test.com",
+            email = "test@test.com",
             encodedPassword = "encodedPassword",
             encodedPin = "encodedPin",
         )
@@ -90,7 +90,7 @@ class UserTest {
             userCiNumber = "CI123",
             username = "홍길동",
             phone = null,
-            userEmail = "test@test.com",
+            email = "test@test.com",
             encodedPassword = "encodedPassword",
             encodedPin = "encodedPin",
         )

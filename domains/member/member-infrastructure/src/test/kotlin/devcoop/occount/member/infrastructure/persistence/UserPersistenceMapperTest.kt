@@ -15,8 +15,8 @@ class UserPersistenceMapperTest {
         userBarcode = "BARCODE123",
         userType = UserType.STUDENT,
         cooperativeNumber = "COOP001",
-        userEmail = "test@test.com",
-        userPassword = "encodedPassword",
+        email = "test@test.com",
+        password = "encodedPassword",
         role = Role.ROLE_USER,
         pin = "encodedPin",
         userCiNumber = "CI123456",
@@ -73,8 +73,8 @@ class UserPersistenceMapperTest {
         assertEquals("BARCODE123", entity.userBarcode)
         assertEquals(UserType.STUDENT, entity.userType)
         assertEquals("COOP001", entity.cooperativeNumber)
-        assertEquals("test@test.com", entity.userEmail)
-        assertEquals("encodedPassword", entity.userPassword)
+        assertEquals("test@test.com", entity.email)
+        assertEquals("encodedPassword", entity.password)
         assertEquals(Role.ROLE_USER, entity.role)
         assertEquals("encodedPin", entity.pin)
         assertEquals("CI123456", entity.userCiNumber)
@@ -90,8 +90,8 @@ class UserPersistenceMapperTest {
             userBarcode = null,
             userType = UserType.STUDENT,
             cooperativeNumber = null,
-            userEmail = "test@test.com",
-            userPassword = "encodedPassword",
+            email = "test@test.com",
+            password = "encodedPassword",
             role = Role.ROLE_USER,
             pin = "encodedPin",
             userCiNumber = null,
