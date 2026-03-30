@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional
 class InitializeWalletUseCase(
     private val pointWalletRepository: WalletRepository,
 ) {
-    @Transactional
     fun initialize(userId: Long) {
         try {
             pointWalletRepository.save(Wallet(userId))
