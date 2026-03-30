@@ -1,23 +1,15 @@
 package devcoop.occount.payment.api.payment
 
 import devcoop.occount.core.common.auth.RequestAuthPrincipalResolver
-import devcoop.occount.payment.api.dto.request.ChargeRequest
 import devcoop.occount.payment.application.query.paymentlog.GetPaymentHistoryQueryService
 import devcoop.occount.payment.application.query.paymentlog.PaymentLogResult
 import devcoop.occount.payment.application.shared.PaymentFacade
 import devcoop.occount.payment.application.shared.PaymentRequest
 import devcoop.occount.payment.application.shared.PaymentResponse
 import jakarta.servlet.http.HttpServletRequest
-import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.ResponseStatus
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
 
 @RestController

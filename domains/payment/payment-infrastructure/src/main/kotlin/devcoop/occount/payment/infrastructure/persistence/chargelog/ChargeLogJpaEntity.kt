@@ -1,5 +1,6 @@
 package devcoop.occount.payment.infrastructure.persistence.chargelog
 
+import devcoop.occount.payment.domain.wallet.ChargeReason
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import java.time.LocalDateTime
@@ -20,13 +21,17 @@ class ChargeLogJpaEntity(
     private var chargeDate: LocalDateTime = LocalDateTime.now(),
     @Embedded
     private var pointTransaction: PointTransactionJpaEmbeddable = PointTransactionJpaEmbeddable(),
-    @field:Column(name = "reason")
-    private var reason: String? = null,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "charge_type", nullable = false)
+    private var chargeReason: ChargeReason,
+    @field:Column(name = "detail_reason")
+    private var detailReason: String? = null,
 ) {
     fun getChargeId() = chargeId
     fun getUserId() = userId
     fun getPaymentId() = paymentId
     fun getChargeDate() = chargeDate
     fun getPointTransaction() = pointTransaction
-    fun getReason() = reason
+    fun getChargeReason() = chargeReason
+    fun getDetailReason() = detailReason
 }
