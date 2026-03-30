@@ -7,7 +7,6 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import jakarta.persistence.Version
 
 @Entity
 @Table(name = "item")
@@ -22,13 +21,15 @@ class ItemJpaEntity(
     private var stock: StockJpaEmbeddable = StockJpaEmbeddable(),
     @field:Column(name = "is_active", nullable = false)
     private var isActive: Boolean = true,
-    @Version
-    @field:Column(nullable = false)
-    private var version: Long = 0L,
+    @field:Column(name = "catalog_version", nullable = false)
+    private var catalogVersion: Long = 0L,
+    @field:Column(name = "stock_version", nullable = false)
+    private var stockVersion: Long = 0L,
 ) {
     fun getItemId() = itemId
     fun getItemInfo() = itemInfo
     fun getStock() = stock
     fun isActive() = isActive
-    fun getVersion() = version
+    fun getCatalogVersion() = catalogVersion
+    fun getStockVersion() = stockVersion
 }

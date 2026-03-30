@@ -17,7 +17,8 @@ object ItemPersistenceMapper {
             ),
             stock = Stock(quantity = entity.getStock().getQuantity()),
             isActive = entity.isActive(),
-            version = entity.getVersion(),
+            catalogVersion = entity.getCatalogVersion(),
+            stockVersion = entity.getStockVersion(),
         )
     }
 
@@ -34,7 +35,8 @@ object ItemPersistenceMapper {
                 quantity = domain.getQuantity(),
             ),
             isActive = domain.isActive(),
-            version = domain.getVersion(),
+            catalogVersion = domain.getCatalogVersion(),
+            stockVersion = domain.getStockVersion(),
         )
     }
 }

@@ -14,6 +14,6 @@ class DeleteItemUseCase(
         val item = itemRepository.findById(id)
             ?: throw ItemNotFoundException()
 
-        itemRepository.save(item.deactivate())
+        itemRepository.saveCatalog(item.deactivate())
     }
 }
