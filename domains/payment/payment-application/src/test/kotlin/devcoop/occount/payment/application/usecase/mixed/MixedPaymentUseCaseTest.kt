@@ -6,7 +6,7 @@ import devcoop.occount.payment.application.dto.response.PgResult
 import devcoop.occount.payment.application.dto.response.TransactionResult
 import devcoop.occount.payment.application.output.CardPaymentPort
 import devcoop.occount.payment.application.output.PaymentLogRepository
-import devcoop.occount.payment.application.query.wallet.GetWalletBalanceQueryService
+import devcoop.occount.payment.application.query.wallet.GetWalletPointQueryService
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentItem
 import devcoop.occount.payment.application.support.FakeWalletRepository
@@ -14,6 +14,7 @@ import devcoop.occount.payment.application.usecase.wallet.deduct.DeductWalletUse
 import devcoop.occount.payment.domain.payment.PaymentLog
 import devcoop.occount.payment.domain.wallet.Wallet
 import devcoop.occount.payment.application.exception.InvalidPaymentRequestException
+import devcoop.occount.payment.application.usecase.payment.MixedPaymentUseCase
 import devcoop.occount.payment.domain.payment.CardType
 import devcoop.occount.payment.domain.payment.PaymentType
 import java.time.LocalDateTime
@@ -30,7 +31,7 @@ class MixedPaymentUseCaseTest {
         val paymentLogRepository = FakePaymentLogRepository()
         val cardPaymentPort = FakeCardPaymentPort()
         val useCase = MixedPaymentUseCase(
-            getWalletBalanceQueryService = GetWalletBalanceQueryService(walletRepository),
+            getWalletPointQueryService = GetWalletPointQueryService(walletRepository),
             deductWalletUseCase = DeductWalletUseCase(walletRepository),
             cardPaymentPort = cardPaymentPort,
             paymentLogRepository = paymentLogRepository,
@@ -55,7 +56,7 @@ class MixedPaymentUseCaseTest {
             wallets = mutableMapOf(1L to Wallet(userId = 1L, point = 80)),
         )
         val useCase = MixedPaymentUseCase(
-            getWalletBalanceQueryService = GetWalletBalanceQueryService(walletRepository),
+            getWalletPointQueryService = GetWalletPointQueryService(walletRepository),
             deductWalletUseCase = DeductWalletUseCase(walletRepository),
             cardPaymentPort = FakeCardPaymentPort(),
             paymentLogRepository = FakePaymentLogRepository(),

@@ -23,7 +23,7 @@ data class ChargeLogResult(
                 beforePoint = chargeLog.pointTransaction.beforePoint,
                 chargeAmount = chargeLog.pointTransaction.changeAmount,
                 afterPoint = chargeLog.pointTransaction.afterPoint,
-                reason = chargeLog.reason,
+                reason = chargeLog.detailReason,
             )
         }
     }

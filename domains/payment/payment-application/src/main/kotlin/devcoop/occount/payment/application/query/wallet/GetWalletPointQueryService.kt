@@ -5,10 +5,10 @@ import devcoop.occount.payment.application.output.WalletRepository
 import org.springframework.stereotype.Service
 
 @Service
-class GetWalletBalanceQueryService(
+class GetWalletPointQueryService(
     private val walletRepository: WalletRepository,
 ) {
-    fun getBalance(userId: Long): Int {
+    fun getPoint(userId: Long): Int {
         val wallet = walletRepository.findByUserId(userId)
             ?: throw WalletNotFoundException()
         return wallet.point
