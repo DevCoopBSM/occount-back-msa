@@ -1,4 +1,4 @@
-package devcoop.occount.item.application.item
+package devcoop.occount.item.application.output
 
 import devcoop.occount.item.domain.item.Item
 
@@ -8,8 +8,6 @@ interface ItemRepository {
     fun findAllWithoutBarcode(): List<Item>
 
     fun findAllByNameIn(names: List<String>): List<Item>
-
-    fun findAllByItemIds(itemIds: List<Long>): List<Item>
 
     fun findAllIds(): List<Long>
 

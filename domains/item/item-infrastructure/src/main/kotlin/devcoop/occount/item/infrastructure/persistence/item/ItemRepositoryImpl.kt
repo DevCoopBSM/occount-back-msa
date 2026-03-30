@@ -1,6 +1,6 @@
-package devcoop.occount.item.infrastructure.persistence
+package devcoop.occount.item.infrastructure.persistence.item
 
-import devcoop.occount.item.application.item.ItemRepository
+import devcoop.occount.item.application.output.ItemRepository
 import devcoop.occount.item.domain.item.Item
 import org.springframework.stereotype.Repository
 
@@ -20,11 +20,6 @@ class ItemRepositoryImpl(
 
     override fun findAllByNameIn(names: List<String>): List<Item> {
         return itemPersistenceRepository.findAllByItemInfoNameIn(names)
-            .map(ItemPersistenceMapper::toDomain)
-    }
-
-    override fun findAllByItemIds(itemIds: List<Long>): List<Item> {
-        return itemPersistenceRepository.findAllByItemIdIn(itemIds)
             .map(ItemPersistenceMapper::toDomain)
     }
 

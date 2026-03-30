@@ -7,9 +7,10 @@ class Order(
     private var items: Map<Long, Item>
 ) {
     fun decreaseItems(itemId: Long, orderQuantity: Int) {
-        items[itemId]
-            ?.decreaseQuantity(orderQuantity)
+        val item = items[itemId]
             ?: throw ItemNotFoundException()
+
+        items = items + (itemId to item.decreaseQuantity(orderQuantity))
     }
 
     fun getItems(): List<Item> = items.values.toList()

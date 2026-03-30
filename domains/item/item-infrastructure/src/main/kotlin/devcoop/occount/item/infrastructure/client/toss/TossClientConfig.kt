@@ -1,4 +1,4 @@
-package devcoop.occount.item.infrastructure.toss
+package devcoop.occount.item.infrastructure.client.toss
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -14,7 +14,7 @@ class TossClientConfig {
 
     @Bean
     fun tossClient(
-        @Value("\${toss.api.url}") baseUrl: String
+        @Value("\${toss.api.url}") baseUrl: String,
     ): TossClient {
         val restClient = RestClient.builder()
             .baseUrl(baseUrl)

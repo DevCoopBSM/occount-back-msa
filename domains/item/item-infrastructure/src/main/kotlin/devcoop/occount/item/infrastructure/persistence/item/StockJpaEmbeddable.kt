@@ -1,4 +1,4 @@
-package devcoop.occount.item.infrastructure.persistence
+package devcoop.occount.item.infrastructure.persistence.item
 
 import jakarta.persistence.Column
 import jakarta.persistence.Embeddable

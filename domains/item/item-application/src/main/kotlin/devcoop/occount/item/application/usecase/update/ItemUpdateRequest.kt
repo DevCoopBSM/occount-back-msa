@@ -1,4 +1,4 @@
-package devcoop.occount.item.application.item
+package devcoop.occount.item.application.usecase.update
 
 import devcoop.occount.item.domain.item.Category
 
