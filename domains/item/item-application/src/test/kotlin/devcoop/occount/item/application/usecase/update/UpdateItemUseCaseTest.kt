@@ -1,6 +1,7 @@
 package devcoop.occount.item.application.usecase.update
 
 import devcoop.occount.item.application.support.FakeItemRepository
+import devcoop.occount.item.application.support.TestTransactionManager
 import devcoop.occount.item.application.support.itemFixture
 import devcoop.occount.item.domain.item.Category
 import devcoop.occount.item.domain.item.ItemNotFoundException
@@ -17,7 +18,7 @@ class UpdateItemUseCaseTest {
                 itemFixture(itemId = 1L, name = "Old", quantity = 3, isActive = false),
             ),
         )
-        val updateItemUseCase = UpdateItemUseCase(itemRepository)
+        val updateItemUseCase = UpdateItemUseCase(itemRepository, TestTransactionManager())
 
         val result = updateItemUseCase.update(
             id = 1L,
@@ -38,7 +39,7 @@ class UpdateItemUseCaseTest {
 
     @Test
     fun `update throws when item does not exist`() {
-        val updateItemUseCase = UpdateItemUseCase(FakeItemRepository())
+        val updateItemUseCase = UpdateItemUseCase(FakeItemRepository(), TestTransactionManager())
 
         assertThrows(ItemNotFoundException::class.java) {
             updateItemUseCase.update(
@@ -52,5 +53,32 @@ class UpdateItemUseCaseTest {
                 ),
             )
         }
+    }
+
+    @Test
+    fun `update retries stock save when optimistic lock failure occurs`() {
+        val itemRepository = FakeItemRepository(
+            initialItems = listOf(
+                itemFixture(itemId = 1L, name = "Snack", quantity = 3),
+            ),
+        ).apply {
+            saveStockOptimisticLockFailuresRemaining = 1
+        }
+        val updateItemUseCase = UpdateItemUseCase(itemRepository, TestTransactionManager())
+
+        val result = updateItemUseCase.update(
+            id = 1L,
+            request = ItemUpdateRequest(
+                name = "Snack",
+                category = Category.과자,
+                price = 1500,
+                barcode = null,
+                quantity = 5,
+            ),
+        )
+
+        assertEquals(2, itemRepository.saveStockCount)
+        assertEquals(5, itemRepository.findById(1L)!!.getQuantity())
+        assertEquals("Snack", result.name)
     }
 }

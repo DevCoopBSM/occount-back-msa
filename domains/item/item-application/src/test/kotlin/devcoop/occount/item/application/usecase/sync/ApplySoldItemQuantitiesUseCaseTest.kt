@@ -23,7 +23,7 @@ class ApplySoldItemQuantitiesUseCaseTest {
 
         useCase.apply(emptyList())
 
-        assertEquals(0, itemRepository.saveAllCount)
+        assertEquals(0, itemRepository.saveStocksCount)
     }
 
     @Test
@@ -43,7 +43,7 @@ class ApplySoldItemQuantitiesUseCaseTest {
             ),
         )
 
-        assertEquals(1, itemRepository.saveAllCount)
+        assertEquals(1, itemRepository.saveStocksCount)
         assertEquals(5, itemRepository.findById(1L)!!.getQuantity())
     }
 
@@ -52,7 +52,7 @@ class ApplySoldItemQuantitiesUseCaseTest {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(itemFixture(itemId = 1L, name = "Snack", quantity = 10)),
         ).apply {
-            saveAllOptimisticLockFailuresRemaining = 1
+            saveStockOptimisticLockFailuresRemaining = 1
         }
         val useCase = ApplySoldItemQuantitiesUseCase(
             itemRepository = itemRepository,
@@ -63,7 +63,7 @@ class ApplySoldItemQuantitiesUseCaseTest {
             listOf(SoldItemPayload(name = "Snack", quantity = 2)),
         )
 
-        assertEquals(2, itemRepository.saveAllCount)
+        assertEquals(2, itemRepository.saveStocksCount)
         assertEquals(8, itemRepository.findById(1L)!!.getQuantity())
     }
 
@@ -89,7 +89,7 @@ class ApplySoldItemQuantitiesUseCaseTest {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(itemFixture(itemId = 1L, name = "Snack", quantity = 10)),
         ).apply {
-            saveAllOptimisticLockFailuresRemaining = 3
+            saveStockOptimisticLockFailuresRemaining = 3
         }
         val useCase = ApplySoldItemQuantitiesUseCase(
             itemRepository = itemRepository,
@@ -101,7 +101,7 @@ class ApplySoldItemQuantitiesUseCaseTest {
                 listOf(SoldItemPayload(name = "Snack", quantity = 2)),
             )
         }
-        assertEquals(3, itemRepository.saveAllCount)
+        assertEquals(3, itemRepository.saveStocksCount)
         assertEquals(10, itemRepository.findById(1L)!!.getQuantity())
     }
 }

@@ -22,7 +22,9 @@ class StockSyncFacadeTest {
         facade.apply()
 
         assertEquals(0, tossItemPort.getItemsCount)
-        assertEquals(0, itemRepository.saveAllCount)
+        assertEquals(0, itemRepository.saveCatalogCount)
+        assertEquals(0, itemRepository.saveCatalogsCount)
+        assertEquals(0, itemRepository.saveStocksCount)
     }
 
     @Test
@@ -58,7 +60,8 @@ class StockSyncFacadeTest {
 
         val updatedItem = itemRepository.findById(2L)!!
         assertEquals(1, tossItemPort.getItemsCount)
-        assertEquals(2, itemRepository.saveAllCount)
+        assertEquals(1, itemRepository.saveCatalogCount)
+        assertEquals(1, itemRepository.saveStocksCount)
         assertEquals("Drink", updatedItem.getName())
         assertEquals(3, updatedItem.getQuantity())
     }
@@ -78,7 +81,7 @@ class StockSyncFacadeTest {
         facade.apply()
 
         assertEquals(0, tossItemPort.getItemsCount)
-        assertEquals(1, itemRepository.saveAllCount)
+        assertEquals(1, itemRepository.saveStocksCount)
         assertEquals(8, itemRepository.findById(1L)!!.getQuantity())
     }
 
@@ -89,7 +92,11 @@ class StockSyncFacadeTest {
         return StockSyncFacade(
             itemRepository = itemRepository,
             tossItemPort = tossItemPort,
-            syncItemsFromTossUseCase = SyncItemsFromTossUseCase(itemRepository, tossItemPort),
+            syncItemsFromTossUseCase = SyncItemsFromTossUseCase(
+                itemRepository,
+                tossItemPort,
+                TestTransactionManager(),
+            ),
             applySoldItemQuantitiesUseCase = ApplySoldItemQuantitiesUseCase(
                 itemRepository = itemRepository,
                 transactionManager = TestTransactionManager(),
