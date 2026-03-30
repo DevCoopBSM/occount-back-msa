@@ -3,9 +3,9 @@ package devcoop.occount.payment.application.query.paymentlog
 import devcoop.occount.payment.application.dto.response.CardResult
 import devcoop.occount.payment.application.dto.response.TransactionResult
 import devcoop.occount.payment.application.shared.PointTransactionResult
-import devcoop.occount.payment.domain.PaymentLog
-import devcoop.occount.payment.domain.type.EventType
-import devcoop.occount.payment.domain.type.PaymentType
+import devcoop.occount.payment.domain.payment.PaymentLog
+import devcoop.occount.payment.domain.payment.EventType
+import devcoop.occount.payment.domain.payment.PaymentType
 import java.time.LocalDateTime
 
 data class PaymentLogResult(

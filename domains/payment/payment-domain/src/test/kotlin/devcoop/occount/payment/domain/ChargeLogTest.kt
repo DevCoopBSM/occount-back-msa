@@ -1,6 +1,7 @@
 package devcoop.occount.payment.domain
 
-import devcoop.occount.payment.domain.vo.PointTransaction
+import devcoop.occount.payment.domain.wallet.PointTransaction
+import devcoop.occount.payment.domain.wallet.ChargeLog
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

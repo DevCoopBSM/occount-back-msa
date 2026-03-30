@@ -1,7 +1,7 @@
 package devcoop.occount.payment.application.shared
 
-import devcoop.occount.payment.domain.exception.InvalidPaymentRequestException
-import devcoop.occount.payment.domain.type.TransactionType
+import devcoop.occount.payment.application.exception.InvalidPaymentRequestException
+import devcoop.occount.payment.domain.payment.TransactionType
 
 data class PaymentRequest(
     val type: TransactionType,

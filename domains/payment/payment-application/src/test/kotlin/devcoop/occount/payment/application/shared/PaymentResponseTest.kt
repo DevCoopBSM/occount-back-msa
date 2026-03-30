@@ -1,6 +1,6 @@
 package devcoop.occount.payment.application.shared
 
-import devcoop.occount.payment.domain.type.PaymentType
+import devcoop.occount.payment.domain.payment.PaymentType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

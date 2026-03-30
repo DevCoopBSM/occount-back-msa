@@ -1,8 +1,8 @@
 package devcoop.occount.payment.application.query.paymentlog
 
-import devcoop.occount.payment.domain.PaymentLog
-import devcoop.occount.payment.domain.PaymentLogRepository
-import devcoop.occount.payment.domain.type.PaymentType
+import devcoop.occount.payment.application.output.PaymentLogRepository
+import devcoop.occount.payment.domain.payment.PaymentLog
+import devcoop.occount.payment.domain.payment.PaymentType
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
