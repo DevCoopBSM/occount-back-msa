@@ -1,8 +1,8 @@
 package devcoop.occount.payment.application.shared
 
-import devcoop.occount.payment.application.usecase.mixed.MixedPaymentUseCase
+import devcoop.occount.payment.application.usecase.payment.MixedPaymentUseCase
 import devcoop.occount.payment.application.usecase.payment.PayWithPointsUseCase
-import devcoop.occount.payment.domain.type.TransactionType
+import devcoop.occount.payment.domain.payment.TransactionType
 import org.springframework.stereotype.Service
 
 @Service

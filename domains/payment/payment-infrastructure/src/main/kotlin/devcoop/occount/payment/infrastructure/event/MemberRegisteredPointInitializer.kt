@@ -4,7 +4,7 @@ import devcoop.occount.core.common.event.DomainEventHeaders
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.db.outbox.ConsumedEventJpaEntity
 import devcoop.occount.db.outbox.ConsumedEventRepository
-import devcoop.occount.payment.application.usecase.wallet.InitializeWalletUseCase
+import devcoop.occount.payment.application.usecase.wallet.initialize.InitializeWalletUseCase
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Component
