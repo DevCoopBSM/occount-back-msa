@@ -1,8 +1,8 @@
 package devcoop.occount.payment.application.output
 
-import devcoop.occount.payment.domain.Wallet
+import devcoop.occount.payment.domain.wallet.Wallet
 
 interface WalletRepository {
     fun findByUserId(userId: Long): Wallet?
-    fun save(pointWallet: Wallet): Wallet
+    fun save(wallet: Wallet): Wallet
 }

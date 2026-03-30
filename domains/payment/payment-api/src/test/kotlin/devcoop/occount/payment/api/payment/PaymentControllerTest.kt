@@ -7,8 +7,8 @@ import devcoop.occount.payment.application.shared.PaymentFacade
 import devcoop.occount.payment.application.usecase.charge.CardChargeUseCase
 import devcoop.occount.payment.application.shared.PaymentRequest
 import devcoop.occount.payment.application.shared.PaymentResponse
-import devcoop.occount.payment.domain.type.PaymentType
-import devcoop.occount.payment.domain.type.TransactionType
+import devcoop.occount.payment.domain.payment.PaymentType
+import devcoop.occount.payment.domain.payment.TransactionType
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock

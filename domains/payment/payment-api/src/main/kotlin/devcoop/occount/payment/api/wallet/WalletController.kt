@@ -5,9 +5,9 @@ import devcoop.occount.payment.api.dto.request.ChargeWalletCommand
 import devcoop.occount.payment.application.query.chargelog.ChargeLogResult
 import devcoop.occount.payment.application.query.chargelog.GetChargeHistoryQueryService
 import devcoop.occount.payment.application.query.wallet.GetWalletBalanceQueryService
-import devcoop.occount.payment.application.query.wallet.WalletBalanceResponse
-import devcoop.occount.payment.application.usecase.wallet.ChargeWalletRequest
-import devcoop.occount.payment.application.usecase.wallet.ChargeWalletUseCase
+import devcoop.occount.payment.api.dto.response.WalletPointResponse
+import devcoop.occount.payment.application.usecase.wallet.charge.ChargeWalletRequest
+import devcoop.occount.payment.application.usecase.wallet.charge.ChargeWalletUseCase
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -26,9 +26,9 @@ class WalletController(
     private val getChargeHistoryQueryService: GetChargeHistoryQueryService,
 ) {
     @GetMapping("/balance")
-    fun getBalance(httpRequest: HttpServletRequest): WalletBalanceResponse {
+    fun getBalance(httpRequest: HttpServletRequest): WalletPointResponse {
         val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return getWalletBalanceQueryService.getBalance(userId)
+        return WalletPointResponse(point = getWalletBalanceQueryService.getBalance(userId))
     }
 
     @PostMapping("/charge")

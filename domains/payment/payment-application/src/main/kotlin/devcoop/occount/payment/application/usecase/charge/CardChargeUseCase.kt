@@ -4,10 +4,10 @@ import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.dto.response.CardResult
 import devcoop.occount.payment.application.dto.response.TransactionResult
 import devcoop.occount.payment.application.output.CardPaymentPort
+import devcoop.occount.payment.application.output.PaymentLogRepository
 import devcoop.occount.payment.application.shared.PaymentResponse
-import devcoop.occount.payment.domain.PaymentLog
-import devcoop.occount.payment.domain.PaymentLogRepository
-import devcoop.occount.payment.domain.type.PaymentType
+import devcoop.occount.payment.domain.payment.PaymentLog
+import devcoop.occount.payment.domain.payment.PaymentType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

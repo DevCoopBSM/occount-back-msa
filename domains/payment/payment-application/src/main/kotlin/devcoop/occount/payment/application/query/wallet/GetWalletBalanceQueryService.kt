@@ -6,11 +6,11 @@ import org.springframework.stereotype.Service
 
 @Service
 class GetWalletBalanceQueryService(
-    private val pointWalletRepository: WalletRepository,
+    private val walletRepository: WalletRepository,
 ) {
-    fun getBalance(userId: Long): WalletBalanceResponse {
-        val pointWallet = pointWalletRepository.findByUserId(userId)
+    fun getBalance(userId: Long): Int {
+        val wallet = walletRepository.findByUserId(userId)
             ?: throw WalletNotFoundException()
-        return WalletBalanceResponse(balance = pointWallet.balance)
+        return wallet.point
     }
 }

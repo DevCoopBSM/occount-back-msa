@@ -5,14 +5,17 @@ import devcoop.occount.payment.application.dto.response.CardResult
 import devcoop.occount.payment.application.dto.response.PgResult
 import devcoop.occount.payment.application.dto.response.TransactionResult
 import devcoop.occount.payment.application.output.CardPaymentPort
-import devcoop.occount.payment.application.output.WalletPort
+import devcoop.occount.payment.application.output.PaymentLogRepository
+import devcoop.occount.payment.application.query.wallet.GetWalletBalanceQueryService
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentItem
-import devcoop.occount.payment.domain.PaymentLog
-import devcoop.occount.payment.domain.PaymentLogRepository
-import devcoop.occount.payment.domain.exception.InvalidPaymentRequestException
-import devcoop.occount.payment.domain.type.CardType
-import devcoop.occount.payment.domain.type.PaymentType
+import devcoop.occount.payment.application.support.FakeWalletRepository
+import devcoop.occount.payment.application.usecase.wallet.deduct.DeductWalletUseCase
+import devcoop.occount.payment.domain.payment.PaymentLog
+import devcoop.occount.payment.domain.wallet.Wallet
+import devcoop.occount.payment.application.exception.InvalidPaymentRequestException
+import devcoop.occount.payment.domain.payment.CardType
+import devcoop.occount.payment.domain.payment.PaymentType
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,10 +24,14 @@ import kotlin.test.assertFailsWith
 class MixedPaymentUseCaseTest {
     @Test
     fun `mixed uses points first and charges card for the remainder`() {
+        val walletRepository = FakeWalletRepository(
+            wallets = mutableMapOf(1L to Wallet(userId = 1L, point = 30)),
+        )
         val paymentLogRepository = FakePaymentLogRepository()
         val cardPaymentPort = FakeCardPaymentPort()
         val useCase = MixedPaymentUseCase(
-            pointWalletPort = FakeWalletPort(balance = 30),
+            getWalletBalanceQueryService = GetWalletBalanceQueryService(walletRepository),
+            deductWalletUseCase = DeductWalletUseCase(walletRepository),
             cardPaymentPort = cardPaymentPort,
             paymentLogRepository = paymentLogRepository,
         )
@@ -44,8 +51,12 @@ class MixedPaymentUseCaseTest {
 
     @Test
     fun `mixed rejects request when it is not actually a mixed payment`() {
+        val walletRepository = FakeWalletRepository(
+            wallets = mutableMapOf(1L to Wallet(userId = 1L, point = 80)),
+        )
         val useCase = MixedPaymentUseCase(
-            pointWalletPort = FakeWalletPort(balance = 80),
+            getWalletBalanceQueryService = GetWalletBalanceQueryService(walletRepository),
+            deductWalletUseCase = DeductWalletUseCase(walletRepository),
             cardPaymentPort = FakeCardPaymentPort(),
             paymentLogRepository = FakePaymentLogRepository(),
         )
@@ -68,17 +79,6 @@ class MixedPaymentUseCaseTest {
             ),
             totalAmount = totalAmount,
         )
-    }
-
-    private class FakeWalletPort(balance: Int) : WalletPort {
-        private var currentBalance = balance
-
-        override fun getBalance(userId: Long): Int = currentBalance
-
-        override fun deduct(userId: Long, amount: Int): Int {
-            currentBalance -= amount
-            return currentBalance
-        }
     }
 
     private class FakeCardPaymentPort : CardPaymentPort {
