@@ -87,9 +87,9 @@ class UserRepositoryImplTest {
     @DisplayName("존재하는 이메일로 조회하면 도메인 객체를 반환한다")
     fun `findByUserEmail returns domain user when entity exists`() {
         val entity = createEntity()
-        `when`(userJpaRepository.findByUserEmail("test@test.com")).thenReturn(entity)
+        `when`(userJpaRepository.findByEmail("test@test.com")).thenReturn(entity)
 
-        val result = userRepositoryImpl.findByUserEmail("test@test.com")
+        val result = userRepositoryImpl.findByEmail("test@test.com")
 
         assertNotNull(result)
         assertEquals("test@test.com", result!!.getEmail())
@@ -98,9 +98,9 @@ class UserRepositoryImplTest {
     @Test
     @DisplayName("존재하지 않는 이메일로 조회하면 null을 반환한다")
     fun `findByUserEmail returns null when entity not found`() {
-        `when`(userJpaRepository.findByUserEmail("notfound@test.com")).thenReturn(null)
+        `when`(userJpaRepository.findByEmail("notfound@test.com")).thenReturn(null)
 
-        val result = userRepositoryImpl.findByUserEmail("notfound@test.com")
+        val result = userRepositoryImpl.findByEmail("notfound@test.com")
 
         assertNull(result)
     }
@@ -125,11 +125,11 @@ class UserRepositoryImplTest {
     @Test
     @DisplayName("이메일 존재 여부 확인 시 JPA 레포지토리에 위임한다")
     fun `existsByUserEmail delegates to JPA repository`() {
-        `when`(userJpaRepository.existsByUserEmail("test@test.com")).thenReturn(true)
+        `when`(userJpaRepository.existsByEmail("test@test.com")).thenReturn(true)
 
-        val result = userRepositoryImpl.existsByUserEmail("test@test.com")
+        val result = userRepositoryImpl.existsByEmail("test@test.com")
 
         assertTrue(result)
-        verify(userJpaRepository).existsByUserEmail("test@test.com")
+        verify(userJpaRepository).existsByEmail("test@test.com")
     }
 }

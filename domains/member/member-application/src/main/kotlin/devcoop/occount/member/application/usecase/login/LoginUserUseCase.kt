@@ -14,7 +14,7 @@ class LoginUserUseCase(
     private val passwordEncoder: PasswordEncoder,
 ) {
     fun login(request: MemberLoginRequest): String {
-        val user = userRepository.findByUserEmail(request.email)
+        val user = userRepository.findByEmail(request.email)
             ?: throw UserNotFoundException()
 
         passwordValidate(request.password, user.getPassword())
