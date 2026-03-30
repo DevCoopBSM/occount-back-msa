@@ -10,7 +10,7 @@ data class User(
         userCiNumber: String,
         username: String,
         phone: String?,
-        userEmail: String,
+        email: String,
         encodedPassword: String,
         encodedPin: String,
     ) : this(
@@ -22,7 +22,7 @@ data class User(
             userBarcode = null,
         ),
         accountInfo = AccountInfo(
-            email = userEmail,
+            email = email,
             password = encodedPassword,
             role = Role.ROLE_USER,
             pin = encodedPin,
