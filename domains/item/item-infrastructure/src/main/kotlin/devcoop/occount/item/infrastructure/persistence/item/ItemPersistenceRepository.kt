@@ -7,11 +7,8 @@ import org.springframework.stereotype.Repository
 @Repository
 interface ItemPersistenceRepository : JpaRepository<ItemJpaEntity, Long> {
     fun findAllByItemInfoNameIn(names: List<String>): MutableList<ItemJpaEntity>
-    fun existsByItemInfoNameNotIn(names: List<String>): Boolean
+    fun findAllByItemIdIn(itemIds: List<Long>): MutableList<ItemJpaEntity>
     fun findAllByIsActiveTrue(): MutableList<ItemJpaEntity>
     fun findAllByItemInfoBarcodeIsNullAndIsActiveTrue(): MutableList<ItemJpaEntity>
     fun findByItemInfoBarcode(barcode: String): ItemJpaEntity?
-
-    @Query("select i.itemId from ItemJpaEntity i")
-    fun findAllItemIds(): MutableList<Long>
 }

@@ -23,12 +23,9 @@ class ItemRepositoryImpl(
             .map(ItemPersistenceMapper::toDomain)
     }
 
-    override fun findAllIds(): List<Long> {
-        return itemPersistenceRepository.findAllItemIds()
-    }
-
-    override fun existsItemByNameIsNotIn(names: List<String>): Boolean {
-        return itemPersistenceRepository.existsByItemInfoNameNotIn(names)
+    override fun findAllByItemIds(itemIds: List<Long>): List<Item> {
+        return itemPersistenceRepository.findAllByItemIdIn(itemIds)
+            .map(ItemPersistenceMapper::toDomain)
     }
 
     override fun findById(id: Long): Item? {

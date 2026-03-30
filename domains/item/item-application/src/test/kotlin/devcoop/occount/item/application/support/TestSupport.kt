@@ -8,6 +8,11 @@ import devcoop.occount.item.domain.item.Category
 import devcoop.occount.item.domain.item.Item
 import devcoop.occount.item.domain.item.ItemInfo
 import devcoop.occount.item.domain.item.Stock
+import org.springframework.dao.OptimisticLockingFailureException
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.TransactionDefinition
+import org.springframework.transaction.TransactionStatus
+import org.springframework.transaction.support.SimpleTransactionStatus
 
 fun itemFixture(
     itemId: Long,
@@ -17,6 +22,7 @@ fun itemFixture(
     barcode: String? = null,
     quantity: Int = 0,
     isActive: Boolean = true,
+    version: Long = 0L,
 ): Item {
     return Item(
         itemId = itemId,
@@ -28,6 +34,7 @@ fun itemFixture(
         ),
         stock = Stock(quantity),
         isActive = isActive,
+        version = version,
     )
 }
 
@@ -46,6 +53,7 @@ class FakeItemRepository(
         private set
     var lastSavedItems: List<Item> = emptyList()
         private set
+    var saveAllOptimisticLockFailuresRemaining: Int = 0
 
     override fun findAll(): List<Item> {
         return itemsById.values.filter(Item::isActive)
@@ -59,12 +67,8 @@ class FakeItemRepository(
         return itemsById.values.filter { it.getName() in names }
     }
 
-    override fun findAllIds(): List<Long> {
-        return itemsById.keys.toList()
-    }
-
-    override fun existsItemByNameIsNotIn(names: List<String>): Boolean {
-        return itemsById.values.any { it.getName() !in names }
+    override fun findAllByItemIds(itemIds: List<Long>): List<Item> {
+        return itemIds.mapNotNull(itemsById::get)
     }
 
     override fun findById(id: Long): Item? {
@@ -76,21 +80,43 @@ class FakeItemRepository(
     }
 
     override fun save(item: Item): Item {
-        itemsById[item.getItemId()] = item
+        val persistedItem = persist(item)
+        itemsById[persistedItem.getItemId()] = persistedItem
         saveCount += 1
-        lastSavedItem = item
-        return item
+        lastSavedItem = persistedItem
+        return persistedItem
     }
 
     override fun saveAll(items: List<Item>): List<Item> {
-        items.forEach { item -> itemsById[item.getItemId()] = item }
         saveAllCount += 1
-        lastSavedItems = items
-        return items
+        if (saveAllOptimisticLockFailuresRemaining > 0) {
+            saveAllOptimisticLockFailuresRemaining -= 1
+            throw OptimisticLockingFailureException("simulated optimistic lock failure")
+        }
+
+        val persistedItems = items.map(::persist)
+        persistedItems.forEach { item -> itemsById[item.getItemId()] = item }
+        lastSavedItems = persistedItems
+        return persistedItems
     }
 
     fun allItems(): List<Item> {
         return itemsById.values.toList()
+    }
+
+    private fun persist(item: Item): Item {
+        return Item(
+            itemId = item.getItemId(),
+            itemInfo = ItemInfo(
+                name = item.getName(),
+                category = item.getCategory(),
+                price = item.getPrice(),
+                barcode = item.getBarcode(),
+            ),
+            stock = Stock(item.getQuantity()),
+            isActive = item.isActive(),
+            version = item.getVersion() + 1,
+        )
     }
 }
 
@@ -98,11 +124,28 @@ class FakeTossItemPort(
     var itemPayloads: List<TossItemPayload> = emptyList(),
     var soldItemPayloads: List<SoldItemPayload> = emptyList(),
 ) : TossItemPort {
+    var getItemsCount: Int = 0
+        private set
+    var getSoldItemsCount: Int = 0
+        private set
+
     override fun getItems(): List<TossItemPayload> {
+        getItemsCount += 1
         return itemPayloads
     }
 
     override fun getSoldItems(): List<SoldItemPayload> {
+        getSoldItemsCount += 1
         return soldItemPayloads
     }
+}
+
+class TestTransactionManager : PlatformTransactionManager {
+    override fun getTransaction(definition: TransactionDefinition?): TransactionStatus {
+        return SimpleTransactionStatus()
+    }
+
+    override fun commit(status: TransactionStatus) = Unit
+
+    override fun rollback(status: TransactionStatus) = Unit
 }

@@ -5,6 +5,7 @@ data class Item(
     private val itemInfo: ItemInfo,
     private val stock: Stock = Stock(),
     private val isActive: Boolean = true,
+    private val version: Long = 0L,
 ) {
     fun getItemId() = itemId
     fun getName() = itemInfo.name()
@@ -13,6 +14,7 @@ data class Item(
     fun getBarcode() = itemInfo.barcode()
     fun getQuantity() = stock.getQuantity()
     fun isActive() = isActive
+    fun getVersion() = version
 
     fun decreaseQuantity(orderQuantity: Int): Item {
         return copy(stock = stock.decreaseQuantity(orderQuantity))
