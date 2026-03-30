@@ -12,7 +12,8 @@ class DeductWalletUseCase(
 ) {
     @Transactional
     fun deduct(userId: Long, amount: Int): WalletBalanceResponse {
-        val pointWallet = pointWalletRepository.findByUserId(userId) ?: throw WalletNotFoundException()
+        val pointWallet = pointWalletRepository.findByUserId(userId)
+            ?: throw WalletNotFoundException()
 
         val savedWallet = pointWalletRepository.save(pointWallet.deduct(amount))
         return WalletBalanceResponse(balance = savedWallet.balance)
