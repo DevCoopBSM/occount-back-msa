@@ -1,4 +1,4 @@
-package devcoop.occount.item.infrastructure.persistence
+package devcoop.occount.item.infrastructure.persistence.item
 
 import devcoop.occount.item.domain.item.Item
 import devcoop.occount.item.domain.item.ItemInfo

@@ -1,4 +1,4 @@
-package devcoop.occount.item.application.item
+package devcoop.occount.item.application.shared
 
 data class ItemLookupResponse(
     val itemId: Long,
