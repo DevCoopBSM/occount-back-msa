@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 data class ChargeLog(
     val chargeId: Long = 0L,
     val userId: Long,
-    val chargeDate: LocalDateTime,
+    val chargeDate: LocalDateTime = LocalDateTime.now(),
     val paymentId: Long? = null,
     val pointTransaction: PointTransaction,
     val reason: String? = null,

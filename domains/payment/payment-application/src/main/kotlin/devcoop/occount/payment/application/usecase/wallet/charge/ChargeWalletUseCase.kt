@@ -34,6 +34,7 @@ class ChargeWalletUseCase(
                 paymentId = paymentId,
                 pointTransaction = PointTransaction(
                     beforePoint = beforePoint,
+                    changeAmount = request.amount,
                     afterPoint = afterPoint,
                 ),
             )
