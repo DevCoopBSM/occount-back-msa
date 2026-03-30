@@ -23,7 +23,11 @@ class StockSyncSchedulerTest {
             stockSyncFacade = StockSyncFacade(
                 itemRepository = itemRepository,
                 tossItemPort = tossItemPort,
-                syncItemsFromTossUseCase = SyncItemsFromTossUseCase(itemRepository, tossItemPort),
+                syncItemsFromTossUseCase = SyncItemsFromTossUseCase(
+                    itemRepository,
+                    tossItemPort,
+                    TestTransactionManager(),
+                ),
                 applySoldItemQuantitiesUseCase = ApplySoldItemQuantitiesUseCase(
                     itemRepository = itemRepository,
                     transactionManager = TestTransactionManager(),

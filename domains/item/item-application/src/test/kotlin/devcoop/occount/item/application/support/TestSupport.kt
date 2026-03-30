@@ -22,7 +22,8 @@ fun itemFixture(
     barcode: String? = null,
     quantity: Int = 0,
     isActive: Boolean = true,
-    version: Long = 0L,
+    catalogVersion: Long = 0L,
+    stockVersion: Long = 0L,
 ): Item {
     return Item(
         itemId = itemId,
@@ -34,7 +35,8 @@ fun itemFixture(
         ),
         stock = Stock(quantity),
         isActive = isActive,
-        version = version,
+        catalogVersion = catalogVersion,
+        stockVersion = stockVersion,
     )
 }
 
@@ -47,13 +49,23 @@ class FakeItemRepository(
 
     var saveCount: Int = 0
         private set
-    var saveAllCount: Int = 0
+    var saveCatalogCount: Int = 0
+        private set
+    var saveCatalogsCount: Int = 0
+        private set
+    var saveStockCount: Int = 0
+        private set
+    var saveStocksCount: Int = 0
         private set
     var lastSavedItem: Item? = null
         private set
-    var lastSavedItems: List<Item> = emptyList()
+    var lastSavedCatalogItems: List<Item> = emptyList()
         private set
-    var saveAllOptimisticLockFailuresRemaining: Int = 0
+    var lastSavedStockItems: List<Item> = emptyList()
+        private set
+    var saveOptimisticLockFailuresRemaining: Int = 0
+    var saveCatalogOptimisticLockFailuresRemaining: Int = 0
+    var saveStockOptimisticLockFailuresRemaining: Int = 0
 
     override fun findAll(): List<Item> {
         return itemsById.values.filter(Item::isActive)
@@ -80,23 +92,45 @@ class FakeItemRepository(
     }
 
     override fun save(item: Item): Item {
-        val persistedItem = persist(item)
-        itemsById[persistedItem.getItemId()] = persistedItem
         saveCount += 1
+        if (saveOptimisticLockFailuresRemaining > 0) {
+            saveOptimisticLockFailuresRemaining -= 1
+            throw OptimisticLockingFailureException("simulated optimistic lock failure")
+        }
+
+        val persistedItem = persistBoth(item)
+        itemsById[persistedItem.getItemId()] = persistedItem
         lastSavedItem = persistedItem
         return persistedItem
     }
 
-    override fun saveAll(items: List<Item>): List<Item> {
-        saveAllCount += 1
-        if (saveAllOptimisticLockFailuresRemaining > 0) {
-            saveAllOptimisticLockFailuresRemaining -= 1
-            throw OptimisticLockingFailureException("simulated optimistic lock failure")
-        }
+    override fun saveCatalog(item: Item): Item {
+        saveCatalogCount += 1
+        val persistedItem = persistCatalog(item)
+        itemsById[persistedItem.getItemId()] = persistedItem
+        return persistedItem
+    }
 
-        val persistedItems = items.map(::persist)
+    override fun saveCatalogs(items: List<Item>): List<Item> {
+        saveCatalogsCount += 1
+        val persistedItems = items.map(::persistCatalog)
         persistedItems.forEach { item -> itemsById[item.getItemId()] = item }
-        lastSavedItems = persistedItems
+        lastSavedCatalogItems = persistedItems
+        return persistedItems
+    }
+
+    override fun saveStock(item: Item): Item {
+        saveStockCount += 1
+        val persistedItem = persistStock(item)
+        itemsById[persistedItem.getItemId()] = persistedItem
+        return persistedItem
+    }
+
+    override fun saveStocks(items: List<Item>): List<Item> {
+        saveStocksCount += 1
+        val persistedItems = items.map(::persistStock)
+        persistedItems.forEach { item -> itemsById[item.getItemId()] = item }
+        lastSavedStockItems = persistedItems
         return persistedItems
     }
 
@@ -104,7 +138,12 @@ class FakeItemRepository(
         return itemsById.values.toList()
     }
 
-    private fun persist(item: Item): Item {
+    private fun persistCatalog(item: Item): Item {
+        if (saveCatalogOptimisticLockFailuresRemaining > 0) {
+            saveCatalogOptimisticLockFailuresRemaining -= 1
+            throw OptimisticLockingFailureException("simulated optimistic lock failure")
+        }
+
         return Item(
             itemId = item.getItemId(),
             itemInfo = ItemInfo(
@@ -115,7 +154,45 @@ class FakeItemRepository(
             ),
             stock = Stock(item.getQuantity()),
             isActive = item.isActive(),
-            version = item.getVersion() + 1,
+            catalogVersion = item.getCatalogVersion() + 1,
+            stockVersion = item.getStockVersion(),
+        )
+    }
+
+    private fun persistStock(item: Item): Item {
+        if (saveStockOptimisticLockFailuresRemaining > 0) {
+            saveStockOptimisticLockFailuresRemaining -= 1
+            throw OptimisticLockingFailureException("simulated optimistic lock failure")
+        }
+
+        return Item(
+            itemId = item.getItemId(),
+            itemInfo = ItemInfo(
+                name = item.getName(),
+                category = item.getCategory(),
+                price = item.getPrice(),
+                barcode = item.getBarcode(),
+            ),
+            stock = Stock(item.getQuantity()),
+            isActive = item.isActive(),
+            catalogVersion = item.getCatalogVersion(),
+            stockVersion = item.getStockVersion() + 1,
+        )
+    }
+
+    private fun persistBoth(item: Item): Item {
+        return Item(
+            itemId = item.getItemId(),
+            itemInfo = ItemInfo(
+                name = item.getName(),
+                category = item.getCategory(),
+                price = item.getPrice(),
+                barcode = item.getBarcode(),
+            ),
+            stock = Stock(item.getQuantity()),
+            isActive = item.isActive(),
+            catalogVersion = item.getCatalogVersion() + 1,
+            stockVersion = item.getStockVersion() + 1,
         )
     }
 }
