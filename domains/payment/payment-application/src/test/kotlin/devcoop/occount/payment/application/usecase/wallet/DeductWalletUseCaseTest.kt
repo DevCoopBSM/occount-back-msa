@@ -1,9 +1,9 @@
 package devcoop.occount.payment.application.usecase.wallet
 
 import devcoop.occount.payment.application.exception.WalletNotFoundException
-import devcoop.occount.payment.application.query.wallet.WalletResponse
 import devcoop.occount.payment.application.support.FakeWalletRepository
 import devcoop.occount.payment.application.usecase.wallet.deduct.DeductWalletUseCase
+import devcoop.occount.payment.domain.wallet.PointTransaction
 import devcoop.occount.payment.domain.wallet.Wallet
 import org.junit.jupiter.api.DisplayName
 import kotlin.test.Test
@@ -21,7 +21,7 @@ class DeductWalletUseCaseTest {
 
         val response = useCase.deduct(1L, 25)
 
-        assertEquals(WalletResponse(beforePoint = 100, afterPoint = 75), response)
+        assertEquals(PointTransaction(beforePoint = 100, changeAmount = -25, afterPoint = 75), response)
         assertEquals(Wallet(userId = 1L, point = 75), repository.savedWallets.single())
     }
 
