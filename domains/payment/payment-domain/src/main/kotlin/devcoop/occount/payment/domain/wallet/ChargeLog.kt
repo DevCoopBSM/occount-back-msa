@@ -8,7 +8,8 @@ data class ChargeLog(
     val chargeDate: LocalDateTime = LocalDateTime.now(),
     val paymentId: Long? = null,
     val pointTransaction: PointTransaction,
-    val reason: String? = null,
+    val chargeReason: ChargeReason,
+    val detailReason: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

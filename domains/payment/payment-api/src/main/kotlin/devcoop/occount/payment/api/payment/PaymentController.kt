@@ -7,7 +7,6 @@ import devcoop.occount.payment.application.query.paymentlog.PaymentLogResult
 import devcoop.occount.payment.application.shared.PaymentFacade
 import devcoop.occount.payment.application.shared.PaymentRequest
 import devcoop.occount.payment.application.shared.PaymentResponse
-import devcoop.occount.payment.application.usecase.charge.CardChargeUseCase
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
@@ -25,7 +24,6 @@ import java.time.LocalDateTime
 @RequestMapping("/payments")
 class PaymentController(
     private val paymentFacade: PaymentFacade,
-    private val cardChargeUseCase: CardChargeUseCase,
     private val getPaymentHistoryQueryService: GetPaymentHistoryQueryService,
 ) {
     @PostMapping("/execute")
@@ -36,16 +34,6 @@ class PaymentController(
     ): PaymentResponse {
         val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
         return paymentFacade.execute(userId, request)
-    }
-
-    @PostMapping("/charge")
-    @ResponseStatus(HttpStatus.OK)
-    fun charge(
-        @Valid @RequestBody request: ChargeRequest,
-        httpRequest: HttpServletRequest,
-    ): PaymentResponse {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return cardChargeUseCase.execute(userId, request.amount)
     }
 
     @GetMapping("/history")

@@ -4,7 +4,6 @@ import devcoop.occount.core.common.auth.AuthHeaders
 import devcoop.occount.payment.application.query.paymentlog.GetPaymentHistoryQueryService
 import devcoop.occount.payment.application.query.paymentlog.PaymentLogResult
 import devcoop.occount.payment.application.shared.PaymentFacade
-import devcoop.occount.payment.application.usecase.charge.CardChargeUseCase
 import devcoop.occount.payment.application.shared.PaymentRequest
 import devcoop.occount.payment.application.shared.PaymentResponse
 import devcoop.occount.payment.domain.payment.PaymentType
