@@ -156,20 +156,21 @@ def call(Map cfg) {
                         script {
                             def changedList = env.CHANGED_SERVICES.split(',') as List
                             def imageTag = "${env.TAG_PREFIX}${env.GIT_COMMIT_SHORT}"
+                            def manifestDir = "${env.WORKSPACE}/manifest-update"
                             sshagent(['github-credentials']) {
                                 sh """
                                     mkdir -p ~/.ssh
                                     ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
-                                    git clone ${env.MANIFEST_REPO} /tmp/manifest-update
+                                    git clone ${env.MANIFEST_REPO} ${manifestDir}
                                 """
-                                def valuesPath = "/tmp/manifest-update/helm/occount/${env.VALUES_FILE}"
+                                def valuesPath = "${manifestDir}/helm/occount/${env.VALUES_FILE}"
                                 def values = readYaml file: valuesPath
                                 SERVICES
                                     .findAll { changedList.contains(it.name) }
                                     .each { svc -> values.apps[svc.yamlKey].image.tag = imageTag }
                                 writeYaml file: valuesPath, data: values, overwrite: true
                                 sh """
-                                    cd /tmp/manifest-update
+                                    cd ${manifestDir}
                                     git config user.email "jenkins@devcoop.local"
                                     git config user.name "Jenkins CI"
                                     git add helm/occount/${env.VALUES_FILE}
