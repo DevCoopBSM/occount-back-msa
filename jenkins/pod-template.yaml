@@ -1,0 +1,52 @@
+# gradle-cache-pvc 사전 생성 필요:
+# kubectl -n jenkins apply -f - <<EOF
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: gradle-cache-pvc
+# spec:
+#   accessModes: [ReadWriteOnce]
+#   resources:
+#     requests:
+#       storage: 5Gi
+# EOF
+apiVersion: v1
+kind: Pod
+spec:
+  dnsConfig:
+    options:
+    - name: ndots
+      value: "1"
+  nodeSelector:
+    kubernetes.io/hostname: worker-1
+  containers:
+  - name: gradle
+    image: gradle:8.5-jdk21-alpine
+    command: ['sleep']
+    args: ['infinity']
+    volumeMounts:
+    - name: gradle-cache
+      mountPath: /home/gradle/.gradle
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:debug
+    command: ['sleep']
+    args: ['infinity']
+    volumeMounts:
+    - name: harbor-creds
+      mountPath: /kaniko/.docker
+  - name: git
+    image: alpine/git:2.43.0
+    command: ['sleep']
+    args: ['infinity']
+  - name: jnlp
+    image: jenkins/inbound-agent:3355.v388858a_47b_33-16
+  volumes:
+  - name: harbor-creds
+    secret:
+      secretName: harbor-registry-secret
+      items:
+      - key: .dockerconfigjson
+        path: config.json
+  - name: gradle-cache
+    persistentVolumeClaim:
+      claimName: gradle-cache-pvc
