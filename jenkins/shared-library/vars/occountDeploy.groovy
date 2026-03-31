@@ -101,6 +101,7 @@ def call(Map cfg) {
                                 .findAll { changedList.contains(it.name) }
                                 .collect { it.task }
                                 .join(' ')
+                            sh "find /home/gradle/.gradle/caches -name '*.lock' -delete 2>/dev/null || true"
                             sh "./gradlew ${targets} --no-daemon --parallel"
                         }
                     }
