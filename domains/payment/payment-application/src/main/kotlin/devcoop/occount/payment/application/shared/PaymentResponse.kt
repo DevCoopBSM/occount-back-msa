@@ -1,6 +1,6 @@
 package devcoop.occount.payment.application.shared
 
-import devcoop.occount.payment.domain.type.PaymentType
+import devcoop.occount.payment.domain.payment.PaymentType
 
 data class PaymentResponse(
     val status: String,
@@ -42,7 +42,7 @@ data class PaymentResponse(
             cardAmount: Int?,
             remainingPoints: Int,
             approvalNumber: String?,
-            transactionId: String?
+            transactionId: String?,
         ): PaymentResponse {
             return PaymentResponse(
                 status = "success",
@@ -55,7 +55,7 @@ data class PaymentResponse(
                 approvalNumber = approvalNumber,
                 transactionId = transactionId,
                 chargedAmount = null,
-                message = null
+                message = null,
             )
         }
 
@@ -71,7 +71,7 @@ data class PaymentResponse(
                 cardAmount = null,
                 remainingPoints = null,
                 approvalNumber = null,
-                transactionId = null
+                transactionId = null,
             )
         }
     }

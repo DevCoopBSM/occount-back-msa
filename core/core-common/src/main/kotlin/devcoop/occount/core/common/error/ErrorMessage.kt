@@ -20,6 +20,7 @@ enum class ErrorMessage(
     ITEM_STOCK_NEGATIVE("요청으로 인해 재고가 부족합니다. 재고 수량을 확인해주세요."),
     ITEM_NOT_FOUND("현재 등록되지 않은 상품입니다."),
     ITEM_NOT_SYNCHRONIZED("상품이 토스와 동기화되지 않았습니다."),
+    ITEM_CONCURRENT_UPDATE("다른 요청에 의해 상품이 변경되었습니다. 잠시 후 다시 시도해주세요."),
 
 
     PAYMENT_FAILED("결제 처리에 실패했습니다."),
@@ -34,6 +35,7 @@ enum class ErrorMessage(
     POINT_CHARGE_FAILED("포인트 충전에 실패했습니다."),
     POINT_DEDUCTION_FAILED("포인트 차감에 실패했습니다."),
     INVALID_CHARGE_AMOUNT("유효하지 않은 충전 금액입니다."),
+    INVALID_DEDUCT_AMOUNT("유효하지 않은 차감 금액입니다."),
     PAYMENT_LOG_NOT_FOUND("결제 로그를 찾을 수 없습니다."),
     PAYMENT_LOG_SAVE_FAILED("결제 로그 저장에 실패했습니다."),
     CHARGE_LOG_SAVE_FAILED("충전 기록 저장에 실패했습니다."),
