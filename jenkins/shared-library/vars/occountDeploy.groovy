@@ -162,6 +162,7 @@ def call(Map cfg) {
                                     mkdir -p ~/.ssh
                                     ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
                                     git clone ${env.MANIFEST_REPO} ${manifestDir}
+                                    chmod -R a+rw ${manifestDir}
                                 """
                                 def valuesPath = "${manifestDir}/helm/occount/${env.VALUES_FILE}"
                                 def values = readYaml file: valuesPath
