@@ -116,7 +116,7 @@ def call(Map cfg) {
                         def svcsToBuild = SERVICES.findAll { changedList.contains(it.name) }
                         def imageTag = "${env.TAG_PREFIX}${env.GIT_COMMIT_SHORT}"
 
-                        // fat jar를 서비스 디렉토리 기준 고정 경로로 복사
+                        // fat jar + Dockerfile을 서비스 디렉토리로 복사
                         container('gradle') {
                             svcsToBuild.each { svc ->
                                 def jarFile = sh(
@@ -125,6 +125,7 @@ def call(Map cfg) {
                                 ).trim()
                                 if (!jarFile) error "No JAR for ${svc.name}"
                                 sh "cp ${jarFile} ${env.WORKSPACE}/${svc.dir}/build/app.jar"
+                                sh "cp ${env.WORKSPACE}/jenkins/Dockerfile.service ${env.WORKSPACE}/${svc.dir}/Dockerfile"
                             }
                         }
 
