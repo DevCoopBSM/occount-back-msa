@@ -118,7 +118,8 @@ def call(Map cfg) {
 
                         // fat jar + Dockerfile을 서비스 디렉토리로 복사
                         container('gradle') {
-                            svcsToBuild.each { svc ->
+                            for (int i = 0; i < svcsToBuild.size(); i++) {
+                                def svc = svcsToBuild[i]
                                 def jarFile = sh(
                                     script: "ls ${env.WORKSPACE}/${svc.dir}/build/libs/*.jar 2>/dev/null | grep -v plain | tail -1",
                                     returnStdout: true
@@ -130,8 +131,10 @@ def call(Map cfg) {
                         }
 
                         // 각 서비스 Dockerfile 기반으로 병렬 빌드
-                        parallel svcsToBuild.collectEntries { svc ->
-                            ["${svc.name}": {
+                        def parallelStages = [:]
+                        for (int i = 0; i < svcsToBuild.size(); i++) {
+                            def svc = svcsToBuild[i]
+                            parallelStages["${svc.name}"] = {
                                 container('kaniko') {
                                     sh """
                                         /kaniko/executor \\
@@ -143,8 +146,9 @@ def call(Map cfg) {
                                             --skip-tls-verify-pull
                                     """
                                 }
-                            }]
+                            }
                         }
+                        parallel parallelStages
                     }
                 }
             }
