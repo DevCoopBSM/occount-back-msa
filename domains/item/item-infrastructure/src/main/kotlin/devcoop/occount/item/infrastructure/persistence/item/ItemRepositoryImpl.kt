@@ -41,7 +41,7 @@ class ItemRepositoryImpl(
     }
 
     override fun save(item: Item): Item {
-        if (item.getItemId() == 0L) {
+        if (isNewItem(item)) {
             return persistNew(item)
         }
 
@@ -52,7 +52,7 @@ class ItemRepositoryImpl(
     }
 
     override fun saveCatalog(item: Item): Item {
-        if (item.getItemId() == 0L) {
+        if (isNewItem(item)) {
             return persistNew(item)
         }
 
@@ -66,7 +66,7 @@ class ItemRepositoryImpl(
     }
 
     override fun saveStock(item: Item): Item {
-        if (item.getItemId() == 0L) {
+        if (isNewItem(item)) {
             return persistNew(item)
         }
 
@@ -82,6 +82,10 @@ class ItemRepositoryImpl(
     private fun persistNew(item: Item): Item {
         return itemPersistenceRepository.save(ItemPersistenceMapper.toEntity(item))
             .let(ItemPersistenceMapper::toDomain)
+    }
+
+    private fun isNewItem(item: Item): Boolean {
+        return item.getItemId() == 0L || !itemPersistenceRepository.existsById(item.getItemId())
     }
 
     private fun updateCatalog(item: Item) {
