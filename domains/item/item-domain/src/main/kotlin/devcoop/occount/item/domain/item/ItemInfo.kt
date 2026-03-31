@@ -1,10 +1,10 @@
 package devcoop.occount.item.domain.item
 
-class ItemInfo(
-    private var name: String,
-    private var category: Category,
-    private var price: Int,
-    private var barcode: String? = null,
+data class ItemInfo(
+    private val name: String,
+    private val category: Category,
+    private val price: Int,
+    private val barcode: String? = null,
 ) {
     fun name() = name
     fun category() = category

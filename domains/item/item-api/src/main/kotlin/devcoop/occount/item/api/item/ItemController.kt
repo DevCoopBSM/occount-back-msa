@@ -1,12 +1,15 @@
 package devcoop.occount.item.api.item
 
-import devcoop.occount.item.application.item.ItemCategoryListResponse
-import devcoop.occount.item.application.item.ItemListResponse
-import devcoop.occount.item.application.item.ItemLookupListResponse
-import devcoop.occount.item.application.item.ItemLookupResponse
-import devcoop.occount.item.application.item.ItemResponse
-import devcoop.occount.item.application.item.ItemService
-import devcoop.occount.item.application.item.ItemUpdateRequest
+import devcoop.occount.item.application.query.ItemCategoryListResponse
+import devcoop.occount.item.application.query.ItemListResponse
+import devcoop.occount.item.application.query.ItemLookupListResponse
+import devcoop.occount.item.application.query.ItemQueryService
+import devcoop.occount.item.application.shared.ItemLookupResponse
+import devcoop.occount.item.application.shared.ItemResponse
+import devcoop.occount.item.application.usecase.delete.DeleteItemUseCase
+import devcoop.occount.item.application.usecase.sync.SyncItemsFromTossUseCase
+import devcoop.occount.item.application.usecase.update.ItemUpdateRequest
+import devcoop.occount.item.application.usecase.update.UpdateItemUseCase
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -21,36 +24,39 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/items")
 @RestController
 class ItemController(
-    private val itemService: ItemService,
+    private val itemQueryService: ItemQueryService,
+    private val syncItemsFromTossUseCase: SyncItemsFromTossUseCase,
+    private val updateItemUseCase: UpdateItemUseCase,
+    private val deleteItemUseCase: DeleteItemUseCase,
 ) {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     fun getAllItems(): ItemListResponse {
-        return itemService.getAllItems()
+        return itemQueryService.getAllItems()
     }
 
     @GetMapping("/categories")
     @ResponseStatus(HttpStatus.OK)
     fun getItemCategories(): ItemCategoryListResponse {
-        return itemService.getItemCategories()
+        return itemQueryService.getItemCategories()
     }
 
     @GetMapping("/without-barcode")
     @ResponseStatus(HttpStatus.OK)
     fun getItemsWithoutBarcode(): ItemLookupListResponse {
-        return itemService.getItemsWithoutBarcode()
+        return itemQueryService.getItemsWithoutBarcode()
     }
 
     @GetMapping("/{barcode}")
     @ResponseStatus(HttpStatus.OK)
     fun getItemByBarcode(@PathVariable barcode: String): ItemLookupResponse {
-        return itemService.getItemByBarcode(barcode)
+        return itemQueryService.getItemByBarcode(barcode)
     }
 
     @PostMapping("/sync")
     @ResponseStatus(HttpStatus.OK)
     fun syncItemsFromToss() {
-        itemService.syncItemsFromToss()
+        syncItemsFromTossUseCase.sync()
     }
 
     @PutMapping("/{id}")
@@ -59,12 +65,12 @@ class ItemController(
         @PathVariable id: Long,
         @RequestBody request: ItemUpdateRequest,
     ): ItemResponse {
-        return itemService.updateItem(id, request)
+        return updateItemUseCase.update(id, request)
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteItem(@PathVariable id: Long) {
-        itemService.deleteItem(id)
+        deleteItemUseCase.delete(id)
     }
 }
