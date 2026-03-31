@@ -1,7 +1,7 @@
 package devcoop.occount.payment.application.support
 
 import devcoop.occount.payment.application.output.WalletRepository
-import devcoop.occount.payment.domain.Wallet
+import devcoop.occount.payment.domain.wallet.Wallet
 
 class FakeWalletRepository(
     private val wallets: MutableMap<Long, Wallet> = mutableMapOf(),
@@ -11,10 +11,10 @@ class FakeWalletRepository(
 
     override fun findByUserId(userId: Long): Wallet? = wallets[userId]
 
-    override fun save(pointWallet: Wallet): Wallet {
+    override fun save(wallet: Wallet): Wallet {
         saveException?.let { throw it }
-        wallets[pointWallet.userId] = pointWallet
-        savedWallets += pointWallet
-        return pointWallet
+        wallets[wallet.userId] = wallet
+        savedWallets += wallet
+        return wallet
     }
 }

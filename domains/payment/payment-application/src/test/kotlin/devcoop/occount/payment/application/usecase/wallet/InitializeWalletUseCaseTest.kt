@@ -2,7 +2,8 @@ package devcoop.occount.payment.application.usecase.wallet
 
 import devcoop.occount.payment.application.exception.WalletAlreadyInitializedException
 import devcoop.occount.payment.application.support.FakeWalletRepository
-import devcoop.occount.payment.domain.Wallet
+import devcoop.occount.payment.application.usecase.wallet.initialize.InitializeWalletUseCase
+import devcoop.occount.payment.domain.wallet.Wallet
 import org.junit.jupiter.api.DisplayName
 import org.springframework.dao.DuplicateKeyException
 import kotlin.test.Test
@@ -18,8 +19,7 @@ class InitializeWalletUseCaseTest {
 
         useCase.initialize(1L)
 
-        assertEquals(1, repository.savedWallets.size)
-        assertEquals(Wallet(userId = 1L, balance = 0), repository.savedWallets.single())
+        assertEquals(Wallet(userId = 1L, point = 0), repository.savedWallets.single())
     }
 
     @Test

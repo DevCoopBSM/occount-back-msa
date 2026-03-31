@@ -1,7 +1,7 @@
 package devcoop.occount.payment.application.query.paymentlog
 
-import devcoop.occount.payment.domain.PaymentLogRepository
-import devcoop.occount.payment.domain.type.PaymentType
+import devcoop.occount.payment.application.output.PaymentLogRepository
+import devcoop.occount.payment.domain.payment.PaymentType
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 

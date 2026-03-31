@@ -19,13 +19,13 @@ class UserRepositoryImpl(
             ?.let(UserPersistenceMapper::toDomain)
     }
 
-    override fun findByUserEmail(userEmail: String): User? {
-        return userJpaRepository.findByUserEmail(userEmail)
+    override fun findByEmail(userEmail: String): User? {
+        return userJpaRepository.findByEmail(userEmail)
             ?.let(UserPersistenceMapper::toDomain)
     }
 
-    override fun existsByUserEmail(userEmail: String): Boolean {
-        return userJpaRepository.existsByUserEmail(userEmail)
+    override fun existsByEmail(userEmail: String): Boolean {
+        return userJpaRepository.existsByEmail(userEmail)
     }
 
     override fun save(user: User): User {

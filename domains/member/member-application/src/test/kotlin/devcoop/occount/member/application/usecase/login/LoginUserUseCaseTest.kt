@@ -41,7 +41,7 @@ class LoginUserUseCaseTest {
         val user = createUser()
         val request = MemberLoginRequest("test@test.com", "rawPassword")
 
-        `when`(userRepository.findByUserEmail("test@test.com")).thenReturn(user)
+        `when`(userRepository.findByEmail("test@test.com")).thenReturn(user)
         `when`(passwordEncoder.matches("rawPassword", "encodedPassword")).thenReturn(true)
         `when`(tokenGenerator.createAccessToken(1L, "ROLE_USER")).thenReturn("accessToken")
 
@@ -55,7 +55,7 @@ class LoginUserUseCaseTest {
     @DisplayName("존재하지 않는 이메일로 멤버 로그인 시 UserNotFoundException이 발생한다")
     fun `memberLogin throws UserNotFoundException when user not found`() {
         val request = MemberLoginRequest("notfound@test.com", "rawPassword")
-        `when`(userRepository.findByUserEmail("notfound@test.com")).thenReturn(null)
+        `when`(userRepository.findByEmail("notfound@test.com")).thenReturn(null)
 
         assertThrows(UserNotFoundException::class.java) {
             loginUserUseCase.login(request)
@@ -68,7 +68,7 @@ class LoginUserUseCaseTest {
         val user = createUser()
         val request = MemberLoginRequest("test@test.com", "wrongPassword")
 
-        `when`(userRepository.findByUserEmail("test@test.com")).thenReturn(user)
+        `when`(userRepository.findByEmail("test@test.com")).thenReturn(user)
         `when`(passwordEncoder.matches("wrongPassword", "encodedPassword")).thenReturn(false)
 
         assertThrows(InvalidPasswordException::class.java) {

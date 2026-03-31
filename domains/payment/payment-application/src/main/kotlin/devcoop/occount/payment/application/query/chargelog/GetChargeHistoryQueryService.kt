@@ -1,6 +1,6 @@
 package devcoop.occount.payment.application.query.chargelog
 
-import devcoop.occount.payment.domain.ChargeLogRepository
+import devcoop.occount.payment.application.output.ChargeLogRepository
 import org.springframework.stereotype.Service
 
 @Service

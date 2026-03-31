@@ -26,6 +26,10 @@ toss:
   api:
     url: ${OCCOUNT_TOSS_API_URL}
 
+app:
+  stock-sync:
+    cron: ${APP_STOCK_SYNC_CRON:0 */5 * * * *}
+
 management:
   endpoints:
     web:

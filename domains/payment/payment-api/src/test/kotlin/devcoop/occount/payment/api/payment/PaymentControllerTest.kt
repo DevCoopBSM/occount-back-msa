@@ -4,11 +4,10 @@ import devcoop.occount.core.common.auth.AuthHeaders
 import devcoop.occount.payment.application.query.paymentlog.GetPaymentHistoryQueryService
 import devcoop.occount.payment.application.query.paymentlog.PaymentLogResult
 import devcoop.occount.payment.application.shared.PaymentFacade
-import devcoop.occount.payment.application.usecase.charge.CardChargeUseCase
 import devcoop.occount.payment.application.shared.PaymentRequest
 import devcoop.occount.payment.application.shared.PaymentResponse
-import devcoop.occount.payment.domain.type.PaymentType
-import devcoop.occount.payment.domain.type.TransactionType
+import devcoop.occount.payment.domain.payment.PaymentType
+import devcoop.occount.payment.domain.payment.TransactionType
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -19,11 +18,9 @@ import java.time.LocalDateTime
 
 class PaymentControllerTest {
     private val paymentFacade = mock(PaymentFacade::class.java)
-    private val cardChargeUseCase = mock(CardChargeUseCase::class.java)
     private val getPaymentHistoryQueryService = mock(GetPaymentHistoryQueryService::class.java)
     private val controller = PaymentController(
         paymentFacade = paymentFacade,
-        cardChargeUseCase = cardChargeUseCase,
         getPaymentHistoryQueryService = getPaymentHistoryQueryService,
     )
 

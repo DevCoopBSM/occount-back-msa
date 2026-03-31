@@ -1,37 +1,25 @@
 package devcoop.occount.payment.application.usecase.payment
 
-import devcoop.occount.payment.application.output.WalletPort
+import devcoop.occount.payment.application.output.PaymentLogRepository
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentMapper
 import devcoop.occount.payment.application.shared.PaymentResponse
-import devcoop.occount.payment.application.shared.PointBalanceChange
-import devcoop.occount.payment.domain.PaymentLogRepository
-import devcoop.occount.payment.domain.exception.InsufficientPointsException
-import devcoop.occount.payment.domain.type.PaymentType
+import devcoop.occount.payment.application.usecase.wallet.deduct.DeductWalletUseCase
+import devcoop.occount.payment.domain.payment.PaymentType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class PayWithPointsUseCase(
-    private val pointWalletPort: WalletPort,
+    private val deductWalletUseCase: DeductWalletUseCase,
     private val paymentLogRepository: PaymentLogRepository,
 ) {
     @Transactional
     fun execute(userId: Long, details: PaymentDetails): PaymentResponse {
-        val beforeBalance = pointWalletPort.getBalance(userId)
-        if (beforeBalance < details.totalAmount) {
-            throw InsufficientPointsException()
-        }
-
-        val afterBalance = pointWalletPort.deduct(userId, details.totalAmount)
-        val pointChange = PointBalanceChange(
-            beforeBalance = beforeBalance,
-            changedAmount = -details.totalAmount,
-            afterBalance = afterBalance,
-        )
+        val pointTransaction = deductWalletUseCase.deduct(userId, details.totalAmount)
 
         paymentLogRepository.save(
-            PaymentMapper.toPointPaymentLog(userId, details, pointChange),
+            PaymentMapper.toPointPaymentLog(userId, details, pointTransaction),
         )
 
         return PaymentResponse.forPayment(
@@ -40,7 +28,7 @@ class PayWithPointsUseCase(
             paymentAmount = details.totalAmount,
             pointsUsed = details.totalAmount,
             cardAmount = null,
-            remainingPoints = afterBalance,
+            remainingPoints = pointTransaction.afterPoint,
             approvalNumber = null,
             transactionId = null,
         )

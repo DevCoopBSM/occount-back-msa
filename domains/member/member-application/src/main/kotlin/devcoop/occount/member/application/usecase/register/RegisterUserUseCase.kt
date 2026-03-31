@@ -29,7 +29,7 @@ class RegisterUserUseCase(
                     userCiNumber = request.userCiNumber,
                     username = request.userName,
                     phone = request.userPhone,
-                    userEmail = request.userEmail,
+                    email = request.userEmail,
                     encodedPassword = passwordEncoder.encode(request.password)!!,
                     encodedPin = passwordEncoder.encode(defaultPin)!!,
                 )
