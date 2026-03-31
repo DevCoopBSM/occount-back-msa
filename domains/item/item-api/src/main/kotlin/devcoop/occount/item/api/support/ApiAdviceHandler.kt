@@ -45,6 +45,7 @@ class ApiAdviceHandler {
 
             ErrorMessage.USER_ALREADY_EXISTS,
             ErrorMessage.TRANSACTION_IN_PROGRESS,
+            ErrorMessage.ITEM_CONCURRENT_UPDATE,
             -> HttpStatus.CONFLICT
 
             ErrorMessage.PAYMENT_TIMEOUT -> HttpStatus.REQUEST_TIMEOUT

@@ -1,13 +1,14 @@
 package devcoop.occount.item.domain.item
 
-class Stock(
-    private var quantity: Int = 0,
+data class Stock(
+    private val quantity: Int = 0,
 ) {
     fun getQuantity() = quantity
+    fun hasQuantity(quantity: Int) = this.quantity == quantity
 
-    fun decreaseQuantity(orderQuantity: Int) {
+    fun decreaseQuantity(orderQuantity: Int): Stock {
         validateQuantity(orderQuantity)
-        this.quantity -= orderQuantity
+        return copy(quantity = quantity - orderQuantity)
     }
 
     private fun validateQuantity(orderQuantity: Int) {
