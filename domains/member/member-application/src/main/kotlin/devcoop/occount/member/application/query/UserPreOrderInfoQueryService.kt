@@ -1,11 +1,11 @@
-package devcoop.occount.member.application.usecase.query
+package devcoop.occount.member.application.query
 
 import devcoop.occount.member.application.exception.UserNotFoundException
 import devcoop.occount.member.application.output.UserRepository
 import org.springframework.stereotype.Service
 
 @Service
-class UserQueryService(
+class UserPreOrderInfoQueryService(
     private val userRepository: UserRepository,
 ) {
     fun findPreOrderInfo(userId: Long): UserPreOrderInfoResponse {

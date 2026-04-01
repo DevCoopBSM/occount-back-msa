@@ -2,6 +2,7 @@ package devcoop.occount.member.application.usecase.query
 
 import devcoop.occount.member.application.exception.UserNotFoundException
 import devcoop.occount.member.application.output.UserRepository
+import devcoop.occount.member.application.query.UserPreOrderInfoQueryService
 import devcoop.occount.member.domain.user.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -10,15 +11,15 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
 
 @DisplayName("UserQueryService 단위 테스트")
-class UserQueryServiceTest {
+class UserPreOrderInfoQueryServiceTest {
 
     private lateinit var userRepository: UserRepository
-    private lateinit var userQueryService: UserQueryService
+    private lateinit var userPreOrderInfoQueryService: UserPreOrderInfoQueryService
 
     @BeforeEach
     fun setUp() {
         userRepository = mock(UserRepository::class.java)
-        userQueryService = UserQueryService(userRepository)
+        userPreOrderInfoQueryService = UserPreOrderInfoQueryService(userRepository)
     }
 
     private fun createUser(username: String) = User(
@@ -34,7 +35,7 @@ class UserQueryServiceTest {
         val user = createUser("홍길동")
         `when`(userRepository.findById(1L)).thenReturn(user)
 
-        val result = userQueryService.findPreOrderInfo(1L)
+        val result = userPreOrderInfoQueryService.findPreOrderInfo(1L)
 
         assertEquals("홍길동", result.username)
     }
@@ -45,7 +46,7 @@ class UserQueryServiceTest {
         `when`(userRepository.findById(999L)).thenReturn(null)
 
         assertThrows(UserNotFoundException::class.java) {
-            userQueryService.findPreOrderInfo(999L)
+            userPreOrderInfoQueryService.findPreOrderInfo(999L)
         }
     }
 }

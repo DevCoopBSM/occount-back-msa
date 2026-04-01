@@ -1,8 +1,8 @@
 package devcoop.occount.member.api.user
 
 import devcoop.occount.core.common.auth.AuthHeaders
-import devcoop.occount.member.application.usecase.query.UserPreOrderInfoResponse
-import devcoop.occount.member.application.usecase.query.UserQueryService
+import devcoop.occount.member.application.query.UserPreOrderInfoResponse
+import devcoop.occount.member.application.query.UserPreOrderInfoQueryService
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -13,13 +13,13 @@ import org.springframework.mock.web.MockHttpServletRequest
 class MemberControllerTest {
     @Test
     fun `find user info delegates with authenticated user id`() {
-        val userQueryService = mock(UserQueryService::class.java)
-        val controller = MemberController(userQueryService)
+        val userPreOrderInfoQueryService = mock(UserPreOrderInfoQueryService::class.java)
+        val controller = MemberController(userPreOrderInfoQueryService)
         val expected = UserPreOrderInfoResponse(
             username = "Tester",
         )
 
-        `when`(userQueryService.findPreOrderInfo(7L)).thenReturn(expected)
+        `when`(userPreOrderInfoQueryService.findPreOrderInfo(7L)).thenReturn(expected)
 
         val httpRequest = MockHttpServletRequest().apply {
             addHeader(AuthHeaders.AUTHENTICATED_USER_ID, "7")
@@ -28,6 +28,6 @@ class MemberControllerTest {
         val actual = controller.findUserInfo(httpRequest)
 
         assertSame(expected, actual)
-        verify(userQueryService).findPreOrderInfo(7L)
+        verify(userPreOrderInfoQueryService).findPreOrderInfo(7L)
     }
 }
