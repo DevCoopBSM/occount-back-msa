@@ -12,6 +12,6 @@ class UserQueryService(
         val user = userRepository.findById(userId)
             ?: throw UserNotFoundException()
 
-        return UserPreOrderInfoResponse.Companion.toUserPreOrderInfoResponse(user)
+        return UserPreOrderInfoResponse.toUserPreOrderInfoResponse(user)
     }
 }
