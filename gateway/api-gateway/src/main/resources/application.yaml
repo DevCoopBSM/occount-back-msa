@@ -55,4 +55,4 @@ management:
     web:
       base-path: /api/v3/actuator
       exposure:
-        include: health
+        include: health,prometheus
