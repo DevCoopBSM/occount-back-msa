@@ -19,6 +19,6 @@ class WalletJpaEntity(
     private var version: Long = 0L,
 ) {
     fun getUserId() = userId
-    fun getBalance() = point
+    fun getPoint() = point
     fun getVersion() = version
 }

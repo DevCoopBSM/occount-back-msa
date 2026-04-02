@@ -28,7 +28,7 @@ payment:
     secret: ${PAYMENT_API_SECRET_KEY}
 member:
   read-api:
-    url: ${MEMBER_API_URL:http://localhost:8081/api/v3}
+    url: ${MEMBER_API_URL}
 
 management:
   endpoints:

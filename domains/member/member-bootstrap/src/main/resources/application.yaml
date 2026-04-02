@@ -4,7 +4,7 @@ server:
 
 spring:
   application:
-    name: item-api
+    name: member-api
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
     username: ${DB_USER}
@@ -22,16 +22,16 @@ jwt:
   header: ${JWT_HEADER}
   secret-key: ${JWT_SECRET_KEY}
 
-toss:
-  api:
-    url: ${OCCOUNT_TOSS_API_URL}
-
 app:
-  stock-sync:
-    cron: ${APP_STOCK_SYNC_CRON:0 */5 * * * *}
+  default-pin: ${DEFAULT_PIN}
 
 management:
   endpoints:
     web:
       exposure:
         include: health,prometheus
+
+internal:
+  wallet:
+    api:
+      base-url: ${INTERNAL_WALLET_BASE_URL}
