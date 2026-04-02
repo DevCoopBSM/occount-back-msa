@@ -28,7 +28,7 @@ toss:
 
 app:
   stock-sync:
-    cron: ${APP_STOCK_SYNC_CRON:0 */5 * * * *}
+    cron: ${APP_STOCK_SYNC_CRON}
 
 management:
   endpoints:
