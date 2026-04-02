@@ -4,7 +4,7 @@ server:
 
 spring:
   application:
-    name: member-api
+    name: item-api
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
     username: ${DB_USER}
@@ -22,8 +22,13 @@ jwt:
   header: ${JWT_HEADER}
   secret-key: ${JWT_SECRET_KEY}
 
+toss:
+  api:
+    url: ${OCCOUNT_TOSS_API_URL}
+
 app:
-  default-pin: ${DEFAULT_PIN:0000}
+  stock-sync:
+    cron: ${APP_STOCK_SYNC_CRON}
 
 management:
   endpoints:
