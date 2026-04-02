@@ -13,7 +13,7 @@ class WalletClientConfig {
 
     @Bean
     fun walletClient(
-        @Value("\${internal.wallet.api.url}") baseUrl: String,
+        @Value("\${internal.api.base-url}") baseUrl: String,
     ): WalletClient {
         val restClient = RestClient.builder()
             .baseUrl(baseUrl)

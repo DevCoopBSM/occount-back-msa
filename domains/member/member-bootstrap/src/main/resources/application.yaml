@@ -32,6 +32,5 @@ management:
         include: health,prometheus
 
 internal:
-  wallet:
-    api:
-      url: ${WALLET_API_URL}
+  api:
+    base-url: ${INTERNAL_BASE_URL}
