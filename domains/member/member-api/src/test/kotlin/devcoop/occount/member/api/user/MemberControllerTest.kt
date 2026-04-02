@@ -17,6 +17,7 @@ class MemberControllerTest {
         val controller = MemberController(userPreOrderInfoQueryService)
         val expected = UserPreOrderInfoResponse(
             username = "Tester",
+            point = 7000,
         )
 
         `when`(userPreOrderInfoQueryService.findPreOrderInfo(7L)).thenReturn(expected)
