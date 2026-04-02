@@ -23,10 +23,15 @@ jwt:
   secret-key: ${JWT_SECRET_KEY}
 
 app:
-  default-pin: ${DEFAULT_PIN:0000}
+  default-pin: ${DEFAULT_PIN}
 
 management:
   endpoints:
     web:
       exposure:
         include: health,prometheus
+
+internal:
+  wallet:
+    api:
+      url: ${WALLET_APU_URL}
