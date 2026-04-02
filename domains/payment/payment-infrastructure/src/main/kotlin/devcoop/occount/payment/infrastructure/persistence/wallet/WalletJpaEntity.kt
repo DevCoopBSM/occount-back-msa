@@ -7,7 +7,7 @@ import jakarta.persistence.Table
 import jakarta.persistence.Version
 
 @Entity
-@Table(name = "user_point")
+@Table(name = "wallet")
 class WalletJpaEntity(
     @Id
     @field:Column(name = "user_id", nullable = false)
