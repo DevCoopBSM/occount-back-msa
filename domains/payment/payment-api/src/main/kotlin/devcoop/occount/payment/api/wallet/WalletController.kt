@@ -19,7 +19,7 @@ class WalletController(
     private val getChargeHistoryQueryService: GetChargeHistoryQueryService,
 ) {
     @GetMapping("/point")
-    fun getPoint(httpRequest: HttpServletRequest): WalletPointResponse {
+    fun getBalance(httpRequest: HttpServletRequest): WalletPointResponse {
         val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
         return WalletPointResponse(getWalletPointQueryService.getPoint(userId))
     }

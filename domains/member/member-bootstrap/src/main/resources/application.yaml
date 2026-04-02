@@ -34,4 +34,4 @@ management:
 internal:
   wallet:
     api:
-      url: ${WALLET_APU_URL}
+      url: ${WALLET_API_URL}
