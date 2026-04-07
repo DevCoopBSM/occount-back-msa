@@ -4,4 +4,5 @@ enum class ChargeReason {
     EVENT,
     REWARD,
     PURCHASE,
+    ORDER_CANCELLATION,
 }
