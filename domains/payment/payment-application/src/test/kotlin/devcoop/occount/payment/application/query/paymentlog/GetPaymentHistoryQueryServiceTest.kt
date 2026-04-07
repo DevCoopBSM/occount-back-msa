@@ -29,6 +29,7 @@ class GetPaymentHistoryQueryServiceTest {
     private class StubPaymentLogRepository(
         private val logs: List<PaymentLog>,
     ) : PaymentLogRepository {
+        override fun findById(paymentId: Long): PaymentLog? = logs.firstOrNull { it.getPaymentId() == paymentId }
         override fun findByUserId(userId: Long): List<PaymentLog> = logs
         override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<PaymentLog> = logs
         override fun findByPaymentType(paymentType: PaymentType): List<PaymentLog> = logs
