@@ -6,22 +6,24 @@ import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.core.common.event.OrderItemPayload
 import devcoop.occount.core.common.event.OrderPaymentCompensatedEvent
 import devcoop.occount.core.common.event.OrderPaymentCompensationFailedEvent
-import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
 import devcoop.occount.core.common.event.OrderPaymentCompletedEvent
 import devcoop.occount.core.common.event.OrderPaymentFailedEvent
 import devcoop.occount.core.common.event.OrderPaymentPayload
 import devcoop.occount.core.common.event.OrderRequestedEvent
 import devcoop.occount.core.common.event.OrderStockCompensatedEvent
 import devcoop.occount.core.common.event.OrderStockCompensationFailedEvent
-import devcoop.occount.core.common.event.OrderStockCompensationItemPayload
-import devcoop.occount.core.common.event.OrderStockCompensationRequestedEvent
 import devcoop.occount.core.common.event.OrderStockCompletedEvent
 import devcoop.occount.core.common.event.OrderStockFailedEvent
 import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderLine
 import devcoop.occount.order.domain.order.OrderPayment
+import devcoop.occount.order.domain.order.OrderPaymentResult
 import devcoop.occount.order.domain.order.OrderStatus
 import devcoop.occount.order.domain.order.OrderStepStatus
+import devcoop.occount.order.domain.order.canCancel
+import devcoop.occount.order.domain.order.isFinalForClient
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
@@ -30,68 +32,99 @@ import org.springframework.transaction.support.TransactionTemplate
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 @Service
 class OrderService(
     private val orderRepository: OrderRepository,
     private val eventPublisher: EventPublisher,
+    private val compensationService: OrderCompensationService,
     transactionManager: PlatformTransactionManager,
+    @param:Value("\${order.timeout-seconds:30}") private val timeoutSeconds: Long,
 ) {
     private val transactionTemplate = TransactionTemplate(transactionManager).apply {
         propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW
     }
 
-    fun order(request: OrderRequest, userId: Long): OrderResponse {
-        val order = transactionTemplate.execute {
-            val createdOrder = orderRepository.save(
-                OrderAggregate(
-                    orderId = UUID.randomUUID().toString(),
-                    userId = userId,
-                    lines = request.orderInfos.map { orderInfo ->
-                        OrderLine(
-                            itemId = orderInfo.itemId,
-                            itemNameSnapshot = orderInfo.itemName,
-                            unitPrice = orderInfo.itemPrice,
-                            quantity = orderInfo.orderQuantity,
-                            totalPrice = orderInfo.totalPrice,
-                        )
-                    },
-                    payment = OrderPayment(
-                        type = request.paymentType,
-                        totalAmount = request.totalAmount,
+    private val pendingFutures = ConcurrentHashMap<String, CompletableFuture<OrderResponse>>()
+
+    fun order(request: OrderRequest, userId: Long): CompletableFuture<OrderResponse> {
+        request.orderInfos.forEach { it.validate() }
+
+        val orderId = UUID.randomUUID().toString()
+
+        val future = CompletableFuture<OrderResponse>()
+            .orTimeout(timeoutSeconds, TimeUnit.SECONDS)
+            .exceptionally { ex ->
+                if (ex is TimeoutException) {
+                    log.warn("주문 처리 시간 초과 - 주문={}", orderId)
+                    handleTimeout(orderId, userId)
+                } else {
+                    pendingFutures.remove(orderId)
+                    throw ex
+                }
+            }
+
+        pendingFutures[orderId] = future
+
+        try {
+            transactionTemplate.executeWithoutResult {
+                val createdOrder = orderRepository.save(
+                    OrderAggregate(
+                        orderId = orderId,
+                        userId = userId,
+                        lines = request.orderInfos.map { orderInfo ->
+                            OrderLine(
+                                itemId = orderInfo.itemId,
+                                itemNameSnapshot = orderInfo.itemName,
+                                unitPrice = orderInfo.itemPrice,
+                                quantity = orderInfo.orderQuantity,
+                                totalPrice = orderInfo.totalPrice,
+                            )
+                        },
+                        payment = OrderPayment(
+                            type = request.paymentType,
+                            totalAmount = request.totalAmount,
+                        ),
+                        status = OrderStatus.PROCESSING,
+                        expiresAt = Instant.now().plus(Duration.ofSeconds(timeoutSeconds)),
                     ),
-                    status = OrderStatus.PROCESSING,
-                    expiresAt = Instant.now().plus(TIMEOUT),
-                ),
-            )
+                )
 
-            eventPublisher.publish(
-                topic = DomainTopics.ORDER_REQUESTED,
-                key = createdOrder.orderId,
-                eventType = DomainEventTypes.ORDER_REQUESTED,
-                payload = OrderRequestedEvent(
-                    orderId = createdOrder.orderId,
-                    userId = userId,
-                    payment = OrderPaymentPayload(
-                        type = createdOrder.payment.type,
-                        totalAmount = createdOrder.payment.totalAmount,
+                eventPublisher.publish(
+                    topic = DomainTopics.ORDER_REQUESTED,
+                    key = createdOrder.orderId,
+                    eventType = DomainEventTypes.ORDER_REQUESTED,
+                    payload = OrderRequestedEvent(
+                        orderId = createdOrder.orderId,
+                        userId = userId,
+                        payment = OrderPaymentPayload(
+                            type = createdOrder.payment.type,
+                            totalAmount = createdOrder.payment.totalAmount,
+                        ),
+                        items = createdOrder.lines.map { line ->
+                            OrderItemPayload(
+                                itemId = line.itemId,
+                                itemName = line.itemNameSnapshot,
+                                itemPrice = line.unitPrice,
+                                quantity = line.quantity,
+                                totalPrice = line.totalPrice,
+                            )
+                        },
                     ),
-                    items = createdOrder.lines.map { line ->
-                        OrderItemPayload(
-                            itemId = line.itemId,
-                            itemName = line.itemNameSnapshot,
-                            itemPrice = line.unitPrice,
-                            quantity = line.quantity,
-                            totalPrice = line.totalPrice,
-                        )
-                    },
-                ),
-            )
+                )
 
-            createdOrder
-        } ?: throw IllegalStateException("Order transaction returned null")
+                log.info("주문 생성 완료 - 주문={} 사용자={}", createdOrder.orderId, userId)
+            }
+        } catch (ex: Exception) {
+            pendingFutures.remove(orderId)
+            future.completeExceptionally(ex)
+        }
 
-        return awaitResult(order.orderId, userId)
+        return future
     }
 
     fun cancel(orderId: String, userId: Long): OrderResponse {
@@ -105,12 +138,13 @@ class OrderService(
             current.copy(
                 cancelRequested = true,
                 status = OrderStatus.CANCEL_REQUESTED,
-                failureReason = current.failureReason ?: "Order cancelled by user",
+                failureReason = current.failureReason ?: "사용자에 의해 주문이 취소되었습니다",
             )
         }
 
-        scheduleCompensations(updated.orderId)
-        return toResponse(orderRepository.findById(orderId) ?: updated)
+        compensationService.scheduleCompensations(updated.orderId)
+        completeIfFinal(updated)
+        return toResponse(updated)
     }
 
     fun handlePaymentCompleted(event: OrderPaymentCompletedEvent) {
@@ -121,15 +155,18 @@ class OrderService(
 
             current.copy(
                 paymentStatus = OrderStepStatus.SUCCEEDED,
-                paymentLogId = event.paymentLogId,
-                pointsUsed = event.pointsUsed,
-                cardAmount = event.cardAmount,
-                transactionId = event.transactionId,
-                approvalNumber = event.approvalNumber,
+                paymentResult = OrderPaymentResult(
+                    paymentLogId = event.paymentLogId,
+                    pointsUsed = event.pointsUsed,
+                    cardAmount = event.cardAmount,
+                    transactionId = event.transactionId,
+                    approvalNumber = event.approvalNumber,
+                ),
             )
         }
 
-        scheduleCompensations(updated.orderId)
+        compensationService.scheduleCompensations(updated.orderId)
+        completeIfFinal(updated)
     }
 
     fun handlePaymentFailed(event: OrderPaymentFailedEvent) {
@@ -144,7 +181,8 @@ class OrderService(
             )
         }
 
-        scheduleCompensations(updated.orderId)
+        compensationService.scheduleCompensations(updated.orderId)
+        completeIfFinal(updated)
     }
 
     fun handleStockCompleted(event: OrderStockCompletedEvent) {
@@ -156,7 +194,8 @@ class OrderService(
             current.copy(stockStatus = OrderStepStatus.SUCCEEDED)
         }
 
-        scheduleCompensations(updated.orderId)
+        compensationService.scheduleCompensations(updated.orderId)
+        completeIfFinal(updated)
     }
 
     fun handleStockFailed(event: OrderStockFailedEvent) {
@@ -171,65 +210,59 @@ class OrderService(
             )
         }
 
-        scheduleCompensations(updated.orderId)
+        compensationService.scheduleCompensations(updated.orderId)
+        completeIfFinal(updated)
     }
 
     fun handlePaymentCompensated(event: OrderPaymentCompensatedEvent) {
-        updateOrder(event.orderId) { current ->
+        val updated = updateOrder(event.orderId) { current ->
+            if (current.paymentStatus != OrderStepStatus.SUCCEEDED) {
+                return@updateOrder current
+            }
             current.copy(paymentStatus = OrderStepStatus.COMPENSATED)
         }
+        completeIfFinal(updated)
     }
 
     fun handlePaymentCompensationFailed(event: OrderPaymentCompensationFailedEvent) {
-        updateOrder(event.orderId) { current ->
+        val updated = updateOrder(event.orderId) { current ->
+            if (current.paymentStatus != OrderStepStatus.SUCCEEDED) {
+                return@updateOrder current
+            }
             current.copy(
                 paymentStatus = OrderStepStatus.COMPENSATION_FAILED,
                 failureReason = current.failureReason ?: event.reason,
             )
         }
+        completeIfFinal(updated)
     }
 
     fun handleStockCompensated(event: OrderStockCompensatedEvent) {
-        updateOrder(event.orderId) { current ->
+        val updated = updateOrder(event.orderId) { current ->
+            if (current.stockStatus != OrderStepStatus.SUCCEEDED) {
+                return@updateOrder current
+            }
             current.copy(stockStatus = OrderStepStatus.COMPENSATED)
         }
+        completeIfFinal(updated)
     }
 
     fun handleStockCompensationFailed(event: OrderStockCompensationFailedEvent) {
-        updateOrder(event.orderId) { current ->
+        val updated = updateOrder(event.orderId) { current ->
+            if (current.stockStatus != OrderStepStatus.SUCCEEDED) {
+                return@updateOrder current
+            }
             current.copy(
                 stockStatus = OrderStepStatus.COMPENSATION_FAILED,
                 failureReason = current.failureReason ?: event.reason,
             )
         }
+        completeIfFinal(updated)
     }
 
-    private fun awaitResult(orderId: String, userId: Long): OrderResponse {
-        val deadline = Instant.now().plus(TIMEOUT)
+    private fun handleTimeout(orderId: String, userId: Long): OrderResponse {
+        pendingFutures.remove(orderId)
 
-        while (true) {
-            val current = orderRepository.findById(orderId)
-                ?: throw OrderNotFoundException()
-            validateOwnership(current, userId)
-
-            if (current.status == OrderStatus.COMPLETED ||
-                current.status == OrderStatus.FAILED ||
-                current.status == OrderStatus.CANCELLED ||
-                current.status == OrderStatus.COMPENSATION_FAILED ||
-                current.status == OrderStatus.TIMED_OUT
-            ) {
-                return toResponse(current)
-            }
-
-            if (Instant.now().isAfter(deadline)) {
-                return timeout(orderId, userId)
-            }
-
-            Thread.sleep(POLL_INTERVAL_MILLIS)
-        }
-    }
-
-    private fun timeout(orderId: String, userId: Long): OrderResponse {
         val updated = updateOrder(orderId) { current ->
             validateOwnership(current, userId)
 
@@ -240,66 +273,18 @@ class OrderService(
             current.copy(
                 cancelRequested = true,
                 status = OrderStatus.TIMED_OUT,
-                failureReason = current.failureReason ?: "Order processing timed out",
+                failureReason = current.failureReason ?: "주문 처리 시간이 초과되었습니다",
             )
         }
 
-        scheduleCompensations(updated.orderId)
-        return toResponse(orderRepository.findById(orderId) ?: updated)
+        compensationService.scheduleCompensations(updated.orderId)
+        return toResponse(updated)
     }
 
-    private fun scheduleCompensations(orderId: String) {
-        repeat(MAX_RETRY_COUNT) { attempt ->
-            try {
-                transactionTemplate.executeWithoutResult {
-                    var current = orderRepository.findById(orderId)
-                        ?: throw OrderNotFoundException()
-
-                    if (shouldRequestPaymentCompensation(current)) {
-                        current = orderRepository.save(
-                            current.copy(paymentCompensationRequested = true),
-                        )
-                        eventPublisher.publish(
-                            topic = DomainTopics.ORDER_PAYMENT_COMPENSATION_REQUESTED,
-                            key = current.orderId,
-                            eventType = DomainEventTypes.ORDER_PAYMENT_COMPENSATION_REQUESTED,
-                            payload = OrderPaymentCompensationRequestedEvent(
-                                orderId = current.orderId,
-                                userId = current.userId,
-                                paymentLogId = current.paymentLogId,
-                                pointsUsed = current.pointsUsed,
-                                cardAmount = current.cardAmount,
-                            ),
-                        )
-                    }
-
-                    if (shouldRequestStockCompensation(current)) {
-                        current = orderRepository.save(
-                            current.copy(stockCompensationRequested = true),
-                        )
-                        eventPublisher.publish(
-                            topic = DomainTopics.ORDER_STOCK_COMPENSATION_REQUESTED,
-                            key = current.orderId,
-                            eventType = DomainEventTypes.ORDER_STOCK_COMPENSATION_REQUESTED,
-                            payload = OrderStockCompensationRequestedEvent(
-                                orderId = current.orderId,
-                                items = current.lines.map { line ->
-                                    OrderStockCompensationItemPayload(
-                                        itemId = line.itemId,
-                                        quantity = line.quantity,
-                                    )
-                                },
-                            ),
-                        )
-                    }
-                }
-                return
-            } catch (ex: OptimisticLockingFailureException) {
-                if (attempt == MAX_RETRY_COUNT - 1) {
-                    throw ex
-                }
-            }
-        }
+    private fun completeIfFinal(order: OrderAggregate) {
+        if (!order.status.isFinalForClient()) return
+        val future = pendingFutures.remove(order.orderId) ?: return
+        future.complete(toResponse(order))
     }
 
     private fun updateOrder(
@@ -312,117 +297,18 @@ class OrderService(
                     val current = orderRepository.findById(orderId)
                         ?: throw OrderNotFoundException()
                     val updated = update(current)
-                    orderRepository.save(reconcile(updated))
-                } ?: throw IllegalStateException("Order transaction returned null")
+                    orderRepository.save(updated.reconcile())
+                }
             } catch (ex: OptimisticLockingFailureException) {
+                log.warn("낙관적 락 충돌 - 주문={} 시도={}", orderId, attempt)
                 if (attempt == MAX_RETRY_COUNT - 1) {
                     throw ex
                 }
+                Thread.sleep(BASE_BACKOFF_MILLIS * (1L shl attempt))
             }
         }
 
-        throw IllegalStateException("Unreachable order retry state")
-    }
-
-    private fun reconcile(order: OrderAggregate): OrderAggregate {
-        if (order.paymentStatus == OrderStepStatus.COMPENSATION_FAILED ||
-            order.stockStatus == OrderStepStatus.COMPENSATION_FAILED
-        ) {
-            return order.copy(status = OrderStatus.COMPENSATION_FAILED)
-        }
-
-        if (order.cancelRequested) {
-            if (order.paymentStatus.isPending() || order.stockStatus.isPending()) {
-                return order.copy(
-                    status = if (order.status == OrderStatus.TIMED_OUT) {
-                        OrderStatus.TIMED_OUT
-                    } else {
-                        OrderStatus.CANCEL_REQUESTED
-                    },
-                )
-            }
-
-            if (order.paymentStatus.requiresCompensation() || order.stockStatus.requiresCompensation()) {
-                return order.copy(
-                    status = if (order.status == OrderStatus.TIMED_OUT) {
-                        OrderStatus.TIMED_OUT
-                    } else {
-                        OrderStatus.COMPENSATING
-                    },
-                )
-            }
-
-            if (order.paymentStatus.isCompensationResolved() && order.stockStatus.isCompensationResolved()) {
-                return order.copy(status = OrderStatus.CANCELLED)
-            }
-        }
-
-        if (order.paymentStatus == OrderStepStatus.SUCCEEDED &&
-            order.stockStatus == OrderStepStatus.SUCCEEDED
-        ) {
-            return order.copy(status = OrderStatus.COMPLETED)
-        }
-
-        val hasFailure = order.paymentStatus == OrderStepStatus.FAILED ||
-            order.stockStatus == OrderStepStatus.FAILED
-        if (hasFailure) {
-            if (order.paymentStatus == OrderStepStatus.PENDING ||
-                order.stockStatus == OrderStepStatus.PENDING
-            ) {
-                return order.copy(status = OrderStatus.PROCESSING)
-            }
-
-            if (order.paymentStatus.requiresCompensation() || order.stockStatus.requiresCompensation()) {
-                return order.copy(status = OrderStatus.COMPENSATING)
-            }
-
-            return order.copy(status = OrderStatus.FAILED)
-        }
-
-        return order.copy(status = OrderStatus.PROCESSING)
-    }
-
-    private fun shouldRequestPaymentCompensation(order: OrderAggregate): Boolean {
-        return order.shouldCompensate() &&
-            order.paymentStatus == OrderStepStatus.SUCCEEDED &&
-            !order.paymentCompensationRequested
-    }
-
-    private fun shouldRequestStockCompensation(order: OrderAggregate): Boolean {
-        return order.shouldCompensate() &&
-            order.stockStatus == OrderStepStatus.SUCCEEDED &&
-            !order.stockCompensationRequested
-    }
-
-    private fun OrderAggregate.shouldCompensate(): Boolean {
-        return cancelRequested ||
-            paymentStatus == OrderStepStatus.FAILED ||
-            stockStatus == OrderStepStatus.FAILED ||
-            status == OrderStatus.TIMED_OUT
-    }
-
-    private fun OrderStepStatus.isPending(): Boolean = this == OrderStepStatus.PENDING
-
-    private fun OrderStepStatus.requiresCompensation(): Boolean = this == OrderStepStatus.SUCCEEDED
-
-    private fun OrderStepStatus.isCompensationResolved(): Boolean {
-        return this == OrderStepStatus.FAILED || this == OrderStepStatus.COMPENSATED
-    }
-
-    private fun OrderStatus.canCancel(): Boolean {
-        return this == OrderStatus.PENDING ||
-            this == OrderStatus.PROCESSING ||
-            this == OrderStatus.CANCEL_REQUESTED ||
-            this == OrderStatus.COMPENSATING ||
-            this == OrderStatus.TIMED_OUT
-    }
-
-    private fun OrderStatus.isFinalForClient(): Boolean {
-        return this == OrderStatus.COMPLETED ||
-            this == OrderStatus.FAILED ||
-            this == OrderStatus.CANCELLED ||
-            this == OrderStatus.COMPENSATION_FAILED ||
-            this == OrderStatus.TIMED_OUT
+        throw OrderTransactionFailedException()
     }
 
     private fun validateOwnership(order: OrderAggregate, userId: Long) {
@@ -439,9 +325,9 @@ class OrderService(
         )
     }
 
-    private companion object {
-        const val MAX_RETRY_COUNT = 3
-        const val POLL_INTERVAL_MILLIS = 200L
-        val TIMEOUT: Duration = Duration.ofSeconds(30)
+    companion object {
+        private val log = LoggerFactory.getLogger(OrderService::class.java)
+        private const val MAX_RETRY_COUNT = 3
+        private const val BASE_BACKOFF_MILLIS = 50L
     }
 }

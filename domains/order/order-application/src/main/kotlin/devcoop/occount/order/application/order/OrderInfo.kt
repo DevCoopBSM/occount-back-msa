@@ -6,4 +6,10 @@ data class OrderInfo(
     val itemPrice: Int,
     val orderQuantity: Int,
     val totalPrice: Int,
-)
+) {
+    fun validate() {
+        if (itemPrice * orderQuantity != totalPrice) {
+            throw OrderInvalidTotalPriceException()
+        }
+    }
+}
