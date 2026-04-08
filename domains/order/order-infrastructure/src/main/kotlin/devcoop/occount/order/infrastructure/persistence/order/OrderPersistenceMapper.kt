@@ -3,6 +3,7 @@ package devcoop.occount.order.infrastructure.persistence.order
 import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderLine
 import devcoop.occount.order.domain.order.OrderPayment
+import devcoop.occount.order.domain.order.OrderPaymentResult
 
 object OrderPersistenceMapper {
     fun toDomain(entity: OrderJpaEntity): OrderAggregate {
@@ -20,11 +21,13 @@ object OrderPersistenceMapper {
             cancelRequested = entity.isCancelRequested(),
             failureReason = entity.getFailureReason(),
             expiresAt = entity.getExpiresAt(),
-            paymentLogId = entity.getPaymentLogId(),
-            pointsUsed = entity.getPointsUsed(),
-            cardAmount = entity.getCardAmount(),
-            transactionId = entity.getTransactionId(),
-            approvalNumber = entity.getApprovalNumber(),
+            paymentResult = OrderPaymentResult(
+                paymentLogId = entity.getPaymentLogId(),
+                pointsUsed = entity.getPointsUsed(),
+                cardAmount = entity.getCardAmount(),
+                transactionId = entity.getTransactionId(),
+                approvalNumber = entity.getApprovalNumber(),
+            ),
             paymentCompensationRequested = entity.isPaymentCompensationRequested(),
             stockCompensationRequested = entity.isStockCompensationRequested(),
             version = entity.getVersion(),
@@ -43,11 +46,11 @@ object OrderPersistenceMapper {
             cancelRequested = domain.cancelRequested,
             failureReason = domain.failureReason,
             expiresAt = domain.expiresAt,
-            paymentLogId = domain.paymentLogId,
-            pointsUsed = domain.pointsUsed,
-            cardAmount = domain.cardAmount,
-            transactionId = domain.transactionId,
-            approvalNumber = domain.approvalNumber,
+            paymentLogId = domain.paymentResult.paymentLogId,
+            pointsUsed = domain.paymentResult.pointsUsed,
+            cardAmount = domain.paymentResult.cardAmount,
+            transactionId = domain.paymentResult.transactionId,
+            approvalNumber = domain.paymentResult.approvalNumber,
             paymentCompensationRequested = domain.paymentCompensationRequested,
             stockCompensationRequested = domain.stockCompensationRequested,
             version = domain.version,
