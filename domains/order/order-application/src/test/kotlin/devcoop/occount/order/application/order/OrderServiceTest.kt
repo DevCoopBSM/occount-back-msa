@@ -9,6 +9,7 @@ import devcoop.occount.core.common.event.OrderStockCompletedEvent
 import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderLine
 import devcoop.occount.order.domain.order.OrderPayment
+import devcoop.occount.order.domain.order.OrderPaymentResult
 import devcoop.occount.order.domain.order.OrderStatus
 import devcoop.occount.order.domain.order.OrderStepStatus
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -27,7 +28,7 @@ class OrderServiceTest {
             initialOrder = orderFixture(),
         )
         val eventPublisher = FakeEventPublisher()
-        val orderService = OrderService(orderRepository, eventPublisher, TestTransactionManager())
+        val orderService = OrderService(orderRepository, eventPublisher, FakeCompensationService(orderRepository, eventPublisher, TestTransactionManager()), TestTransactionManager(), 30L)
 
         orderService.handlePaymentFailed(
             OrderPaymentFailedEvent(
@@ -58,7 +59,7 @@ class OrderServiceTest {
             ),
         )
         val eventPublisher = FakeEventPublisher()
-        val orderService = OrderService(orderRepository, eventPublisher, TestTransactionManager())
+        val orderService = OrderService(orderRepository, eventPublisher, FakeCompensationService(orderRepository, eventPublisher, TestTransactionManager()), TestTransactionManager(), 30L)
 
         orderService.cancel(ORDER_ID, USER_ID)
 
@@ -92,11 +93,19 @@ class OrderServiceTest {
             status = OrderStatus.PROCESSING,
             paymentStatus = paymentStatus,
             stockStatus = stockStatus,
-            paymentLogId = paymentLogId,
-            pointsUsed = pointsUsed,
+            paymentResult = OrderPaymentResult(
+                paymentLogId = paymentLogId,
+                pointsUsed = pointsUsed,
+            ),
             expiresAt = Instant.now().plusSeconds(30),
         )
     }
+
+    private class FakeCompensationService(
+        private val orderRepository: OrderRepository,
+        private val eventPublisher: EventPublisher,
+        transactionManager: PlatformTransactionManager,
+    ) : OrderCompensationService(orderRepository, eventPublisher, transactionManager)
 
     private class FakeOrderRepository(
         initialOrder: OrderAggregate,
