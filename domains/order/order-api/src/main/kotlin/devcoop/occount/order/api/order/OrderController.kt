@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.context.request.async.DeferredResult
 
 @RestController
 @RequestMapping("/orders")
@@ -23,10 +24,25 @@ class OrderController(
     fun handleOrder(
         @RequestBody orderRequest: OrderRequest,
         httpServletRequest: HttpServletRequest,
-    ): ResponseEntity<OrderResponse> {
+    ): DeferredResult<ResponseEntity<OrderResponse>> {
         val authPrincipal = RequestAuthPrincipalResolver.resolve(httpServletRequest)
-        val response = orderService.order(orderRequest, authPrincipal.userId)
-        return ResponseEntity.status(resolveStatus(response)).body(response)
+
+        val deferredResult = DeferredResult<ResponseEntity<OrderResponse>>()
+
+        orderService.order(orderRequest, authPrincipal.userId)
+            .thenAccept { response ->
+                deferredResult.setResult(
+                    ResponseEntity.status(resolveStatus(response)).body(response),
+                )
+            }
+            .exceptionally { ex ->
+                deferredResult.setErrorResult(
+                    ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build<OrderResponse>(),
+                )
+                null
+            }
+
+        return deferredResult
     }
 
     @PostMapping("/{orderId}/cancel")
