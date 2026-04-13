@@ -7,7 +7,7 @@ import jakarta.persistence.Table
 import jakarta.persistence.Version
 
 @Entity
-@Table(name = "wallet")
+@Table(name = "user_point")
 class WalletJpaEntity(
     @Id
     @field:Column(name = "user_id", nullable = false)
@@ -19,6 +19,6 @@ class WalletJpaEntity(
     private var version: Long = 0L,
 ) {
     fun getUserId() = userId
-    fun getPoint() = point
+    fun getBalance() = point
     fun getVersion() = version
 }
