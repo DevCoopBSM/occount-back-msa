@@ -38,7 +38,6 @@ class ApiAdviceHandler {
             -> HttpStatus.UNAUTHORIZED
 
             ErrorMessage.USER_NOT_FOUND,
-            ErrorMessage.POINT_NOT_FOUND,
             ErrorMessage.ITEM_NOT_FOUND,
             ErrorMessage.ITEM_NOT_SYNCHRONIZED,
             ErrorMessage.PAYMENT_LOG_NOT_FOUND,

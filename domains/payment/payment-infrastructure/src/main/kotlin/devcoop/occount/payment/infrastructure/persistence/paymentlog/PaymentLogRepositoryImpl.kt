@@ -10,11 +10,6 @@ import java.time.LocalDateTime
 class PaymentLogRepositoryImpl(
     private val persistenceRepository: PaymentLogPersistenceRepository
 ) : PaymentLogRepository {
-    override fun findById(paymentId: Long): PaymentLog? {
-        return persistenceRepository.findById(paymentId)
-            .map(PaymentLogPersistenceMapper::toDomain)
-            .orElse(null)
-    }
 
     override fun findByUserId(userId: Long): List<PaymentLog> {
         return persistenceRepository.findByUserId(userId)
