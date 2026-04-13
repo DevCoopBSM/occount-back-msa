@@ -37,7 +37,7 @@ class MixedPaymentUseCase(
         )
         val pointTransaction = deductWalletUseCase.deduct(userId, pointsUsed)
 
-        paymentLogRepository.save(
+        val paymentLog = paymentLogRepository.save(
             PaymentMapper.toMixedPaymentLog(
                 userId = userId,
                 paymentDetails = details,
@@ -56,6 +56,7 @@ class MixedPaymentUseCase(
             remainingPoints = pointTransaction.afterPoint,
             approvalNumber = approved.transaction?.approvalNumber,
             transactionId = approved.transaction?.transactionId,
+            paymentLogId = paymentLog.getPaymentId(),
         )
     }
 }
