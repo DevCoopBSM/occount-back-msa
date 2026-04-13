@@ -10,8 +10,8 @@ import kotlin.test.assertFailsWith
 
 class WalletTest {
     @Test
-    @DisplayName("충전 시 잔액에 금액이 더해진다")
-    fun `charge adds amount to balance`() {
+    @DisplayName("충전 시 포인트에 금액이 더해진다")
+    fun `charge adds amount to point`() {
         val wallet = Wallet(userId = 1L, point = 100)
 
         val chargedWallet = wallet.charge(30)
@@ -30,8 +30,8 @@ class WalletTest {
     }
 
     @Test
-    @DisplayName("차감 시 잔액이 부족하면 예외가 발생한다")
-    fun `deduct rejects insufficient balance`() {
+    @DisplayName("차감 시 포인트가 부족하면 예외가 발생한다")
+    fun `deduct rejects insufficient point`() {
         val wallet = Wallet(userId = 1L, point = 100)
 
         assertFailsWith<InsufficientPointsException> {
@@ -40,8 +40,8 @@ class WalletTest {
     }
 
     @Test
-    @DisplayName("차감 시 잔액에서 금액이 빠진다")
-    fun `deduct subtracts amount from balance`() {
+    @DisplayName("차감 시 포인트에서 금액이 빠진다")
+    fun `deduct subtracts amount from point`() {
         val wallet = Wallet(userId = 1L, point = 100)
 
         val deductedWallet = wallet.deduct(40)
