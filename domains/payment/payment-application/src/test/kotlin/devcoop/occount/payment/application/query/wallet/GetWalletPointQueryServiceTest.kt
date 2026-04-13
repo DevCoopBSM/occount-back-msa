@@ -10,8 +10,8 @@ import kotlin.test.assertFailsWith
 
 class GetWalletPointQueryServiceTest {
     @Test
-    @DisplayName("포인트 조회 시 기존 포인트 지갑의 포인트를 반환한다")
-    fun `getPoint returns existing point wallet point`() {
+    @DisplayName("잔액 조회 시 기존 포인트 지갑의 잔액을 반환한다")
+    fun `getBalance returns existing point wallet balance`() {
         val repository = FakeWalletRepository(
             wallets = mutableMapOf(1L to Wallet(userId = 1L, point = 50)),
         )
@@ -23,8 +23,8 @@ class GetWalletPointQueryServiceTest {
     }
 
     @Test
-    @DisplayName("포인트 조회 시 포인트 지갑이 없으면 WalletNotFound가 발생한다")
-    fun `getPoint throws WalletNotFound when wallet does not exist`() {
+    @DisplayName("잔액 조회 시 포인트 지갑이 없으면 WalletNotFound가 발생한다")
+    fun `getBalance throws WalletNotFound when wallet does not exist`() {
         val repository = FakeWalletRepository()
         val queryService = GetWalletPointQueryService(repository)
 

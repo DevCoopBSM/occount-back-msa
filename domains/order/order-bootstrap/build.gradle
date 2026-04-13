@@ -8,7 +8,6 @@ bootJar {
 
 dependencies {
     implementation project(':domains:order:order-api')
-    implementation project(':domains:order:order-infrastructure')
     implementation project(':modules:db')
     implementation project(':modules:kafka')
 

@@ -10,7 +10,7 @@ class AuthenticationPolicy {
         rule("/api/v3/auth").permitAll()
         rule("/api/v3/auth/**").permitAll()
 
-        rule(HttpMethod.GET, "/api/v3/items/without-barcode").authenticated()
+        rule(HttpMethod.GET, "/api/v3/items/without-barcode").permitAll()
         rule(HttpMethod.GET, "/api/v3/items/categories").permitAll()
         rule(HttpMethod.GET, "/api/v3/items/{barcode}").permitAll()
         rule(HttpMethod.GET, "/api/v3/items").permitAll()
