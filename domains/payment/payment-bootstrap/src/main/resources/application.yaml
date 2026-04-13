@@ -1,0 +1,43 @@
+server:
+  servlet:
+    context-path: /api/v3
+
+spring:
+  application:
+    name: payment-api
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+
+jwt:
+  access-expiration-time: ${JWT_ACCESS_EXPIRATION_TIME}
+  kiosk-expiration-time: ${JWT_KIOSK_EXPIRATION_TIME}
+  prefix: ${JWT_PREFIX}
+  header: ${JWT_HEADER}
+  secret-key: ${JWT_SECRET_KEY}
+
+payment:
+  legacy-order-requested-cutoff-epoch-millis: ${PAYMENT_LEGACY_ORDER_REQUESTED_CUTOFF_EPOCH_MILLIS:-1}
+  pg:
+    host: ${PG_HOST}
+    port: ${PG_PORT}
+    connect-timeout-millis: ${PG_CONNECT_TIMEOUT_MILLIS:5000}
+    read-timeout-millis: ${PG_READ_TIMEOUT_MILLIS:1000}
+    retry-delay-millis: ${PG_RETRY_DELAY_MILLIS:5000}
+    max-retries: ${PG_MAX_RETRIES:3}
+    transaction-timeout-millis: ${PG_TRANSACTION_TIMEOUT_MILLIS:30000}
+member:
+  read-api:
+    url: ${MEMBER_API_URL}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
