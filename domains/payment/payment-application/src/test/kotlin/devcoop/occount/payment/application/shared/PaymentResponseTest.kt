@@ -35,7 +35,6 @@ class PaymentResponseTest {
             remainingPoints = 0,
             approvalNumber = "APP-2",
             transactionId = "TX-2",
-            paymentLogId = 99L,
         )
 
         assertEquals("success", response.status)
@@ -47,6 +46,5 @@ class PaymentResponseTest {
         assertEquals(0, response.remainingPoints)
         assertEquals("APP-2", response.approvalNumber)
         assertEquals("TX-2", response.transactionId)
-        assertEquals(99L, response.paymentLogId)
     }
 }

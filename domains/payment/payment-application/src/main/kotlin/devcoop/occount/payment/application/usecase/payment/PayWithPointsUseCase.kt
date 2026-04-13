@@ -18,7 +18,7 @@ class PayWithPointsUseCase(
     fun execute(userId: Long, details: PaymentDetails): PaymentResponse {
         val pointTransaction = deductWalletUseCase.deduct(userId, details.totalAmount)
 
-        val paymentLog = paymentLogRepository.save(
+        paymentLogRepository.save(
             PaymentMapper.toPointPaymentLog(userId, details, pointTransaction),
         )
 
@@ -31,7 +31,6 @@ class PayWithPointsUseCase(
             remainingPoints = pointTransaction.afterPoint,
             approvalNumber = null,
             transactionId = null,
-            paymentLogId = paymentLog.getPaymentId(),
         )
     }
 }
