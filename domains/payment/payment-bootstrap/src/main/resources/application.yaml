@@ -23,6 +23,7 @@ jwt:
   secret-key: ${JWT_SECRET_KEY}
 
 payment:
+  legacy-order-requested-cutoff-epoch-millis: ${PAYMENT_LEGACY_ORDER_REQUESTED_CUTOFF_EPOCH_MILLIS:-1}
   pg:
     host: ${PG_HOST}
     port: ${PG_PORT}

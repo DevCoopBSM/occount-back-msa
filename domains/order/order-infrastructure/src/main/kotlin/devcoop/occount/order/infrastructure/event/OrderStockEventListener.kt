@@ -8,7 +8,8 @@ import devcoop.occount.core.common.event.OrderStockCompletedEvent
 import devcoop.occount.core.common.event.OrderStockFailedEvent
 import devcoop.occount.db.outbox.ConsumedEventJpaEntity
 import devcoop.occount.db.outbox.ConsumedEventRepository
-import devcoop.occount.order.application.order.OrderService
+import devcoop.occount.order.application.usecase.order.event.HandleOrderStockEventUseCase
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Component
@@ -17,7 +18,7 @@ import tools.jackson.databind.ObjectMapper
 
 @Component
 class OrderStockEventListener(
-    private val orderService: OrderService,
+    private val handleOrderStockEventUseCase: HandleOrderStockEventUseCase,
     private val consumedEventRepository: ConsumedEventRepository,
     private val objectMapper: ObjectMapper,
 ) {
@@ -31,7 +32,9 @@ class OrderStockEventListener(
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {
         consume("order-stock-completed", eventId) {
-            orderService.handleStockCompleted(objectMapper.readValue(payload, OrderStockCompletedEvent::class.java))
+            handleOrderStockEventUseCase.applyCompletedStock(
+                objectMapper.readValue(payload, OrderStockCompletedEvent::class.java),
+            )
         }
     }
 
@@ -45,7 +48,9 @@ class OrderStockEventListener(
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {
         consume("order-stock-failed", eventId) {
-            orderService.handleStockFailed(objectMapper.readValue(payload, OrderStockFailedEvent::class.java))
+            handleOrderStockEventUseCase.applyFailedStock(
+                objectMapper.readValue(payload, OrderStockFailedEvent::class.java),
+            )
         }
     }
 
@@ -59,7 +64,9 @@ class OrderStockEventListener(
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {
         consume("order-stock-compensated", eventId) {
-            orderService.handleStockCompensated(objectMapper.readValue(payload, OrderStockCompensatedEvent::class.java))
+            handleOrderStockEventUseCase.applyCompensatedStock(
+                objectMapper.readValue(payload, OrderStockCompensatedEvent::class.java),
+            )
         }
     }
 
@@ -73,25 +80,28 @@ class OrderStockEventListener(
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {
         consume("order-stock-compensation-failed", eventId) {
-            orderService.handleStockCompensationFailed(
+            handleOrderStockEventUseCase.applyStockCompensationFailure(
                 objectMapper.readValue(payload, OrderStockCompensationFailedEvent::class.java),
             )
         }
     }
 
     private fun consume(consumerName: String, eventId: String, action: () -> Unit) {
-        if (consumedEventRepository.existsById(processedEventId(consumerName, eventId))) {
+        val processedEventId = processedEventId(consumerName, eventId)
+
+        try {
+            consumedEventRepository.saveAndFlush(
+                ConsumedEventJpaEntity(
+                    id = processedEventId,
+                    consumerName = consumerName,
+                    eventId = eventId,
+                ),
+            )
+        } catch (_: DataIntegrityViolationException) {
             return
         }
 
         action()
-        consumedEventRepository.save(
-            ConsumedEventJpaEntity(
-                id = processedEventId(consumerName, eventId),
-                consumerName = consumerName,
-                eventId = eventId,
-            ),
-        )
     }
 
     private fun processedEventId(consumerName: String, eventId: String): String {

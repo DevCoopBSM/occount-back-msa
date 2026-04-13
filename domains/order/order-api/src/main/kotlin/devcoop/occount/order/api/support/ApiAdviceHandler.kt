@@ -47,6 +47,7 @@ class ApiAdviceHandler {
             ErrorMessage.USER_ALREADY_EXISTS,
             ErrorMessage.TRANSACTION_IN_PROGRESS,
             ErrorMessage.ORDER_CANNOT_CANCEL,
+            ErrorMessage.ORDER_TRANSACTION_FAILED,
             -> HttpStatus.CONFLICT
 
             ErrorMessage.ORDER_ACCESS_DENIED -> HttpStatus.FORBIDDEN

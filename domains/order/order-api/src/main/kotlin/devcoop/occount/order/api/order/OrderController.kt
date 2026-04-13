@@ -1,11 +1,13 @@
 package devcoop.occount.order.api.order
 
 import devcoop.occount.core.common.auth.RequestAuthPrincipalResolver
-import devcoop.occount.order.application.order.OrderService
-import devcoop.occount.order.application.order.OrderRequest
-import devcoop.occount.order.application.order.OrderResponse
+import devcoop.occount.order.application.shared.OrderRequest
+import devcoop.occount.order.application.shared.OrderResponse
+import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
+import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
 import devcoop.occount.order.domain.order.OrderStatus
 import jakarta.servlet.http.HttpServletRequest
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
@@ -14,32 +16,37 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.context.request.async.DeferredResult
+import kotlin.math.max
 
 @RestController
 @RequestMapping("/orders")
 class OrderController(
-    private val orderService: OrderService,
+    private val createOrderUseCase: CreateOrderUseCase,
+    private val cancelOrderUseCase: CancelOrderUseCase,
+    @param:Value("\${order.timeout-seconds:30}") private val timeoutSeconds: Long,
+    @param:Value("\${order.async-timeout-buffer-millis:10000}") private val asyncTimeoutBufferMillis: Long,
 ) {
     @PostMapping
-    fun handleOrder(
+    fun createOrder(
         @RequestBody orderRequest: OrderRequest,
         httpServletRequest: HttpServletRequest,
     ): DeferredResult<ResponseEntity<OrderResponse>> {
         val authPrincipal = RequestAuthPrincipalResolver.resolve(httpServletRequest)
 
-        val deferredResult = DeferredResult<ResponseEntity<OrderResponse>>()
+        val deferredResult = DeferredResult<ResponseEntity<OrderResponse>>(
+            timeoutSeconds * 1000 + max(asyncTimeoutBufferMillis, MIN_ASYNC_TIMEOUT_BUFFER_MILLIS),
+        )
 
-        orderService.order(orderRequest, authPrincipal.userId)
-            .thenAccept { response ->
+        createOrderUseCase.placeOrder(orderRequest, authPrincipal.userId)
+            .whenComplete { response, throwable ->
+                if (throwable != null) {
+                    deferredResult.setErrorResult(unwrap(throwable))
+                    return@whenComplete
+                }
+
                 deferredResult.setResult(
                     ResponseEntity.status(resolveStatus(response)).body(response),
                 )
-            }
-            .exceptionally { ex ->
-                deferredResult.setErrorResult(
-                    ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build<OrderResponse>(),
-                )
-                null
             }
 
         return deferredResult
@@ -51,7 +58,7 @@ class OrderController(
         httpServletRequest: HttpServletRequest,
     ): ResponseEntity<OrderResponse> {
         val authPrincipal = RequestAuthPrincipalResolver.resolve(httpServletRequest)
-        val response = orderService.cancel(orderId, authPrincipal.userId)
+        val response = cancelOrderUseCase.cancel(orderId, authPrincipal.userId)
         return ResponseEntity.status(HttpStatus.OK).body(response)
     }
 
@@ -66,5 +73,16 @@ class OrderController(
 
             else -> HttpStatus.OK
         }
+    }
+
+    private fun unwrap(throwable: Throwable): Throwable {
+        return throwable.cause?.takeIf {
+            throwable is java.util.concurrent.CompletionException ||
+                throwable is java.util.concurrent.ExecutionException
+        } ?: throwable
+    }
+
+    companion object {
+        private const val MIN_ASYNC_TIMEOUT_BUFFER_MILLIS = 5_000L
     }
 }
