@@ -23,9 +23,15 @@ jwt:
   secret-key: ${JWT_SECRET_KEY}
 
 payment:
-  api:
-    url: ${PAYMENT_API_URL}
-    secret: ${PAYMENT_API_SECRET_KEY}
+  legacy-order-requested-cutoff-epoch-millis: ${PAYMENT_LEGACY_ORDER_REQUESTED_CUTOFF_EPOCH_MILLIS:-1}
+  pg:
+    host: ${PG_HOST}
+    port: ${PG_PORT}
+    connect-timeout-millis: ${PG_CONNECT_TIMEOUT_MILLIS:5000}
+    read-timeout-millis: ${PG_READ_TIMEOUT_MILLIS:1000}
+    retry-delay-millis: ${PG_RETRY_DELAY_MILLIS:5000}
+    max-retries: ${PG_MAX_RETRIES:3}
+    transaction-timeout-millis: ${PG_TRANSACTION_TIMEOUT_MILLIS:30000}
 member:
   read-api:
     url: ${MEMBER_API_URL}

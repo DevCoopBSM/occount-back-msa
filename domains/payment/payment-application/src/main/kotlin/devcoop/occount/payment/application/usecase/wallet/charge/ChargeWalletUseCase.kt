@@ -30,7 +30,7 @@ class ChargeWalletUseCase(
                     changeAmount = request.amount,
                     afterPoint = afterPoint,
                 ),
-                chargeReason = ChargeReason.PURCHASE
+                chargeReason = request.reason,
             )
         )
     }
