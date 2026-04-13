@@ -34,8 +34,20 @@ Use module-scoped tasks when changing one area, for example `./gradlew :domains:
 - Prefer names ending in `Test` or `Tests`, matching existing examples like `ArchitectureBoundaryTest` and `DbKioskApplicationTests`.
 - Add focused module-level tests for controller wiring, boundary rules, and service behavior when changing public flows.
 
+## Safe Change Policy
+- Keep diffs minimal and changes localized.
+- Follow the existing codebase structure, patterns, and architecture.
+- Do not introduce arbitrary default values for environment variables in code, config, or docs.
+- Prefer extending existing patterns over introducing new frameworks.
+- Repository rules take precedence over suggestions.
+- Always verify build/tests with the CLI commands above after code changes.
+
 ## Commit & Pull Request Guidelines
-Git history is not available in this workspace, so no repository-specific commit pattern could be verified. Use short imperative commit messages such as `Move service controllers into domain api modules`.
+- If a commit is requested, check `COMMIT.md` first and follow its rules.
+- Split commits into small, clear units by role and responsibility.
+- Separate different change types when possible, such as refactoring, feature work, bug fixes, tests, and docs.
+- Write commit messages in Korean.
+- Do not run `commit`, `amend`, or `push` unless the user explicitly asks.
 
 For pull requests:
 - describe the changed modules and affected flows,
