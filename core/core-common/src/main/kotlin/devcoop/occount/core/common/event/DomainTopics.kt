@@ -3,6 +3,7 @@ package devcoop.occount.core.common.event
 object DomainTopics {
     const val MEMBER_REGISTERED = "member.registered.v1"
     const val ORDER_REQUESTED = "order.requested.v1"
+    const val ORDER_PAYMENT_REQUESTED = "order.payment-requested.v1"
     const val ORDER_PAYMENT_COMPLETED = "order.payment-completed.v1"
     const val ORDER_PAYMENT_FAILED = "order.payment-failed.v1"
     const val ORDER_STOCK_COMPLETED = "order.stock-completed.v1"

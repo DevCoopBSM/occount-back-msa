@@ -3,6 +3,7 @@ package devcoop.occount.core.common.event
 object DomainEventTypes {
     const val MEMBER_REGISTERED = "MemberRegisteredEvent"
     const val ORDER_REQUESTED = "OrderRequestedEvent"
+    const val ORDER_PAYMENT_REQUESTED = "OrderPaymentRequestedEvent"
     const val ORDER_PAYMENT_COMPLETED = "OrderPaymentCompletedEvent"
     const val ORDER_PAYMENT_FAILED = "OrderPaymentFailedEvent"
     const val ORDER_STOCK_COMPLETED = "OrderStockCompletedEvent"

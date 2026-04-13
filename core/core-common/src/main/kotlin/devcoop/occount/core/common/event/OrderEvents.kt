@@ -7,6 +7,13 @@ data class OrderRequestedEvent(
     val items: List<OrderItemPayload>,
 )
 
+data class OrderPaymentRequestedEvent(
+    val orderId: String,
+    val userId: Long,
+    val payment: OrderPaymentPayload,
+    val items: List<OrderItemPayload>,
+)
+
 data class OrderPaymentPayload(
     val type: OrderPaymentType,
     val totalAmount: Int,

@@ -1,4 +1,4 @@
-package devcoop.occount.order.application.order
+package devcoop.occount.order.application.shared
 
 import devcoop.occount.order.domain.order.OrderStatus
 

@@ -28,13 +28,13 @@ object OrderPersistenceMapper {
                 transactionId = entity.getTransactionId(),
                 approvalNumber = entity.getApprovalNumber(),
             ),
+            paymentRequested = entity.isPaymentRequested(),
             paymentCompensationRequested = entity.isPaymentCompensationRequested(),
             stockCompensationRequested = entity.isStockCompensationRequested(),
-            version = entity.getVersion(),
         )
     }
 
-    fun toEntity(domain: OrderAggregate): OrderJpaEntity {
+    fun toEntity(domain: OrderAggregate, version: Long = 0L): OrderJpaEntity {
         val entity = OrderJpaEntity(
             orderId = domain.orderId,
             userId = domain.userId,
@@ -51,9 +51,10 @@ object OrderPersistenceMapper {
             cardAmount = domain.paymentResult.cardAmount,
             transactionId = domain.paymentResult.transactionId,
             approvalNumber = domain.paymentResult.approvalNumber,
+            paymentRequested = domain.paymentRequested,
             paymentCompensationRequested = domain.paymentCompensationRequested,
             stockCompensationRequested = domain.stockCompensationRequested,
-            version = domain.version,
+            version = version,
         )
 
         val lines = domain.lines.map { toEntityLine(entity, it) }.toMutableList()

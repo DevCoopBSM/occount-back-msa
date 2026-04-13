@@ -14,79 +14,122 @@ data class OrderAggregate(
     val failureReason: String? = null,
     val expiresAt: Instant,
     val paymentResult: OrderPaymentResult = OrderPaymentResult(),
+    val paymentRequested: Boolean = false,
     val paymentCompensationRequested: Boolean = false,
     val stockCompensationRequested: Boolean = false,
-    val version: Long = 0L,
 ) {
-    fun reconcile(): OrderAggregate {
-        if (paymentStatus == OrderStepStatus.COMPENSATION_FAILED ||
-            stockStatus == OrderStepStatus.COMPENSATION_FAILED
-        ) {
+    fun reconcileStatus(): OrderAggregate {
+        if (hasCompensationFailure()) {
             return copy(status = OrderStatus.COMPENSATION_FAILED)
         }
 
-        if (cancelRequested) {
-            if (paymentStatus.isPending() || stockStatus.isPending()) {
-                return copy(
-                    status = if (status == OrderStatus.TIMED_OUT) {
-                        OrderStatus.TIMED_OUT
-                    } else {
-                        OrderStatus.CANCEL_REQUESTED
-                    },
-                )
-            }
-
-            if (paymentStatus.requiresCompensation() || stockStatus.requiresCompensation()) {
-                return copy(
-                    status = if (status == OrderStatus.TIMED_OUT) {
-                        OrderStatus.TIMED_OUT
-                    } else {
-                        OrderStatus.COMPENSATING
-                    },
-                )
-            }
-
-            if (paymentStatus.isCompensationResolved() && stockStatus.isCompensationResolved()) {
-                return copy(status = OrderStatus.CANCELLED)
-            }
+        deriveCancellationStatus()?.let { cancellationStatus ->
+            return copy(status = cancellationStatus)
         }
 
-        if (paymentStatus == OrderStepStatus.SUCCEEDED &&
-            stockStatus == OrderStepStatus.SUCCEEDED
-        ) {
+        if (isFullyCompleted()) {
             return copy(status = OrderStatus.COMPLETED)
         }
 
-        val hasFailure = paymentStatus == OrderStepStatus.FAILED ||
-            stockStatus == OrderStepStatus.FAILED
-        if (hasFailure) {
-            if (paymentStatus.isPending() || stockStatus.isPending()) {
-                return copy(status = OrderStatus.PROCESSING)
-            }
-
-            if (paymentStatus.requiresCompensation() || stockStatus.requiresCompensation()) {
-                return copy(status = OrderStatus.COMPENSATING)
-            }
-
-            return copy(status = OrderStatus.FAILED)
+        deriveFailureStatus()?.let { failureStatus ->
+            return copy(status = failureStatus)
         }
 
         return copy(status = OrderStatus.PROCESSING)
     }
 
-    fun shouldCompensate(): Boolean =
+    fun requiresCompensation(): Boolean =
         cancelRequested ||
             paymentStatus == OrderStepStatus.FAILED ||
             stockStatus == OrderStepStatus.FAILED ||
             status == OrderStatus.TIMED_OUT
 
     fun shouldRequestPaymentCompensation(): Boolean =
-        shouldCompensate() &&
+        requiresCompensation() &&
             paymentStatus == OrderStepStatus.SUCCEEDED &&
             !paymentCompensationRequested
 
     fun shouldRequestStockCompensation(): Boolean =
-        shouldCompensate() &&
+        requiresCompensation() &&
             stockStatus == OrderStepStatus.SUCCEEDED &&
             !stockCompensationRequested
+
+    fun isReadyForPaymentRequest(): Boolean =
+        status == OrderStatus.PROCESSING &&
+            stockStatus == OrderStepStatus.SUCCEEDED &&
+            paymentStatus == OrderStepStatus.PENDING &&
+            !cancelRequested &&
+            !paymentRequested
+
+    private fun hasCompensationFailure(): Boolean {
+        return paymentStatus == OrderStepStatus.COMPENSATION_FAILED ||
+            stockStatus == OrderStepStatus.COMPENSATION_FAILED
+    }
+
+    private fun deriveCancellationStatus(): OrderStatus? {
+        if (!cancelRequested) {
+            return null
+        }
+
+        if (hasPendingStep()) {
+            return timeoutAwareStatus(OrderStatus.CANCEL_REQUESTED)
+        }
+
+        if (hasSucceededStepNeedingCompensation()) {
+            return timeoutAwareStatus(OrderStatus.COMPENSATING)
+        }
+
+        if (isCompensationResolved()) {
+            return OrderStatus.CANCELLED
+        }
+
+        return null
+    }
+
+    private fun deriveFailureStatus(): OrderStatus? {
+        if (!hasAnyStepFailure()) {
+            return null
+        }
+
+        if (hasPendingStep()) {
+            return OrderStatus.PROCESSING
+        }
+
+        if (hasSucceededStepNeedingCompensation()) {
+            return OrderStatus.COMPENSATING
+        }
+
+        return OrderStatus.FAILED
+    }
+
+    private fun timeoutAwareStatus(defaultStatus: OrderStatus): OrderStatus {
+        return if (status == OrderStatus.TIMED_OUT) {
+            OrderStatus.TIMED_OUT
+        } else {
+            defaultStatus
+        }
+    }
+
+    private fun isFullyCompleted(): Boolean {
+        return paymentStatus == OrderStepStatus.SUCCEEDED &&
+            stockStatus == OrderStepStatus.SUCCEEDED
+    }
+
+    private fun hasAnyStepFailure(): Boolean {
+        return paymentStatus == OrderStepStatus.FAILED ||
+            stockStatus == OrderStepStatus.FAILED
+    }
+
+    private fun hasPendingStep(): Boolean {
+        return paymentStatus.isPending() || stockStatus.isPending()
+    }
+
+    private fun hasSucceededStepNeedingCompensation(): Boolean {
+        return paymentStatus.requiresCompensation() || stockStatus.requiresCompensation()
+    }
+
+    private fun isCompensationResolved(): Boolean {
+        return paymentStatus.isCompensationResolved() &&
+            stockStatus.isCompensationResolved()
+    }
 }

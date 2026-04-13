@@ -54,6 +54,8 @@ class OrderJpaEntity(
     private var transactionId: String? = null,
     @field:Column(name = "approval_number")
     private var approvalNumber: String? = null,
+    @field:Column(name = "payment_requested", nullable = false)
+    private var paymentRequested: Boolean = false,
     @field:Column(name = "payment_compensation_requested", nullable = false)
     private var paymentCompensationRequested: Boolean = false,
     @field:Column(name = "stock_compensation_requested", nullable = false)
@@ -82,6 +84,7 @@ class OrderJpaEntity(
     fun getCardAmount() = cardAmount
     fun getTransactionId() = transactionId
     fun getApprovalNumber() = approvalNumber
+    fun isPaymentRequested() = paymentRequested
     fun isPaymentCompensationRequested() = paymentCompensationRequested
     fun isStockCompensationRequested() = stockCompensationRequested
     fun getVersion() = version

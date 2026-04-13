@@ -5,7 +5,7 @@ import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.core.common.event.OrderPaymentCompletedEvent
 import devcoop.occount.core.common.event.OrderPaymentFailedEvent
-import devcoop.occount.core.common.event.OrderRequestedEvent
+import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentFacade
 import devcoop.occount.payment.application.shared.PaymentItem
@@ -18,7 +18,7 @@ class ProcessOrderPaymentUseCase(
     private val paymentFacade: PaymentFacade,
     private val eventPublisher: EventPublisher,
 ) {
-    fun process(event: OrderRequestedEvent) {
+    fun process(event: OrderPaymentRequestedEvent) {
         try {
             val result = paymentFacade.execute(
                 event.userId,

@@ -8,7 +8,8 @@ import devcoop.occount.core.common.event.OrderPaymentCompletedEvent
 import devcoop.occount.core.common.event.OrderPaymentFailedEvent
 import devcoop.occount.db.outbox.ConsumedEventJpaEntity
 import devcoop.occount.db.outbox.ConsumedEventRepository
-import devcoop.occount.order.application.order.OrderService
+import devcoop.occount.order.application.usecase.order.event.HandleOrderPaymentEventUseCase
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Component
@@ -17,7 +18,7 @@ import tools.jackson.databind.ObjectMapper
 
 @Component
 class OrderPaymentEventListener(
-    private val orderService: OrderService,
+    private val handleOrderPaymentEventUseCase: HandleOrderPaymentEventUseCase,
     private val consumedEventRepository: ConsumedEventRepository,
     private val objectMapper: ObjectMapper,
 ) {
@@ -31,7 +32,9 @@ class OrderPaymentEventListener(
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {
         consume("order-payment-completed", eventId) {
-            orderService.handlePaymentCompleted(objectMapper.readValue(payload, OrderPaymentCompletedEvent::class.java))
+            handleOrderPaymentEventUseCase.applyCompletedPayment(
+                objectMapper.readValue(payload, OrderPaymentCompletedEvent::class.java),
+            )
         }
     }
 
@@ -45,7 +48,9 @@ class OrderPaymentEventListener(
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {
         consume("order-payment-failed", eventId) {
-            orderService.handlePaymentFailed(objectMapper.readValue(payload, OrderPaymentFailedEvent::class.java))
+            handleOrderPaymentEventUseCase.applyFailedPayment(
+                objectMapper.readValue(payload, OrderPaymentFailedEvent::class.java),
+            )
         }
     }
 
@@ -59,7 +64,9 @@ class OrderPaymentEventListener(
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {
         consume("order-payment-compensated", eventId) {
-            orderService.handlePaymentCompensated(objectMapper.readValue(payload, OrderPaymentCompensatedEvent::class.java))
+            handleOrderPaymentEventUseCase.applyCompensatedPayment(
+                objectMapper.readValue(payload, OrderPaymentCompensatedEvent::class.java),
+            )
         }
     }
 
@@ -73,25 +80,28 @@ class OrderPaymentEventListener(
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {
         consume("order-payment-compensation-failed", eventId) {
-            orderService.handlePaymentCompensationFailed(
+            handleOrderPaymentEventUseCase.applyPaymentCompensationFailure(
                 objectMapper.readValue(payload, OrderPaymentCompensationFailedEvent::class.java),
             )
         }
     }
 
     private fun consume(consumerName: String, eventId: String, action: () -> Unit) {
-        if (consumedEventRepository.existsById(processedEventId(consumerName, eventId))) {
+        val processedEventId = processedEventId(consumerName, eventId)
+
+        try {
+            consumedEventRepository.saveAndFlush(
+                ConsumedEventJpaEntity(
+                    id = processedEventId,
+                    consumerName = consumerName,
+                    eventId = eventId,
+                ),
+            )
+        } catch (_: DataIntegrityViolationException) {
             return
         }
 
         action()
-        consumedEventRepository.save(
-            ConsumedEventJpaEntity(
-                id = processedEventId(consumerName, eventId),
-                consumerName = consumerName,
-                eventId = eventId,
-            ),
-        )
     }
 
     private fun processedEventId(consumerName: String, eventId: String): String {

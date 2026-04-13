@@ -27,3 +27,6 @@ management:
     web:
       exposure:
         include: health,prometheus
+
+order:
+  async-timeout-buffer-millis: ${ORDER_ASYNC_TIMEOUT_BUFFER_MILLIS:10000}
