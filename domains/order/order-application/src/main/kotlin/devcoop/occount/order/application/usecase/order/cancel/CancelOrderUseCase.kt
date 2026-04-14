@@ -16,9 +16,9 @@ class CancelOrderUseCase(
     private val orderLifecycleProcessor: OrderLifecycleProcessor,
     private val orderResponseMapper: OrderResponseMapper,
 ) {
-    fun cancel(orderId: String, userId: Long): OrderResponse {
+    fun cancel(orderId: String, kioskId: String): OrderResponse {
         val updated = orderMutationExecutor.updateOrder(orderId) { current ->
-            if (current.userId != userId) {
+            if (current.kioskId != kioskId) {
                 throw OrderAccessDeniedException()
             }
 

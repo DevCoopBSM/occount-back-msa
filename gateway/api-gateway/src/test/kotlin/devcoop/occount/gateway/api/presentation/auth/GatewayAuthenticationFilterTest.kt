@@ -107,6 +107,76 @@ class GatewayAuthenticationFilterTest {
     }
 
     @Test
+    fun `optional auth request with valid token forwards mutated request`() {
+        val request = MockServerHttpRequest.post("/api/v3/orders")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer user-token")
+            .build()
+        val exchange = MockServerWebExchange.from(request)
+        val authenticatedUser = AuthenticatedUser(userId = 7L, role = "ROLE_USER")
+        val mutatedRequest = request.mutate().header("X-Test", "forwarded").build()
+        var forwardedExchange: ServerWebExchange? = null
+        val chain = GatewayFilterChain { nextExchange ->
+            forwardedExchange = nextExchange
+            Mono.empty()
+        }
+
+        `when`(authenticationPolicy.resolveAccess(request.method, request.path.value()))
+            .thenReturn(AuthenticationRule.Access.OPTIONAL_AUTH)
+        `when`(tokenAuthenticator.authenticate("Bearer user-token")).thenReturn(authenticatedUser)
+        `when`(authenticatedRequestMutator.mutate(request, authenticatedUser)).thenReturn(mutatedRequest)
+
+        filter.filter(exchange, chain).block()
+
+        assertEquals("forwarded", forwardedExchange?.request?.headers?.getFirst("X-Test"))
+        verify(tokenAuthenticator).authenticate("Bearer user-token")
+        verify(authenticatedRequestMutator).mutate(request, authenticatedUser)
+        verifyNoInteractions(authenticationFailureWriter)
+    }
+
+    @Test
+    fun `optional auth request without token bypasses authentication`() {
+        val request = MockServerHttpRequest.post("/api/v3/orders").build()
+        val exchange = MockServerWebExchange.from(request)
+        var forwardedExchange: ServerWebExchange? = null
+        val chain = GatewayFilterChain { nextExchange ->
+            forwardedExchange = nextExchange
+            Mono.empty()
+        }
+
+        `when`(authenticationPolicy.resolveAccess(request.method, request.path.value()))
+            .thenReturn(AuthenticationRule.Access.OPTIONAL_AUTH)
+
+        filter.filter(exchange, chain).block()
+
+        assertNotNull(forwardedExchange)
+        assertTrue(forwardedExchange === exchange)
+        verifyNoInteractions(tokenAuthenticator, authenticatedRequestMutator, authenticationFailureWriter)
+    }
+
+    @Test
+    fun `optional auth request with invalid token returns unauthorized`() {
+        val request = MockServerHttpRequest.post("/api/v3/orders")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer invalid-token")
+            .build()
+        val exchange = MockServerWebExchange.from(request)
+        val chain = GatewayFilterChain { Mono.empty<Void>() }
+        val expected = Mono.empty<Void>()
+        val exception = InvalidTokenException()
+
+        `when`(authenticationPolicy.resolveAccess(request.method, request.path.value()))
+            .thenReturn(AuthenticationRule.Access.OPTIONAL_AUTH)
+        `when`(tokenAuthenticator.authenticate("Bearer invalid-token"))
+            .thenThrow(exception)
+        `when`(authenticationFailureWriter.writeUnauthorized(exchange, exception)).thenReturn(expected)
+
+        val actual = filter.filter(exchange, chain)
+
+        assertSame(expected, actual)
+        verify(authenticationFailureWriter).writeUnauthorized(exchange, exception)
+        verifyNoInteractions(authenticatedRequestMutator)
+    }
+
+    @Test
     fun `admin only request returns forbidden for non admin user`() {
         val request = MockServerHttpRequest.post("/api/v3/items/sync")
             .header(HttpHeaders.AUTHORIZATION, "Bearer user-token")

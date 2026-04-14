@@ -20,6 +20,7 @@ object OrderPersistenceMapper {
             stockStatus = entity.getStockStatus(),
             cancelRequested = entity.isCancelRequested(),
             failureReason = entity.getFailureReason(),
+            kioskId = entity.getKioskId(),
             expiresAt = entity.getExpiresAt(),
             paymentResult = OrderPaymentResult(
                 paymentLogId = entity.getPaymentLogId(),
@@ -45,6 +46,7 @@ object OrderPersistenceMapper {
             stockStatus = domain.stockStatus,
             cancelRequested = domain.cancelRequested,
             failureReason = domain.failureReason,
+            kioskId = domain.kioskId,
             expiresAt = domain.expiresAt,
             paymentLogId = domain.paymentResult.paymentLogId,
             pointsUsed = domain.paymentResult.pointsUsed,

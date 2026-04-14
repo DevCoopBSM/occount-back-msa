@@ -27,6 +27,7 @@ enum class ErrorMessage(
     ORDER_ACCESS_DENIED("해당 주문에 접근할 수 없습니다."),
     ORDER_CANNOT_CANCEL("현재 상태에서는 주문을 취소할 수 없습니다."),
     ORDER_INVALID_TOTAL_PRICE("주문 항목의 총 금액이 일치하지 않습니다."),
+    ORDER_INVALID_PAYMENT_TYPE("비회원 주문은 카드 결제만 지원합니다."),
     ORDER_TRANSACTION_FAILED("주문 트랜잭션 처리에 실패했습니다."),
     ORDER_UNREACHABLE_STATE("도달할 수 없는 주문 처리 상태입니다."),
 

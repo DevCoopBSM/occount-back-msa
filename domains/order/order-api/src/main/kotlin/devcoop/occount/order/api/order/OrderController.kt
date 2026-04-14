@@ -1,13 +1,13 @@
 package devcoop.occount.order.api.order
 
-import devcoop.occount.core.common.auth.RequestAuthPrincipalResolver
+import devcoop.occount.core.common.auth.AuthHeaders
+import devcoop.occount.order.application.config.OrderTimeoutConfig
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
 import devcoop.occount.order.domain.order.OrderStatus
 import jakarta.servlet.http.HttpServletRequest
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
@@ -23,21 +23,21 @@ import kotlin.math.max
 class OrderController(
     private val createOrderUseCase: CreateOrderUseCase,
     private val cancelOrderUseCase: CancelOrderUseCase,
-    @param:Value("\${order.timeout-seconds:30}") private val timeoutSeconds: Long,
-    @param:Value("\${order.async-timeout-buffer-millis:10000}") private val asyncTimeoutBufferMillis: Long,
+    private val orderTimeoutConfig: OrderTimeoutConfig,
 ) {
     @PostMapping
     fun createOrder(
         @RequestBody orderRequest: OrderRequest,
         httpServletRequest: HttpServletRequest,
     ): DeferredResult<ResponseEntity<OrderResponse>> {
-        val authPrincipal = RequestAuthPrincipalResolver.resolve(httpServletRequest)
+        val userId = httpServletRequest.getHeader(AuthHeaders.AUTHENTICATED_USER_ID)?.toLongOrNull()
 
         val deferredResult = DeferredResult<ResponseEntity<OrderResponse>>(
-            timeoutSeconds * 1000 + max(asyncTimeoutBufferMillis, MIN_ASYNC_TIMEOUT_BUFFER_MILLIS),
+            orderTimeoutConfig.timeoutSeconds * 1000 +
+                max(orderTimeoutConfig.asyncTimeoutBufferMillis, MIN_ASYNC_TIMEOUT_BUFFER_MILLIS),
         )
 
-        createOrderUseCase.placeOrder(orderRequest, authPrincipal.userId)
+        createOrderUseCase.placeOrder(orderRequest, userId)
             .whenComplete { response, throwable ->
                 if (throwable != null) {
                     deferredResult.setErrorResult(unwrap(throwable))
@@ -57,8 +57,8 @@ class OrderController(
         @PathVariable orderId: String,
         httpServletRequest: HttpServletRequest,
     ): ResponseEntity<OrderResponse> {
-        val authPrincipal = RequestAuthPrincipalResolver.resolve(httpServletRequest)
-        val response = cancelOrderUseCase.cancel(orderId, authPrincipal.userId)
+        val kioskId = requireNotNull(httpServletRequest.getHeader(AuthHeaders.KIOSK_ID))
+        val response = cancelOrderUseCase.cancel(orderId, kioskId)
         return ResponseEntity.status(HttpStatus.OK).body(response)
     }
 

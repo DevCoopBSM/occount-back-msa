@@ -8,4 +8,5 @@ data class OrderRequest(
     val items: List<OrderItemRequest>,
     val paymentType: OrderPaymentType,
     val totalAmount: Int,
+    val kioskId: String,
 )
