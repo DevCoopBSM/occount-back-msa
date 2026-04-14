@@ -53,7 +53,7 @@ class HandleOrderStockEventUseCase(
             current.copy(stockStatus = OrderStepStatus.COMPENSATED)
         } ?: return
 
-        orderLifecycleProcessor.completePendingOrderIfFinal(updated)
+        orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 
     fun applyStockCompensationFailure(event: OrderStockCompensationFailedEvent, recordConsumption: () -> Unit) {
@@ -68,6 +68,6 @@ class HandleOrderStockEventUseCase(
             )
         } ?: return
 
-        orderLifecycleProcessor.completePendingOrderIfFinal(updated)
+        orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 }
