@@ -34,13 +34,23 @@ Use module-scoped tasks when changing one area, for example `./gradlew :domains:
 - Prefer names ending in `Test` or `Tests`, matching existing examples like `ArchitectureBoundaryTest` and `DbKioskApplicationTests`.
 - Add focused module-level tests for controller wiring, boundary rules, and service behavior when changing public flows.
 
+## Compile Verification (REQUIRED)
+After **every** code change, always run a compile check before considering the task done:
+```
+./gradlew compileKotlin compileTestKotlin --console=plain
+```
+For changes scoped to a single domain, prefer the module-scoped variant, e.g.:
+```
+./gradlew :domains:order:order-application:compileKotlin :domains:order:order-application:compileTestKotlin --console=plain
+```
+Do not skip this step. Compile errors in related files (imports, constructor changes, deleted classes) are a common source of breakage that must be caught before finishing.
+
 ## Safe Change Policy
 - Keep diffs minimal and changes localized.
 - Follow the existing codebase structure, patterns, and architecture.
 - Do not introduce arbitrary default values for environment variables in code, config, or docs.
 - Prefer extending existing patterns over introducing new frameworks.
 - Repository rules take precedence over suggestions.
-- Always verify build/tests with the CLI commands above after code changes.
 
 ## Commit & Pull Request Guidelines
 - If a commit is requested, check `COMMIT.md` first and follow its rules.
