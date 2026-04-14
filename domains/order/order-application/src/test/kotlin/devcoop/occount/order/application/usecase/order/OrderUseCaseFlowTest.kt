@@ -8,14 +8,12 @@ import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
 import devcoop.occount.core.common.event.OrderPaymentType
 import devcoop.occount.core.common.event.OrderStockCompensationRequestedEvent
 import devcoop.occount.core.common.event.OrderStockCompletedEvent
-import devcoop.occount.order.application.output.OrderItemData
-import devcoop.occount.order.application.output.OrderItemReader
 import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.output.PersistedOrder
+import devcoop.occount.order.application.output.TransactionPort
 import devcoop.occount.order.application.support.OrderCompensationScheduler
 import devcoop.occount.order.application.support.OrderLifecycleProcessor
 import devcoop.occount.order.application.support.OrderMutationExecutor
-import devcoop.occount.order.application.support.OrderPendingResultRegistry
 import devcoop.occount.order.application.support.OrderPaymentRequestScheduler
 import devcoop.occount.order.application.support.OrderRequestValidator
 import devcoop.occount.order.application.support.OrderResponseMapper
@@ -34,10 +32,6 @@ import devcoop.occount.order.domain.order.isFinalForClient
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
-import org.springframework.transaction.PlatformTransactionManager
-import org.springframework.transaction.TransactionDefinition
-import org.springframework.transaction.TransactionStatus
-import org.springframework.transaction.support.SimpleTransactionStatus
 import java.time.Instant
 
 class OrderUseCaseFlowTest {
@@ -56,12 +50,14 @@ class OrderUseCaseFlowTest {
                 userId = USER_ID,
                 reason = "payment failed",
             ),
+            recordConsumption = {},
         )
         handleOrderStockEventUseCase.applyCompletedStock(
             OrderStockCompletedEvent(
                 orderId = ORDER_ID,
                 itemIds = listOf(ITEM_ID),
             ),
+            recordConsumption = {},
         )
 
         val publishedEvent = eventPublisher.published.last().payload
@@ -82,6 +78,7 @@ class OrderUseCaseFlowTest {
                 orderId = ORDER_ID,
                 itemIds = listOf(ITEM_ID),
             ),
+            recordConsumption = {},
         )
 
         val publishedEvent = eventPublisher.published.single().payload
@@ -102,12 +99,14 @@ class OrderUseCaseFlowTest {
                 orderId = ORDER_ID,
                 itemIds = listOf(ITEM_ID),
             ),
+            recordConsumption = {},
         )
         handleOrderStockEventUseCase.applyCompletedStock(
             OrderStockCompletedEvent(
                 orderId = ORDER_ID,
                 itemIds = listOf(ITEM_ID),
             ),
+            recordConsumption = {},
         )
 
         assertEquals(1, eventPublisher.published.filter { it.payload is OrderPaymentRequestedEvent }.size)
@@ -176,6 +175,7 @@ class OrderUseCaseFlowTest {
                 transactionId = "tx-1",
                 approvalNumber = "ap-1",
             ),
+            recordConsumption = {},
         )
 
         assertEquals(0, orderRepository.versionedSaveCount)
@@ -201,6 +201,7 @@ class OrderUseCaseFlowTest {
                 transactionId = "tx-1",
                 approvalNumber = "ap-1",
             ),
+            recordConsumption = {},
         )
 
         assertEquals(1, orderRepository.persistedLookupCount)
@@ -248,7 +249,8 @@ class OrderUseCaseFlowTest {
         eventPublisher: FakeEventPublisher,
     ): CancelOrderUseCase {
         return CancelOrderUseCase(
-            orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionManager()),
+            orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionPort()),
+            orderRepository = orderRepository,
             orderLifecycleProcessor = orderLifecycleProcessor(orderRepository, eventPublisher),
             orderResponseMapper = OrderResponseMapper(),
         )
@@ -259,7 +261,7 @@ class OrderUseCaseFlowTest {
         eventPublisher: FakeEventPublisher,
     ): HandleOrderPaymentEventUseCase {
         return HandleOrderPaymentEventUseCase(
-            orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionManager()),
+            orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionPort()),
             orderLifecycleProcessor = orderLifecycleProcessor(orderRepository, eventPublisher),
         )
     }
@@ -269,12 +271,12 @@ class OrderUseCaseFlowTest {
         eventPublisher: FakeEventPublisher,
     ): HandleOrderStockEventUseCase {
         return HandleOrderStockEventUseCase(
-            orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionManager()),
+            orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionPort()),
             orderLifecycleProcessor = orderLifecycleProcessor(orderRepository, eventPublisher),
             orderPaymentRequestScheduler = OrderPaymentRequestScheduler(
                 orderRepository,
                 eventPublisher,
-                TestTransactionManager(),
+                TestTransactionPort(),
             ),
         )
     }
@@ -286,9 +288,8 @@ class OrderUseCaseFlowTest {
         return ExpireTimedOutOrdersUseCase(
             orderRepository = orderRepository,
             expireOrderUseCase = ExpireOrderUseCase(
-                orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionManager()),
+                orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionPort()),
                 orderLifecycleProcessor = orderLifecycleProcessor(orderRepository, eventPublisher),
-                orderPendingResultRegistry = OrderPendingResultRegistry(),
                 orderResponseMapper = OrderResponseMapper(),
             ),
         )
@@ -299,9 +300,7 @@ class OrderUseCaseFlowTest {
         eventPublisher: FakeEventPublisher,
     ): OrderLifecycleProcessor {
         return OrderLifecycleProcessor(
-            orderCompensationScheduler = OrderCompensationScheduler(orderRepository, eventPublisher, TestTransactionManager()),
-            orderPendingResultRegistry = OrderPendingResultRegistry(),
-            orderResponseMapper = OrderResponseMapper(),
+            orderCompensationScheduler = OrderCompensationScheduler(orderRepository, eventPublisher, TestTransactionPort()),
         )
     }
 
@@ -359,25 +358,8 @@ class OrderUseCaseFlowTest {
         val payload: Any,
     )
 
-    private class TestTransactionManager : PlatformTransactionManager {
-        override fun getTransaction(definition: TransactionDefinition?): TransactionStatus = SimpleTransactionStatus()
-
-        override fun commit(status: TransactionStatus) = Unit
-
-        override fun rollback(status: TransactionStatus) = Unit
-    }
-
-    private class FakeOrderItemReader : OrderItemReader {
-        override fun findByIds(itemIds: Set<Long>): List<OrderItemData> {
-            return itemIds.map { itemId ->
-                OrderItemData(
-                    itemId = itemId,
-                    itemName = "Americano",
-                    itemPrice = 2000,
-                    isActive = true,
-                )
-            }
-        }
+    private class TestTransactionPort : TransactionPort {
+        override fun <T : Any> executeInNewTransaction(action: () -> T): T = action()
     }
 
     private companion object {
