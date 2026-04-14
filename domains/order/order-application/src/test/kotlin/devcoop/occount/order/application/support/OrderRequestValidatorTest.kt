@@ -43,6 +43,7 @@ class OrderRequestValidatorTest {
             ),
             paymentType = OrderPaymentType.PAYMENT,
             totalAmount = 1000,
+            kioskId = "kiosk-1",
         )
 
         assertThrows(OrderInvalidTotalPriceException::class.java) {
@@ -63,6 +64,7 @@ class OrderRequestValidatorTest {
             ),
             paymentType = OrderPaymentType.PAYMENT,
             totalAmount = 3000,
+            kioskId = "kiosk-1",
         )
 
         assertThrows(OrderItemNotFoundException::class.java) {
@@ -83,6 +85,7 @@ class OrderRequestValidatorTest {
             ),
             paymentType = OrderPaymentType.PAYMENT,
             totalAmount = 4000,
+            kioskId = "kiosk-1",
         )
 
         val validated = validator.validate(request)
