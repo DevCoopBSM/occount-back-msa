@@ -50,7 +50,7 @@ class CreateOrderUseCase(
 
         try {
             val createdOrder = orderMutationExecutor.executeInNewTransaction {
-                val savedOrder = orderRepository.save(
+                orderRepository.save(
                     OrderAggregate(
                         orderId = orderId,
                         userId = userId,
@@ -64,10 +64,9 @@ class CreateOrderUseCase(
                         expiresAt = Instant.now().plus(Duration.ofSeconds(orderTimeoutConfig.timeoutSeconds)),
                     ),
                 )
-
-                publishOrderRequested(savedOrder, userId)
-                savedOrder
             }
+            // DB 커밋 후 이벤트 발행 — 트랜잭션 내 발행 시 DB 롤백과 이벤트 불일치 방지
+            publishOrderRequested(createdOrder, userId)
             log.info("주문 생성 완료 - 주문={} 사용자={}", createdOrder.orderId, userId)
         } catch (ex: Exception) {
             orderPendingResultRegistry.failPendingOrder(orderId, ex)

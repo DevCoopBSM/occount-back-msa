@@ -55,6 +55,7 @@ class GatewayAuthenticationFilter(
         }
 
         val mutatedRequest = authenticatedRequestMutator.mutate(request, authenticatedUser)
+            .mutate().headers { it.remove(AuthHeaders.KIOSK_ID) }.build()
         return chain.filter(exchange.mutate().request(mutatedRequest).build())
     }
 }

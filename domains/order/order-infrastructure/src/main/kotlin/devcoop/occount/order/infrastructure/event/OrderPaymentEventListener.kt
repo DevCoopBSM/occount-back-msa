@@ -9,11 +9,9 @@ import devcoop.occount.core.common.event.OrderPaymentFailedEvent
 import devcoop.occount.db.outbox.ConsumedEventJpaEntity
 import devcoop.occount.db.outbox.ConsumedEventRepository
 import devcoop.occount.order.application.usecase.order.event.HandleOrderPaymentEventUseCase
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import tools.jackson.databind.ObjectMapper
 
 @Component
@@ -22,89 +20,45 @@ class OrderPaymentEventListener(
     private val consumedEventRepository: ConsumedEventRepository,
     private val objectMapper: ObjectMapper,
 ) {
-    @Transactional
-    @KafkaListener(
-        topics = [DomainTopics.ORDER_PAYMENT_COMPLETED],
-        groupId = "order-payment-completed",
-    )
-    fun onPaymentCompleted(
-        payload: String,
-        @Header(DomainEventHeaders.EVENT_ID) eventId: String,
-    ) {
-        consume("order-payment-completed", eventId) {
-            handleOrderPaymentEventUseCase.applyCompletedPayment(
-                objectMapper.readValue(payload, OrderPaymentCompletedEvent::class.java),
-            )
-        }
+    @KafkaListener(topics = [DomainTopics.ORDER_PAYMENT_COMPLETED], groupId = "order-payment-completed")
+    fun onPaymentCompleted(payload: String, @Header(DomainEventHeaders.EVENT_ID) eventId: String) {
+        handleOrderPaymentEventUseCase.applyCompletedPayment(
+            event = objectMapper.readValue(payload, OrderPaymentCompletedEvent::class.java),
+            recordConsumption = { saveConsumedEvent("order-payment-completed", eventId) },
+        )
     }
 
-    @Transactional
-    @KafkaListener(
-        topics = [DomainTopics.ORDER_PAYMENT_FAILED],
-        groupId = "order-payment-failed",
-    )
-    fun onPaymentFailed(
-        payload: String,
-        @Header(DomainEventHeaders.EVENT_ID) eventId: String,
-    ) {
-        consume("order-payment-failed", eventId) {
-            handleOrderPaymentEventUseCase.applyFailedPayment(
-                objectMapper.readValue(payload, OrderPaymentFailedEvent::class.java),
-            )
-        }
+    @KafkaListener(topics = [DomainTopics.ORDER_PAYMENT_FAILED], groupId = "order-payment-failed")
+    fun onPaymentFailed(payload: String, @Header(DomainEventHeaders.EVENT_ID) eventId: String) {
+        handleOrderPaymentEventUseCase.applyFailedPayment(
+            event = objectMapper.readValue(payload, OrderPaymentFailedEvent::class.java),
+            recordConsumption = { saveConsumedEvent("order-payment-failed", eventId) },
+        )
     }
 
-    @Transactional
-    @KafkaListener(
-        topics = [DomainTopics.ORDER_PAYMENT_COMPENSATED],
-        groupId = "order-payment-compensated",
-    )
-    fun onPaymentCompensated(
-        payload: String,
-        @Header(DomainEventHeaders.EVENT_ID) eventId: String,
-    ) {
-        consume("order-payment-compensated", eventId) {
-            handleOrderPaymentEventUseCase.applyCompensatedPayment(
-                objectMapper.readValue(payload, OrderPaymentCompensatedEvent::class.java),
-            )
-        }
+    @KafkaListener(topics = [DomainTopics.ORDER_PAYMENT_COMPENSATED], groupId = "order-payment-compensated")
+    fun onPaymentCompensated(payload: String, @Header(DomainEventHeaders.EVENT_ID) eventId: String) {
+        handleOrderPaymentEventUseCase.applyCompensatedPayment(
+            event = objectMapper.readValue(payload, OrderPaymentCompensatedEvent::class.java),
+            recordConsumption = { saveConsumedEvent("order-payment-compensated", eventId) },
+        )
     }
 
-    @Transactional
-    @KafkaListener(
-        topics = [DomainTopics.ORDER_PAYMENT_COMPENSATION_FAILED],
-        groupId = "order-payment-compensation-failed",
-    )
-    fun onPaymentCompensationFailed(
-        payload: String,
-        @Header(DomainEventHeaders.EVENT_ID) eventId: String,
-    ) {
-        consume("order-payment-compensation-failed", eventId) {
-            handleOrderPaymentEventUseCase.applyPaymentCompensationFailure(
-                objectMapper.readValue(payload, OrderPaymentCompensationFailedEvent::class.java),
-            )
-        }
+    @KafkaListener(topics = [DomainTopics.ORDER_PAYMENT_COMPENSATION_FAILED], groupId = "order-payment-compensation-failed")
+    fun onPaymentCompensationFailed(payload: String, @Header(DomainEventHeaders.EVENT_ID) eventId: String) {
+        handleOrderPaymentEventUseCase.applyPaymentCompensationFailure(
+            event = objectMapper.readValue(payload, OrderPaymentCompensationFailedEvent::class.java),
+            recordConsumption = { saveConsumedEvent("order-payment-compensation-failed", eventId) },
+        )
     }
 
-    private fun consume(consumerName: String, eventId: String, action: () -> Unit) {
-        val processedEventId = processedEventId(consumerName, eventId)
-
-        try {
-            consumedEventRepository.saveAndFlush(
-                ConsumedEventJpaEntity(
-                    id = processedEventId,
-                    consumerName = consumerName,
-                    eventId = eventId,
-                ),
-            )
-        } catch (_: DataIntegrityViolationException) {
-            return
-        }
-
-        action()
-    }
-
-    private fun processedEventId(consumerName: String, eventId: String): String {
-        return "$consumerName:$eventId"
+    private fun saveConsumedEvent(consumerName: String, eventId: String) {
+        consumedEventRepository.save(
+            ConsumedEventJpaEntity(
+                id = "$consumerName:$eventId",
+                consumerName = consumerName,
+                eventId = eventId,
+            ),
+        )
     }
 }

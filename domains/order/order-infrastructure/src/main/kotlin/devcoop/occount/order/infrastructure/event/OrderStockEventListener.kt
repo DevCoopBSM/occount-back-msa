@@ -9,11 +9,9 @@ import devcoop.occount.core.common.event.OrderStockFailedEvent
 import devcoop.occount.db.outbox.ConsumedEventJpaEntity
 import devcoop.occount.db.outbox.ConsumedEventRepository
 import devcoop.occount.order.application.usecase.order.event.HandleOrderStockEventUseCase
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import tools.jackson.databind.ObjectMapper
 
 @Component
@@ -22,89 +20,45 @@ class OrderStockEventListener(
     private val consumedEventRepository: ConsumedEventRepository,
     private val objectMapper: ObjectMapper,
 ) {
-    @Transactional
-    @KafkaListener(
-        topics = [DomainTopics.ORDER_STOCK_COMPLETED],
-        groupId = "order-stock-completed",
-    )
-    fun onStockCompleted(
-        payload: String,
-        @Header(DomainEventHeaders.EVENT_ID) eventId: String,
-    ) {
-        consume("order-stock-completed", eventId) {
-            handleOrderStockEventUseCase.applyCompletedStock(
-                objectMapper.readValue(payload, OrderStockCompletedEvent::class.java),
-            )
-        }
+    @KafkaListener(topics = [DomainTopics.ORDER_STOCK_COMPLETED], groupId = "order-stock-completed")
+    fun onStockCompleted(payload: String, @Header(DomainEventHeaders.EVENT_ID) eventId: String) {
+        handleOrderStockEventUseCase.applyCompletedStock(
+            event = objectMapper.readValue(payload, OrderStockCompletedEvent::class.java),
+            recordConsumption = { saveConsumedEvent("order-stock-completed", eventId) },
+        )
     }
 
-    @Transactional
-    @KafkaListener(
-        topics = [DomainTopics.ORDER_STOCK_FAILED],
-        groupId = "order-stock-failed",
-    )
-    fun onStockFailed(
-        payload: String,
-        @Header(DomainEventHeaders.EVENT_ID) eventId: String,
-    ) {
-        consume("order-stock-failed", eventId) {
-            handleOrderStockEventUseCase.applyFailedStock(
-                objectMapper.readValue(payload, OrderStockFailedEvent::class.java),
-            )
-        }
+    @KafkaListener(topics = [DomainTopics.ORDER_STOCK_FAILED], groupId = "order-stock-failed")
+    fun onStockFailed(payload: String, @Header(DomainEventHeaders.EVENT_ID) eventId: String) {
+        handleOrderStockEventUseCase.applyFailedStock(
+            event = objectMapper.readValue(payload, OrderStockFailedEvent::class.java),
+            recordConsumption = { saveConsumedEvent("order-stock-failed", eventId) },
+        )
     }
 
-    @Transactional
-    @KafkaListener(
-        topics = [DomainTopics.ORDER_STOCK_COMPENSATED],
-        groupId = "order-stock-compensated",
-    )
-    fun onStockCompensated(
-        payload: String,
-        @Header(DomainEventHeaders.EVENT_ID) eventId: String,
-    ) {
-        consume("order-stock-compensated", eventId) {
-            handleOrderStockEventUseCase.applyCompensatedStock(
-                objectMapper.readValue(payload, OrderStockCompensatedEvent::class.java),
-            )
-        }
+    @KafkaListener(topics = [DomainTopics.ORDER_STOCK_COMPENSATED], groupId = "order-stock-compensated")
+    fun onStockCompensated(payload: String, @Header(DomainEventHeaders.EVENT_ID) eventId: String) {
+        handleOrderStockEventUseCase.applyCompensatedStock(
+            event = objectMapper.readValue(payload, OrderStockCompensatedEvent::class.java),
+            recordConsumption = { saveConsumedEvent("order-stock-compensated", eventId) },
+        )
     }
 
-    @Transactional
-    @KafkaListener(
-        topics = [DomainTopics.ORDER_STOCK_COMPENSATION_FAILED],
-        groupId = "order-stock-compensation-failed",
-    )
-    fun onStockCompensationFailed(
-        payload: String,
-        @Header(DomainEventHeaders.EVENT_ID) eventId: String,
-    ) {
-        consume("order-stock-compensation-failed", eventId) {
-            handleOrderStockEventUseCase.applyStockCompensationFailure(
-                objectMapper.readValue(payload, OrderStockCompensationFailedEvent::class.java),
-            )
-        }
+    @KafkaListener(topics = [DomainTopics.ORDER_STOCK_COMPENSATION_FAILED], groupId = "order-stock-compensation-failed")
+    fun onStockCompensationFailed(payload: String, @Header(DomainEventHeaders.EVENT_ID) eventId: String) {
+        handleOrderStockEventUseCase.applyStockCompensationFailure(
+            event = objectMapper.readValue(payload, OrderStockCompensationFailedEvent::class.java),
+            recordConsumption = { saveConsumedEvent("order-stock-compensation-failed", eventId) },
+        )
     }
 
-    private fun consume(consumerName: String, eventId: String, action: () -> Unit) {
-        val processedEventId = processedEventId(consumerName, eventId)
-
-        try {
-            consumedEventRepository.saveAndFlush(
-                ConsumedEventJpaEntity(
-                    id = processedEventId,
-                    consumerName = consumerName,
-                    eventId = eventId,
-                ),
-            )
-        } catch (_: DataIntegrityViolationException) {
-            return
-        }
-
-        action()
-    }
-
-    private fun processedEventId(consumerName: String, eventId: String): String {
-        return "$consumerName:$eventId"
+    private fun saveConsumedEvent(consumerName: String, eventId: String) {
+        consumedEventRepository.save(
+            ConsumedEventJpaEntity(
+                id = "$consumerName:$eventId",
+                consumerName = consumerName,
+                eventId = eventId,
+            ),
+        )
     }
 }

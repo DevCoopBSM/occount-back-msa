@@ -29,6 +29,7 @@ class OrderPaymentRequestScheduler(
     fun schedulePaymentRequestIfEligible(orderId: String) {
         repeat(MAX_RETRY_COUNT) { attempt ->
             try {
+                var orderToPublish: OrderAggregate? = null
                 transactionTemplate.executeWithoutResult {
                     val persistedOrder = orderRepository.findPersistedById(orderId)
                         ?: throw OrderNotFoundException()
@@ -38,13 +39,13 @@ class OrderPaymentRequestScheduler(
                         return@executeWithoutResult
                     }
 
-                    val requestedOrder = orderRepository.save(
+                    orderToPublish = orderRepository.save(
                         order.copy(paymentRequested = true),
                         persistedOrder.persistenceVersion,
                     )
-
-                    publishPaymentRequested(requestedOrder, attempt)
                 }
+                // DB 커밋 후 이벤트 발행 — 트랜잭션 내 발행 시 DB 롤백과 이벤트 불일치 방지
+                orderToPublish?.let { publishPaymentRequested(it, attempt) }
                 return
             } catch (ex: OptimisticLockingFailureException) {
                 log.warn("결제 요청 스케줄링 중 낙관적 락 충돌 - 주문={} 시도={}", orderId, attempt)
