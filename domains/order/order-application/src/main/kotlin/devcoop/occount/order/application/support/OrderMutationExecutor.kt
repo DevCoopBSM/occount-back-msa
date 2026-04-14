@@ -1,30 +1,22 @@
 package devcoop.occount.order.application.support
 
+import devcoop.occount.order.application.exception.DuplicateEventException
+import devcoop.occount.order.application.exception.OrderConcurrencyException
 import devcoop.occount.order.application.exception.OrderNotFoundException
 import devcoop.occount.order.application.exception.OrderTransactionFailedException
 import devcoop.occount.order.application.output.OrderRepository
+import devcoop.occount.order.application.output.TransactionPort
 import devcoop.occount.order.domain.order.OrderAggregate
 import org.slf4j.LoggerFactory
-import org.springframework.dao.DataIntegrityViolationException
-import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.stereotype.Component
-import org.springframework.transaction.PlatformTransactionManager
-import org.springframework.transaction.TransactionDefinition
-import org.springframework.transaction.support.TransactionTemplate
 
 @Component
 class OrderMutationExecutor(
     private val orderRepository: OrderRepository,
-    transactionManager: PlatformTransactionManager,
+    private val transactionPort: TransactionPort,
 ) {
-    private val transactionTemplate = TransactionTemplate(transactionManager).apply {
-        propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW
-    }
-
     fun <T : Any> executeInNewTransaction(action: () -> T): T {
-        return transactionTemplate.execute {
-            action()
-        }
+        return transactionPort.executeInNewTransaction(action)
     }
 
     fun save(order: OrderAggregate): OrderAggregate {
@@ -37,7 +29,7 @@ class OrderMutationExecutor(
         orderId: String,
         update: (OrderAggregate) -> OrderAggregate,
     ): OrderAggregate {
-        repeat(MAX_RETRY_COUNT) { attempt ->
+        repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
             try {
                 return executeInNewTransaction {
                     val persistedOrder = orderRepository.findPersistedById(orderId)
@@ -53,12 +45,12 @@ class OrderMutationExecutor(
                         )
                     }
                 }
-            } catch (ex: OptimisticLockingFailureException) {
+            } catch (ex: OrderConcurrencyException) {
                 log.warn("낙관적 락 충돌 - 주문={} 시도={}", orderId, attempt)
-                if (attempt == MAX_RETRY_COUNT - 1) {
-                    throw ex
+                if (attempt == OrderRetryPolicy.MAX_RETRY_COUNT - 1) {
+                    throw OrderTransactionFailedException()
                 }
-                Thread.sleep(BASE_BACKOFF_MILLIS * (1L shl attempt))
+                Thread.sleep(OrderRetryPolicy.BASE_BACKOFF_MILLIS * (1L shl attempt))
             }
         }
 
@@ -77,7 +69,7 @@ class OrderMutationExecutor(
         recordConsumption: () -> Unit,
         update: (OrderAggregate) -> OrderAggregate,
     ): OrderAggregate? {
-        repeat(MAX_RETRY_COUNT) { attempt ->
+        repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
             try {
                 return executeInNewTransaction {
                     recordConsumption()
@@ -91,13 +83,13 @@ class OrderMutationExecutor(
                         orderRepository.save(reconciledOrder, persistedOrder.persistenceVersion)
                     }
                 }
-            } catch (_: DataIntegrityViolationException) {
+            } catch (_: DuplicateEventException) {
                 // 멱등성 키 중복 — 이미 처리된 이벤트
                 return null
-            } catch (ex: OptimisticLockingFailureException) {
+            } catch (ex: OrderConcurrencyException) {
                 log.warn("낙관적 락 충돌 (멱등) - 주문={} 시도={}", orderId, attempt)
-                if (attempt == MAX_RETRY_COUNT - 1) throw ex
-                Thread.sleep(BASE_BACKOFF_MILLIS * (1L shl attempt))
+                if (attempt == OrderRetryPolicy.MAX_RETRY_COUNT - 1) throw OrderTransactionFailedException()
+                Thread.sleep(OrderRetryPolicy.BASE_BACKOFF_MILLIS * (1L shl attempt))
             }
         }
 
@@ -106,7 +98,5 @@ class OrderMutationExecutor(
 
     companion object {
         private val log = LoggerFactory.getLogger(OrderMutationExecutor::class.java)
-        private const val MAX_RETRY_COUNT = 3
-        private const val BASE_BACKOFF_MILLIS = 50L
     }
 }

@@ -6,37 +6,32 @@ import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.core.common.event.OrderItemPayload
 import devcoop.occount.core.common.event.OrderPaymentPayload
 import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
+import devcoop.occount.order.application.exception.OrderConcurrencyException
 import devcoop.occount.order.application.exception.OrderNotFoundException
+import devcoop.occount.order.application.exception.OrderTransactionFailedException
 import devcoop.occount.order.application.output.OrderRepository
+import devcoop.occount.order.application.output.TransactionPort
 import devcoop.occount.order.domain.order.OrderAggregate
 import org.slf4j.LoggerFactory
-import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.stereotype.Service
-import org.springframework.transaction.PlatformTransactionManager
-import org.springframework.transaction.TransactionDefinition
-import org.springframework.transaction.support.TransactionTemplate
 
 @Service
 class OrderPaymentRequestScheduler(
     private val orderRepository: OrderRepository,
     private val eventPublisher: EventPublisher,
-    transactionManager: PlatformTransactionManager,
+    private val transactionPort: TransactionPort,
 ) {
-    private val transactionTemplate = TransactionTemplate(transactionManager).apply {
-        propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW
-    }
-
     fun schedulePaymentRequestIfEligible(orderId: String) {
-        repeat(MAX_RETRY_COUNT) { attempt ->
+        repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
             try {
                 var orderToPublish: OrderAggregate? = null
-                transactionTemplate.executeWithoutResult {
+                transactionPort.executeInNewTransaction {
                     val persistedOrder = orderRepository.findPersistedById(orderId)
                         ?: throw OrderNotFoundException()
                     val order = persistedOrder.order
 
                     if (!order.isReadyForPaymentRequest()) {
-                        return@executeWithoutResult
+                        return@executeInNewTransaction
                     }
 
                     orderToPublish = orderRepository.save(
@@ -47,12 +42,12 @@ class OrderPaymentRequestScheduler(
                 // DB 커밋 후 이벤트 발행 — 트랜잭션 내 발행 시 DB 롤백과 이벤트 불일치 방지
                 orderToPublish?.let { publishPaymentRequested(it, attempt) }
                 return
-            } catch (ex: OptimisticLockingFailureException) {
+            } catch (ex: OrderConcurrencyException) {
                 log.warn("결제 요청 스케줄링 중 낙관적 락 충돌 - 주문={} 시도={}", orderId, attempt)
-                if (attempt == MAX_RETRY_COUNT - 1) {
-                    throw ex
+                if (attempt == OrderRetryPolicy.MAX_RETRY_COUNT - 1) {
+                    throw OrderTransactionFailedException()
                 }
-                Thread.sleep(BASE_BACKOFF_MILLIS * (1L shl attempt))
+                Thread.sleep(OrderRetryPolicy.BASE_BACKOFF_MILLIS * (1L shl attempt))
             }
         }
     }
@@ -85,7 +80,5 @@ class OrderPaymentRequestScheduler(
 
     companion object {
         private val log = LoggerFactory.getLogger(OrderPaymentRequestScheduler::class.java)
-        private const val MAX_RETRY_COUNT = 3
-        private const val BASE_BACKOFF_MILLIS = 50L
     }
 }
