@@ -8,7 +8,9 @@ import devcoop.occount.core.common.event.OrderPaymentCompletedEvent
 import devcoop.occount.core.common.event.OrderPaymentFailedEvent
 import devcoop.occount.db.outbox.ConsumedEventJpaEntity
 import devcoop.occount.db.outbox.ConsumedEventRepository
+import devcoop.occount.order.application.exception.DuplicateEventException
 import devcoop.occount.order.application.usecase.order.event.HandleOrderPaymentEventUseCase
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Component
@@ -53,12 +55,16 @@ class OrderPaymentEventListener(
     }
 
     private fun saveConsumedEvent(consumerName: String, eventId: String) {
-        consumedEventRepository.save(
-            ConsumedEventJpaEntity(
-                id = "$consumerName:$eventId",
-                consumerName = consumerName,
-                eventId = eventId,
-            ),
-        )
+        try {
+            consumedEventRepository.save(
+                ConsumedEventJpaEntity(
+                    id = "$consumerName:$eventId",
+                    consumerName = consumerName,
+                    eventId = eventId,
+                ),
+            )
+        } catch (_: DataIntegrityViolationException) {
+            throw DuplicateEventException()
+        }
     }
 }

@@ -52,19 +52,17 @@ class HandleOrderPaymentEventUseCase(
     }
 
     fun applyCompensatedPayment(event: OrderPaymentCompensatedEvent, recordConsumption: () -> Unit) {
-        val updated = orderMutationExecutor.updateOrderIdempotently(
+        orderMutationExecutor.updateOrderIdempotently(
             orderId = event.orderId,
             recordConsumption = recordConsumption,
         ) { current ->
             if (current.paymentStatus != OrderStepStatus.SUCCEEDED) return@updateOrderIdempotently current
             current.copy(paymentStatus = OrderStepStatus.COMPENSATED)
-        } ?: return
-
-        orderLifecycleProcessor.completePendingOrderIfFinal(updated)
+        }
     }
 
     fun applyPaymentCompensationFailure(event: OrderPaymentCompensationFailedEvent, recordConsumption: () -> Unit) {
-        val updated = orderMutationExecutor.updateOrderIdempotently(
+        orderMutationExecutor.updateOrderIdempotently(
             orderId = event.orderId,
             recordConsumption = recordConsumption,
         ) { current ->
@@ -73,8 +71,6 @@ class HandleOrderPaymentEventUseCase(
                 paymentStatus = OrderStepStatus.COMPENSATION_FAILED,
                 failureReason = current.failureReason ?: event.reason,
             )
-        } ?: return
-
-        orderLifecycleProcessor.completePendingOrderIfFinal(updated)
+        }
     }
 }
