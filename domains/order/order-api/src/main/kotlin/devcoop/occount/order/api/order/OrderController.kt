@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.context.request.async.DeferredResult
@@ -55,9 +56,8 @@ class OrderController(
     @PostMapping("/{orderId}/cancel")
     fun cancelOrder(
         @PathVariable orderId: String,
-        httpServletRequest: HttpServletRequest,
+        @RequestHeader(AuthHeaders.KIOSK_ID) kioskId: String,
     ): ResponseEntity<OrderResponse> {
-        val kioskId = requireNotNull(httpServletRequest.getHeader(AuthHeaders.KIOSK_ID))
         val response = cancelOrderUseCase.cancel(orderId, kioskId)
         return ResponseEntity.status(HttpStatus.OK).body(response)
     }

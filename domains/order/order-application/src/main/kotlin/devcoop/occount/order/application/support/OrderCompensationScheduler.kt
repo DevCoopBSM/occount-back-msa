@@ -30,13 +30,13 @@ class OrderCompensationScheduler(
     fun scheduleRequiredCompensations(orderId: String) {
         repeat(MAX_RETRY_COUNT) { attempt ->
             try {
+                var compensationsToPublish: RequestedCompensations? = null
                 transactionTemplate.executeWithoutResult {
                     val persistedOrder = loadPersistedOrder(orderId)
-                    val requestedCompensations = markRequestedCompensations(persistedOrder)
-                        ?: return@executeWithoutResult
-
-                    publishRequestedCompensations(requestedCompensations, attempt)
+                    compensationsToPublish = markRequestedCompensations(persistedOrder)
                 }
+                // DB 커밋 후 이벤트 발행 — 트랜잭션 내 발행 시 DB 롤백과 이벤트 불일치 방지
+                compensationsToPublish?.let { publishRequestedCompensations(it, attempt) }
                 return
             } catch (ex: OptimisticLockingFailureException) {
                 log.warn("보상 처리 중 낙관적 락 충돌 - 주문={} 시도={}", orderId, attempt)

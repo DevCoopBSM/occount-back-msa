@@ -55,6 +55,26 @@ For pull requests:
 - include test/compile results,
 - add request/response examples when changing API behavior.
 
+## API Specification
+
+`docs/API_SPEC.yaml` 은 프론트엔드와 소통하는 **유일한 API 계약서**입니다.
+
+아래 변경이 발생하면 **반드시** 해당 파일을 함께 수정해야 합니다:
+- 컨트롤러에 엔드포인트 추가 / 삭제 / 경로 변경
+- 요청(Request) 또는 응답(Response) 필드 추가 / 삭제 / 타입 변경
+- 헤더 요구사항 변경 (`X-Kiosk-Id`, `Authorization` 등)
+- 인증 방식 변경 (PERMIT_ALL / OPTIONAL_AUTH / AUTHENTICATED / ADMIN_ONLY)
+- HTTP 상태 코드 변경
+
+수정 대상 컨트롤러:
+- `domains/member/member-api/.../AuthController.kt`
+- `domains/member/member-api/.../MemberController.kt`
+- `domains/item/item-api/.../ItemController.kt`
+- `domains/order/order-api/.../OrderController.kt`
+- `domains/payment/payment-api/.../PaymentController.kt`
+- `domains/payment/payment-api/.../WalletController.kt`
+- `gateway/api-gateway/.../AuthenticationPolicy.kt` (인증 정책 변경 시)
+
 ## Security & Configuration Tips
 - Copy `.env.example` when preparing local configuration.
 - Do not commit secrets from `.env`.

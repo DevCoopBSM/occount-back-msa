@@ -16,8 +16,7 @@ fun OrderStatus.canCancel(): Boolean =
     this == OrderStatus.PENDING ||
         this == OrderStatus.PROCESSING ||
         this == OrderStatus.CANCEL_REQUESTED ||
-        this == OrderStatus.COMPENSATING ||
-        this == OrderStatus.TIMED_OUT
+        this == OrderStatus.COMPENSATING
 
 fun OrderStatus.isFinalForClient(): Boolean =
     this == OrderStatus.COMPLETED ||
