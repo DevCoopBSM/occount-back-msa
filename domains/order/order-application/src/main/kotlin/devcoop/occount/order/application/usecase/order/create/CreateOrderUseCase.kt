@@ -13,7 +13,6 @@ import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
 import devcoop.occount.order.application.support.OrderMutationExecutor
-import devcoop.occount.order.application.support.OrderPendingResultRegistry
 import devcoop.occount.order.application.support.OrderRequestValidator
 import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderPayment
@@ -23,56 +22,44 @@ import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
-import java.util.concurrent.CompletableFuture
 
 @Service
 class CreateOrderUseCase(
     private val orderMutationExecutor: OrderMutationExecutor,
     private val orderRepository: OrderRepository,
     private val orderRequestValidator: OrderRequestValidator,
-    private val orderPendingResultRegistry: OrderPendingResultRegistry,
-    private val expireOrderUseCase: ExpireOrderUseCase,
     private val eventPublisher: EventPublisher,
     private val orderTimeoutConfig: OrderTimeoutConfig,
 ) {
-    fun placeOrder(request: OrderRequest, userId: Long?): CompletableFuture<OrderResponse> {
+    fun placeOrder(request: OrderRequest, userId: Long?): OrderResponse {
         if (userId == null && request.paymentType != OrderPaymentType.CARD) {
-            return CompletableFuture.failedFuture(OrderInvalidPaymentTypeException())
+            throw OrderInvalidPaymentTypeException()
         }
 
         val validatedRequest = orderRequestValidator.validate(request)
         val orderId = UUID.randomUUID().toString()
 
-        val responseFuture = orderPendingResultRegistry.registerPendingOrder(orderId, orderTimeoutConfig.timeoutSeconds) {
-            log.warn("주문 처리 시간 초과 - 주문={}", orderId)
-            expireOrderUseCase.expire(orderId)
-        }
-
-        try {
-            val createdOrder = orderMutationExecutor.executeInNewTransaction {
-                orderRepository.save(
-                    OrderAggregate(
-                        orderId = orderId,
-                        userId = userId,
-                        lines = validatedRequest.lines,
-                        payment = OrderPayment(
-                            type = request.paymentType,
-                            totalAmount = validatedRequest.totalAmount,
-                        ),
-                        status = OrderStatus.PROCESSING,
-                        kioskId = request.kioskId,
-                        expiresAt = Instant.now().plus(Duration.ofSeconds(orderTimeoutConfig.timeoutSeconds)),
+        val createdOrder = orderMutationExecutor.executeInNewTransaction {
+            orderRepository.save(
+                OrderAggregate(
+                    orderId = orderId,
+                    userId = userId,
+                    lines = validatedRequest.lines,
+                    payment = OrderPayment(
+                        type = request.paymentType,
+                        totalAmount = validatedRequest.totalAmount,
                     ),
-                )
-            }
-            // DB 커밋 후 이벤트 발행 — 트랜잭션 내 발행 시 DB 롤백과 이벤트 불일치 방지
-            publishOrderRequested(createdOrder, userId)
-            log.info("주문 생성 완료 - 주문={} 사용자={}", createdOrder.orderId, userId)
-        } catch (ex: Exception) {
-            orderPendingResultRegistry.failPendingOrder(orderId, ex)
+                    status = OrderStatus.PROCESSING,
+                    kioskId = request.kioskId,
+                    expiresAt = Instant.now().plus(Duration.ofSeconds(orderTimeoutConfig.timeoutSeconds)),
+                ),
+            )
         }
+        // DB 커밋 후 이벤트 발행 — 트랜잭션 내 발행 시 DB 롤백과 이벤트 불일치 방지
+        publishOrderRequested(createdOrder, userId)
+        log.info("주문 생성 완료 - 주문={} 사용자={}", createdOrder.orderId, userId)
 
-        return responseFuture
+        return OrderResponse(orderId = createdOrder.orderId, status = createdOrder.status)
     }
 
     private fun publishOrderRequested(createdOrder: OrderAggregate, userId: Long?) {
