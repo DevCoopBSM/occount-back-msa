@@ -4,7 +4,7 @@ import java.time.Instant
 
 data class OrderAggregate(
     val orderId: String,
-    val userId: Long,
+    val userId: Long?,
     val lines: List<OrderLine>,
     val payment: OrderPayment,
     val status: OrderStatus = OrderStatus.PENDING,
@@ -12,6 +12,7 @@ data class OrderAggregate(
     val stockStatus: OrderStepStatus = OrderStepStatus.PENDING,
     val cancelRequested: Boolean = false,
     val failureReason: String? = null,
+    val kioskId: String,
     val expiresAt: Instant,
     val paymentResult: OrderPaymentResult = OrderPaymentResult(),
     val paymentRequested: Boolean = false,

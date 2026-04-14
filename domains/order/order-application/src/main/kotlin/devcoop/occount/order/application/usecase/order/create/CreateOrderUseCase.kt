@@ -5,7 +5,10 @@ import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.core.common.event.OrderItemPayload
 import devcoop.occount.core.common.event.OrderPaymentPayload
+import devcoop.occount.core.common.event.OrderPaymentType
 import devcoop.occount.core.common.event.OrderRequestedEvent
+import devcoop.occount.order.application.config.OrderTimeoutConfig
+import devcoop.occount.order.application.exception.OrderInvalidPaymentTypeException
 import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
@@ -16,7 +19,6 @@ import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderPayment
 import devcoop.occount.order.domain.order.OrderStatus
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.Instant
@@ -31,12 +33,17 @@ class CreateOrderUseCase(
     private val orderPendingResultRegistry: OrderPendingResultRegistry,
     private val expireOrderUseCase: ExpireOrderUseCase,
     private val eventPublisher: EventPublisher,
-    @param:Value("\${order.timeout-seconds:30}") private val timeoutSeconds: Long,
+    private val orderTimeoutConfig: OrderTimeoutConfig,
 ) {
-    fun placeOrder(request: OrderRequest, userId: Long): CompletableFuture<OrderResponse> {
+    fun placeOrder(request: OrderRequest, userId: Long?): CompletableFuture<OrderResponse> {
+        if (userId == null && request.paymentType != OrderPaymentType.CARD) {
+            return CompletableFuture.failedFuture(OrderInvalidPaymentTypeException())
+        }
+
         val validatedRequest = orderRequestValidator.validate(request)
         val orderId = UUID.randomUUID().toString()
-        val responseFuture = orderPendingResultRegistry.registerPendingOrder(orderId, timeoutSeconds) {
+
+        val responseFuture = orderPendingResultRegistry.registerPendingOrder(orderId, orderTimeoutConfig.timeoutSeconds) {
             log.warn("주문 처리 시간 초과 - 주문={}", orderId)
             expireOrderUseCase.expire(orderId)
         }
@@ -53,7 +60,8 @@ class CreateOrderUseCase(
                             totalAmount = validatedRequest.totalAmount,
                         ),
                         status = OrderStatus.PROCESSING,
-                        expiresAt = Instant.now().plus(Duration.ofSeconds(timeoutSeconds)),
+                        kioskId = request.kioskId,
+                        expiresAt = Instant.now().plus(Duration.ofSeconds(orderTimeoutConfig.timeoutSeconds)),
                     ),
                 )
 
@@ -68,7 +76,7 @@ class CreateOrderUseCase(
         return responseFuture
     }
 
-    private fun publishOrderRequested(createdOrder: OrderAggregate, userId: Long) {
+    private fun publishOrderRequested(createdOrder: OrderAggregate, userId: Long?) {
         eventPublisher.publish(
             topic = DomainTopics.ORDER_REQUESTED,
             key = createdOrder.orderId,

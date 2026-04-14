@@ -36,4 +36,17 @@ class AuthenticationPolicyTest {
             policy.resolveAccess(HttpMethod.GET, "/api/v3/items/without-barcode"),
         )
     }
+
+    @Test
+    fun `order creation allows optional auth`() {
+        assertEquals(AuthenticationRule.Access.OPTIONAL_AUTH, policy.resolveAccess(HttpMethod.POST, "/api/v3/orders"))
+    }
+
+    @Test
+    fun `order cancel requires authentication`() {
+        assertEquals(
+            AuthenticationRule.Access.AUTHENTICATED,
+            policy.resolveAccess(HttpMethod.POST, "/api/v3/orders/order-1/cancel"),
+        )
+    }
 }

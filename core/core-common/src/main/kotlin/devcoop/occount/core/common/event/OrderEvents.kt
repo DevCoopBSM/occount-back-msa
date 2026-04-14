@@ -2,14 +2,14 @@ package devcoop.occount.core.common.event
 
 data class OrderRequestedEvent(
     val orderId: String,
-    val userId: Long,
+    val userId: Long?,
     val payment: OrderPaymentPayload,
     val items: List<OrderItemPayload>,
 )
 
 data class OrderPaymentRequestedEvent(
     val orderId: String,
-    val userId: Long,
+    val userId: Long?,
     val payment: OrderPaymentPayload,
     val items: List<OrderItemPayload>,
 )
@@ -22,6 +22,7 @@ data class OrderPaymentPayload(
 enum class OrderPaymentType {
     PAYMENT,
     MIXED,
+    CARD,
 }
 
 data class OrderItemPayload(
@@ -34,7 +35,7 @@ data class OrderItemPayload(
 
 data class OrderPaymentCompletedEvent(
     val orderId: String,
-    val userId: Long,
+    val userId: Long?,
     val paymentLogId: Long,
     val pointsUsed: Int,
     val cardAmount: Int,
@@ -45,7 +46,7 @@ data class OrderPaymentCompletedEvent(
 
 data class OrderPaymentFailedEvent(
     val orderId: String,
-    val userId: Long,
+    val userId: Long?,
     val reason: String,
 )
 
@@ -62,7 +63,7 @@ data class OrderStockFailedEvent(
 
 data class OrderPaymentCompensationRequestedEvent(
     val orderId: String,
-    val userId: Long,
+    val userId: Long?,
     val paymentLogId: Long?,
     val pointsUsed: Int,
     val cardAmount: Int,
@@ -70,12 +71,12 @@ data class OrderPaymentCompensationRequestedEvent(
 
 data class OrderPaymentCompensatedEvent(
     val orderId: String,
-    val userId: Long,
+    val userId: Long?,
 )
 
 data class OrderPaymentCompensationFailedEvent(
     val orderId: String,
-    val userId: Long,
+    val userId: Long?,
     val reason: String,
 )
 

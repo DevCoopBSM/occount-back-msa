@@ -29,4 +29,5 @@ management:
         include: health,prometheus
 
 order:
+  timeout-seconds: ${ORDER_TIMEOUT_SECONDS:30}
   async-timeout-buffer-millis: ${ORDER_ASYNC_TIMEOUT_BUFFER_MILLIS:10000}

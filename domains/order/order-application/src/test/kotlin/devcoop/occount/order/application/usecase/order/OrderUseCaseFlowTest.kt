@@ -125,7 +125,7 @@ class OrderUseCaseFlowTest {
         val eventPublisher = FakeEventPublisher()
         val cancelOrderUseCase = cancelOrderUseCase(orderRepository, eventPublisher)
 
-        cancelOrderUseCase.cancel(ORDER_ID, USER_ID)
+        cancelOrderUseCase.cancel(ORDER_ID, KIOSK_ID)
 
         val publishedEvent = eventPublisher.published.last().payload
         assertInstanceOf(OrderPaymentCompensationRequestedEvent::class.java, publishedEvent)
@@ -218,6 +218,7 @@ class OrderUseCaseFlowTest {
         return OrderAggregate(
             orderId = ORDER_ID,
             userId = USER_ID,
+            kioskId = KIOSK_ID,
             lines = listOf(
                 OrderLine(
                     itemId = ITEM_ID,
@@ -383,5 +384,6 @@ class OrderUseCaseFlowTest {
         const val ORDER_ID = "order-1"
         const val USER_ID = 1L
         const val ITEM_ID = 101L
+        const val KIOSK_ID = "kiosk-1"
     }
 }

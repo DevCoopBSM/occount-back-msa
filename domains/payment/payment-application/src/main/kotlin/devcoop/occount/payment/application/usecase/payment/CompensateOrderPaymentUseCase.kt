@@ -35,7 +35,7 @@ class CompensateOrderPaymentUseCase(
             if (event.pointsUsed > 0) {
                 chargeWalletUseCase.charge(
                     ChargeWalletRequest(
-                        userId = event.userId,
+                        userId = requireNotNull(event.userId) { "포인트 환불은 회원 주문에서만 발생합니다" },
                         amount = event.pointsUsed,
                         reason = ChargeReason.ORDER_CANCELLATION,
                     ),
