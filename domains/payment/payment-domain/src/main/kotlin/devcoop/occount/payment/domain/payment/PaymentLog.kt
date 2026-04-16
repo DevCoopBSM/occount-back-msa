@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 
 class PaymentLog(
     private var paymentId: Long = 0L,
-    private var userId: Long,
+    private var userId: Long?,
     private var paymentDate: LocalDateTime = LocalDateTime.now(),
     private var paymentType: PaymentType,
     private var totalAmount: Int,
@@ -18,7 +18,7 @@ class PaymentLog(
     private var refundRequesterId: String? = null,
 ) {
     fun getPaymentId(): Long = paymentId
-    fun getUserId(): Long = userId
+    fun getUserId(): Long? = userId
     fun getPaymentDate(): LocalDateTime = paymentDate
     fun getPaymentType(): PaymentType = paymentType
     fun getTotalAmount(): Int = totalAmount

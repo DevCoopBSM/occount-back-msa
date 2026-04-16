@@ -3,11 +3,11 @@ package devcoop.occount.payment.api.payment
 import devcoop.occount.core.common.auth.AuthHeaders
 import devcoop.occount.payment.application.query.paymentlog.GetPaymentHistoryQueryService
 import devcoop.occount.payment.application.query.paymentlog.PaymentLogResult
+import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentFacade
 import devcoop.occount.payment.application.shared.PaymentRequest
 import devcoop.occount.payment.application.shared.PaymentResponse
 import devcoop.occount.payment.domain.payment.PaymentType
-import devcoop.occount.payment.domain.payment.TransactionType
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -26,10 +26,8 @@ class PaymentControllerTest {
 
     @Test
     fun `execute payment delegates to facade with authenticated user id header`() {
-        val request = PaymentRequest(
-            type = TransactionType.PAYMENT,
-            payment = null,
-        )
+        val paymentDetails = PaymentDetails(items = emptyList(), totalAmount = 1000)
+        val request = PaymentRequest(payment = paymentDetails)
         val expected = PaymentResponse.forPayment(
             type = PaymentType.POINT,
             totalAmount = 1000,
@@ -41,7 +39,7 @@ class PaymentControllerTest {
             transactionId = null,
         )
 
-        `when`(paymentFacade.execute(7L, request)).thenReturn(expected)
+        `when`(paymentFacade.execute(7L, paymentDetails)).thenReturn(expected)
 
         val httpRequest = MockHttpServletRequest().apply {
             addHeader(AuthHeaders.AUTHENTICATED_USER_ID, "7")
@@ -50,7 +48,7 @@ class PaymentControllerTest {
         val actual = controller.executePayment(request, httpRequest)
 
         assertSame(expected, actual)
-        verify(paymentFacade).execute(7L, request)
+        verify(paymentFacade).execute(7L, paymentDetails)
     }
 
     @Test

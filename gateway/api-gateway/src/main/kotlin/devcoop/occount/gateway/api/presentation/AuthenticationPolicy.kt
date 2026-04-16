@@ -16,9 +16,12 @@ class AuthenticationPolicy {
         rule(HttpMethod.GET, "/api/v3/items").permitAll()
 
         rule("/api/v3/users/**").authenticated()
+        rule(HttpMethod.POST, "/api/v3/orders").optionalAuth()
+        rule(HttpMethod.POST, "/api/v3/orders/{orderId}/cancel").optionalAuth()
         rule("/api/v3/orders/**").authenticated()
         rule("/api/v3/payments/**").authenticated()
         rule("/api/v3/points/**").authenticated()
+        rule("/api/v3/wallet/**").authenticated()
 
         rule(HttpMethod.POST, "/api/v3/items/sync").adminOnly()
         rule(HttpMethod.PUT, "/api/v3/items/{id}").adminOnly()
@@ -33,7 +36,7 @@ class AuthenticationPolicy {
         return rules
             .firstOrNull { it.matches(method, path) }
             ?.access
-            ?: AuthenticationRule.Access.PERMIT_ALL
+            ?: AuthenticationRule.Access.AUTHENTICATED
     }
 
     private fun authenticationRules(init: AuthenticationRulesBuilder.() -> Unit): List<AuthenticationRule> {

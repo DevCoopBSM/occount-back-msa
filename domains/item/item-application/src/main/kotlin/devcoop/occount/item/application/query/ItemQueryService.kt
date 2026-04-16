@@ -27,6 +27,12 @@ class ItemQueryService(
         )
     }
 
+    fun getItemsByIds(ids: List<Long>): ItemLookupListResponse {
+        return ItemLookupListResponse(
+            items = itemRepository.findAllByItemIds(ids).map(ItemMapper::toLookupResponse),
+        )
+    }
+
     fun getItemByBarcode(barcode: String): ItemLookupResponse {
         val item = itemRepository.findByBarcode(barcode)
             ?: throw ItemNotFoundException()

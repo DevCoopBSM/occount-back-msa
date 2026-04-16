@@ -27,3 +27,11 @@ management:
     web:
       exposure:
         include: health,prometheus
+
+order:
+  timeout-seconds: ${ORDER_TIMEOUT_SECONDS:30}
+  async-timeout-buffer-millis: ${ORDER_ASYNC_TIMEOUT_BUFFER_MILLIS:10000}
+
+services:
+  item:
+    base-url: ${ITEM_SERVICE_BASE_URL:http://localhost:8081/api/v3}

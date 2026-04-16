@@ -39,4 +39,20 @@ object PaymentMapper {
             eventType = EventType.NONE,
         )
     }
+
+    fun toCardPaymentLog(
+        userId: Long?,
+        paymentDetails: PaymentDetails,
+        cardResult: CardResult?,
+        transactionResult: TransactionResult?,
+    ): PaymentLog {
+        return PaymentLog(
+            userId = userId,
+            paymentType = PaymentType.CARD,
+            totalAmount = paymentDetails.totalAmount,
+            cardInfo = cardResult?.let(CardResult::toDomain),
+            transactionInfo = transactionResult?.let(TransactionResult::toDomain),
+            eventType = EventType.NONE,
+        )
+    }
 }

@@ -10,7 +10,7 @@ import java.time.LocalDateTime
 
 data class PaymentLogResult(
     val paymentId: Long,
-    val userId: Long,
+    val userId: Long?,
     val paymentDate: LocalDateTime,
     val paymentType: PaymentType,
     val totalAmount: Int,

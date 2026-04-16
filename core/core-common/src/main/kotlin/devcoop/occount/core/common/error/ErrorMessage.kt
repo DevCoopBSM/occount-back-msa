@@ -23,6 +23,15 @@ enum class ErrorMessage(
     ITEM_CONCURRENT_UPDATE("다른 요청에 의해 상품이 변경되었습니다. 잠시 후 다시 시도해주세요."),
 
 
+    ORDER_NOT_FOUND("주문 정보를 찾을 수 없습니다."),
+    ORDER_ACCESS_DENIED("해당 주문에 접근할 수 없습니다."),
+    ORDER_CANNOT_CANCEL("현재 상태에서는 주문을 취소할 수 없습니다."),
+    ORDER_INVALID_TOTAL_PRICE("주문 항목의 총 금액이 일치하지 않습니다."),
+    ORDER_INVALID_PAYMENT_TYPE("비회원 주문은 카드 결제만 지원합니다."),
+    ORDER_TRANSACTION_FAILED("주문 트랜잭션 처리에 실패했습니다."),
+    ORDER_UNREACHABLE_STATE("도달할 수 없는 주문 처리 상태입니다."),
+
+
     PAYMENT_FAILED("결제 처리에 실패했습니다."),
     TRANSACTION_IN_PROGRESS("이미 진행 중인 거래가 있습니다."),
     INSUFFICIENT_POINTS("포인트가 부족합니다."),
@@ -39,4 +48,6 @@ enum class ErrorMessage(
     PAYMENT_LOG_NOT_FOUND("결제 로그를 찾을 수 없습니다."),
     PAYMENT_LOG_SAVE_FAILED("결제 로그 저장에 실패했습니다."),
     CHARGE_LOG_SAVE_FAILED("충전 기록 저장에 실패했습니다."),
+
+    INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다."),
 }
