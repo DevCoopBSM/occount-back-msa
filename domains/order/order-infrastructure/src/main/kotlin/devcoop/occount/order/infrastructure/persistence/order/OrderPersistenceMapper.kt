@@ -5,6 +5,7 @@ import devcoop.occount.order.domain.order.OrderLine
 import devcoop.occount.order.domain.order.OrderPayment
 import devcoop.occount.order.domain.order.OrderPaymentResult
 
+
 object OrderPersistenceMapper {
     fun toDomain(entity: OrderJpaEntity): OrderAggregate {
         return OrderAggregate(
@@ -12,7 +13,6 @@ object OrderPersistenceMapper {
             userId = entity.getUserId(),
             lines = entity.getLines().map(::toDomainLine),
             payment = OrderPayment(
-                type = entity.getPaymentType(),
                 totalAmount = entity.getTotalAmount(),
             ),
             status = entity.getStatus(),
@@ -39,7 +39,6 @@ object OrderPersistenceMapper {
         val entity = OrderJpaEntity(
             orderId = domain.orderId,
             userId = domain.userId,
-            paymentType = domain.payment.type,
             totalAmount = domain.payment.totalAmount,
             status = domain.status,
             paymentStatus = domain.paymentStatus,

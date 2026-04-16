@@ -5,10 +5,8 @@ import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.core.common.event.OrderItemPayload
 import devcoop.occount.core.common.event.OrderPaymentPayload
-import devcoop.occount.core.common.event.OrderPaymentType
 import devcoop.occount.core.common.event.OrderRequestedEvent
 import devcoop.occount.order.application.config.OrderTimeoutConfig
-import devcoop.occount.order.application.exception.OrderInvalidPaymentTypeException
 import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
@@ -32,10 +30,6 @@ class CreateOrderUseCase(
     private val orderTimeoutConfig: OrderTimeoutConfig,
 ) {
     fun placeOrder(request: OrderRequest, userId: Long?): OrderResponse {
-        if (userId == null && request.paymentType != OrderPaymentType.CARD) {
-            throw OrderInvalidPaymentTypeException()
-        }
-
         val validatedRequest = orderRequestValidator.validate(request)
         val orderId = UUID.randomUUID().toString()
 
@@ -46,7 +40,6 @@ class CreateOrderUseCase(
                     userId = userId,
                     lines = validatedRequest.lines,
                     payment = OrderPayment(
-                        type = request.paymentType,
                         totalAmount = validatedRequest.totalAmount,
                     ),
                     status = OrderStatus.PROCESSING,
@@ -71,7 +64,6 @@ class CreateOrderUseCase(
                 orderId = createdOrder.orderId,
                 userId = userId,
                 payment = OrderPaymentPayload(
-                    type = createdOrder.payment.type,
                     totalAmount = createdOrder.payment.totalAmount,
                 ),
                 items = createdOrder.lines.map { line ->

@@ -9,8 +9,6 @@ import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentFacade
 import devcoop.occount.payment.application.shared.PaymentItem
-import devcoop.occount.payment.application.shared.PaymentRequest
-import devcoop.occount.payment.domain.payment.TransactionType
 import org.springframework.stereotype.Service
 
 @Service
@@ -22,20 +20,17 @@ class ProcessOrderPaymentUseCase(
         try {
             val result = paymentFacade.execute(
                 event.userId,
-                PaymentRequest(
-                    type = TransactionType.valueOf(event.payment.type.name),
-                    payment = PaymentDetails(
-                        items = event.items.map { item ->
-                            PaymentItem(
-                                itemId = item.itemId.toString(),
-                                itemName = item.itemName,
-                                itemPrice = item.itemPrice,
-                                quantity = item.quantity,
-                                totalPrice = item.totalPrice,
-                            )
-                        },
-                        totalAmount = event.payment.totalAmount,
-                    ),
+                PaymentDetails(
+                    items = event.items.map { item ->
+                        PaymentItem(
+                            itemId = item.itemId.toString(),
+                            itemName = item.itemName,
+                            itemPrice = item.itemPrice,
+                            quantity = item.quantity,
+                            totalPrice = item.totalPrice,
+                        )
+                    },
+                    totalAmount = event.payment.totalAmount,
                 ),
             )
 
