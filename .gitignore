@@ -44,3 +44,4 @@ out/
 .env.*
 **/*.env
 .DS_Store
+.claude
