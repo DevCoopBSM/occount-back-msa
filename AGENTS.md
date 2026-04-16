@@ -54,8 +54,11 @@ Do not skip this step. Compile errors in related files (imports, constructor cha
 
 ## Commit & Pull Request Guidelines
 - If a commit is requested, check `COMMIT.md` first and follow its rules.
+- **커밋은 반드시 관심사별로 분리해서 여러 개로 나눠야 한다. 하나의 커밋에 여러 관심사를 절대 섞지 말 것.**
+  - fix, refactor, feat, test, chore 등 타입이 다르면 무조건 별도 커밋으로 분리한다.
+  - 영향받는 모듈이나 레이어가 다르면 별도 커밋으로 분리한다.
+  - 관련 테스트 코드도 구현 커밋과 별도로 분리한다.
 - Split commits into small, clear units by role and responsibility.
-- Separate different change types when possible, such as refactoring, feature work, bug fixes, tests, and docs.
 - Write commit messages in Korean.
 - Do not run `commit`, `amend`, or `push` unless the user explicitly asks.
 
