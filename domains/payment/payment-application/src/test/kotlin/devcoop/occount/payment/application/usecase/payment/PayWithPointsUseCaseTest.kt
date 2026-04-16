@@ -71,31 +71,11 @@ class PayWithPointsUseCaseTest {
 
     private class FakePaymentLogRepository : PaymentLogRepository {
         val saved = mutableListOf<PaymentLog>()
-        private var nextId = 1L
 
-        override fun findById(paymentId: Long): PaymentLog? = saved.firstOrNull { it.getPaymentId() == paymentId }
         override fun findByUserId(userId: Long): List<PaymentLog> = saved.filter { it.getUserId() == userId }
         override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<PaymentLog> = saved
         override fun findByPaymentType(paymentType: PaymentType): List<PaymentLog> = saved.filter { it.getPaymentType() == paymentType }
-        override fun save(paymentLog: PaymentLog): PaymentLog {
-            val persisted = PaymentLog(
-                paymentId = if (paymentLog.getPaymentId() == 0L) nextId++ else paymentLog.getPaymentId(),
-                userId = paymentLog.getUserId(),
-                paymentDate = paymentLog.getPaymentDate(),
-                paymentType = paymentLog.getPaymentType(),
-                totalAmount = paymentLog.getTotalAmount(),
-                pointTransaction = paymentLog.getPointTransaction(),
-                cardInfo = paymentLog.getCardInfo(),
-                transactionInfo = paymentLog.getTransactionInfo(),
-                eventType = paymentLog.getEventType(),
-                refundState = paymentLog.getRefundState(),
-                refundDate = paymentLog.getRefundDate(),
-                refundRequesterId = paymentLog.getRefundRequesterId(),
-            )
-            saved.removeIf { it.getPaymentId() == persisted.getPaymentId() }
-            saved += persisted
-            return persisted
-        }
+        override fun save(paymentLog: PaymentLog): PaymentLog { saved += paymentLog; return paymentLog }
         override fun saveAll(paymentLogs: List<PaymentLog>): List<PaymentLog> { saved += paymentLogs; return paymentLogs }
     }
 }

@@ -55,16 +55,11 @@ class ApiAdviceHandler {
             ErrorMessage.ITEM_NOT_FOUND,
             ErrorMessage.ITEM_NOT_SYNCHRONIZED,
             ErrorMessage.PAYMENT_LOG_NOT_FOUND,
-            ErrorMessage.ORDER_NOT_FOUND,
             -> HttpStatus.NOT_FOUND
 
             ErrorMessage.USER_ALREADY_EXISTS,
             ErrorMessage.TRANSACTION_IN_PROGRESS,
-            ErrorMessage.ORDER_CANNOT_CANCEL,
-            ErrorMessage.ORDER_TRANSACTION_FAILED,
             -> HttpStatus.CONFLICT
-
-            ErrorMessage.ORDER_ACCESS_DENIED -> HttpStatus.FORBIDDEN
 
             ErrorMessage.PAYMENT_TIMEOUT -> HttpStatus.REQUEST_TIMEOUT
 

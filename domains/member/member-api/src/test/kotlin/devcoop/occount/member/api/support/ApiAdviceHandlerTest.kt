@@ -1,6 +1,5 @@
 package devcoop.occount.member.api.support
 
-import devcoop.occount.member.application.exception.PointNotFoundException
 import devcoop.occount.member.application.exception.InvalidPasswordException
 import devcoop.occount.member.application.exception.UserAlreadyExistsException
 import devcoop.occount.member.application.exception.UserNotFoundException
@@ -44,17 +43,6 @@ class ApiAdviceHandlerTest {
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
         assertEquals("비밀번호가 일치하지 않습니다.", response.body?.message)
-    }
-
-    @Test
-    @DisplayName("PointNotFoundException 발생 시 404 NOT_FOUND와 에러 메시지를 반환한다")
-    fun `handleBusinessBaseException returns 404 for PointNotFoundException`() {
-        val exception = PointNotFoundException()
-
-        val response = apiAdviceHandler.handleBusinessBaseException(exception)
-
-        assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
-        assertEquals("포인트 정보를 조회할 수 없습니다.", response.body?.message)
     }
 
     @Test

@@ -37,7 +37,6 @@ class PaymentControllerTest {
             remainingPoints = 0,
             approvalNumber = null,
             transactionId = null,
-            paymentLogId = 1L,
         )
 
         `when`(paymentFacade.execute(7L, paymentDetails)).thenReturn(expected)
