@@ -6,7 +6,7 @@ object WalletPersistenceMapper {
     fun toDomain(entity: WalletJpaEntity): Wallet {
         return Wallet(
             userId = entity.getUserId(),
-            point = entity.getPoint(),
+            point = entity.getBalance(),
         )
     }
 
