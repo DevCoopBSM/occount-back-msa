@@ -1,4 +1,4 @@
-package devcoop.occount.payment.infrastructure.client.pg
+package devcoop.occount.payment.infrastructure.client.van
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -10,18 +10,18 @@ import org.springframework.web.client.RestClient
 import java.time.Duration
 
 @Configuration
-@EnableConfigurationProperties(PgProperties::class)
-class PgConfig(
-    private val pgProperties: PgProperties
+@EnableConfigurationProperties(VanProperties::class)
+class VanConfig(
+    private val vanProperties: VanProperties
 ) {
 
     @Bean
-    fun pgClient(): RestClient {
+    fun vanClient(): RestClient {
         val requestFactory = JdkClientHttpRequestFactory()
         requestFactory.setReadTimeout(Duration.ofSeconds(40))
 
         return RestClient.builder()
-            .baseUrl(pgProperties.url)
+            .baseUrl(vanProperties.url)
             .requestFactory(requestFactory)
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
