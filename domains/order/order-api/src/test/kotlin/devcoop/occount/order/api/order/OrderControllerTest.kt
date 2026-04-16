@@ -6,64 +6,78 @@ import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
+import devcoop.occount.order.application.usecase.order.get.GetOrderUseCase
 import devcoop.occount.order.domain.order.OrderStatus
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.springframework.http.HttpStatus
-import org.springframework.mock.web.MockHttpServletRequest
-import java.util.concurrent.CompletableFuture
 
 class OrderControllerTest {
     private val createOrderUseCase = mock(CreateOrderUseCase::class.java)
     private val cancelOrderUseCase = mock(CancelOrderUseCase::class.java)
-    private val controller = OrderController(createOrderUseCase, cancelOrderUseCase, 30L, 10_000L)
+    private val getOrderUseCase = mock(GetOrderUseCase::class.java)
+    private val controller = OrderController(createOrderUseCase, cancelOrderUseCase, getOrderUseCase)
 
     @Test
-    fun `handle order returns resolved async response`() {
+    fun `createOrder returns ACCEPTED with response body`() {
         val request = OrderRequest(
             items = emptyList(),
-            paymentType = devcoop.occount.core.common.event.OrderPaymentType.PAYMENT,
             totalAmount = 0,
+            kioskId = "kiosk-1",
         )
-        val expected = OrderResponse(
-            orderId = "order-1",
-            status = OrderStatus.COMPLETED,
-        )
+        val expected = OrderResponse(orderId = "order-1", status = OrderStatus.PROCESSING)
 
-        `when`(createOrderUseCase.placeOrder(request, 7L)).thenReturn(CompletableFuture.completedFuture(expected))
+        `when`(createOrderUseCase.placeOrder(request, 7L)).thenReturn(expected)
 
-        val httpRequest = MockHttpServletRequest().apply {
-            addHeader(AuthHeaders.AUTHENTICATED_USER_ID, "7")
-        }
+        val response = controller.createOrder(request, userIdHeader = "7")
 
-        val deferredResult = controller.createOrder(request, httpRequest)
-        val response = deferredResult.result as org.springframework.http.ResponseEntity<*>
-
-        assertEquals(HttpStatus.OK, response.statusCode)
+        assertEquals(HttpStatus.ACCEPTED, response.statusCode)
         assertEquals(expected, response.body)
     }
 
     @Test
-    fun `handle order propagates business exception to async error handling`() {
+    fun `createOrder with no user id header passes null userId`() {
         val request = OrderRequest(
             items = emptyList(),
-            paymentType = devcoop.occount.core.common.event.OrderPaymentType.PAYMENT,
             totalAmount = 0,
+            kioskId = "kiosk-1",
+        )
+        val expected = OrderResponse(orderId = "order-2", status = OrderStatus.PROCESSING)
+
+        `when`(createOrderUseCase.placeOrder(request, null)).thenReturn(expected)
+
+        val response = controller.createOrder(request, userIdHeader = null)
+
+        assertEquals(HttpStatus.ACCEPTED, response.statusCode)
+        assertEquals(expected, response.body)
+    }
+
+    @Test
+    fun `createOrder propagates business exception`() {
+        val request = OrderRequest(
+            items = emptyList(),
+            totalAmount = 0,
+            kioskId = "kiosk-1",
         )
 
-        `when`(createOrderUseCase.placeOrder(request, 7L)).thenReturn(
-            CompletableFuture.failedFuture(OrderInvalidTotalPriceException()),
-        )
+        `when`(createOrderUseCase.placeOrder(request, 7L)).thenThrow(OrderInvalidTotalPriceException())
 
-        val httpRequest = MockHttpServletRequest().apply {
-            addHeader(AuthHeaders.AUTHENTICATED_USER_ID, "7")
+        assertThrows<OrderInvalidTotalPriceException> {
+            controller.createOrder(request, userIdHeader = "7")
         }
+    }
 
-        val deferredResult = controller.createOrder(request, httpRequest)
+    @Test
+    fun `getOrder returns 200 with response body`() {
+        val expected = OrderResponse(orderId = "order-1", status = OrderStatus.COMPLETED)
+        `when`(getOrderUseCase.getOrder("order-1")).thenReturn(expected)
 
-        assertInstanceOf(OrderInvalidTotalPriceException::class.java, deferredResult.result)
+        val response = controller.getOrder("order-1")
+
+        assertEquals(HttpStatus.OK, response.statusCode)
+        assertEquals(expected, response.body)
     }
 }

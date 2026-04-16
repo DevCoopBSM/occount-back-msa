@@ -25,7 +25,7 @@ class PaymentController(
         httpRequest: HttpServletRequest,
     ): PaymentResponse {
         val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return paymentFacade.execute(userId, request)
+        return paymentFacade.execute(userId, request.requirePayment())
     }
 
     @GetMapping("/history")

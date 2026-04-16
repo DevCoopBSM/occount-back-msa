@@ -92,7 +92,7 @@ class CompensateOrderPaymentUseCaseTest {
             throw UnsupportedOperationException()
         }
 
-        override fun cancel(transactionId: String?, approvalNumber: String?, amount: Int): PgResult {
+        override fun cancel(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int): PgResult {
             return PgResult(true, "ok", null, null, null, null, null)
         }
     }

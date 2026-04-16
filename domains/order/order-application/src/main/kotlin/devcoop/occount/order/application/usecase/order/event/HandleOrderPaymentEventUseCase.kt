@@ -15,12 +15,12 @@ class HandleOrderPaymentEventUseCase(
     private val orderMutationExecutor: OrderMutationExecutor,
     private val orderLifecycleProcessor: OrderLifecycleProcessor,
 ) {
-    fun applyCompletedPayment(event: OrderPaymentCompletedEvent) {
-        val updated = orderMutationExecutor.updateOrder(event.orderId) { current ->
-            if (current.paymentStatus != OrderStepStatus.PENDING) {
-                return@updateOrder current
-            }
-
+    fun applyCompletedPayment(event: OrderPaymentCompletedEvent, recordConsumption: () -> Unit) {
+        val updated = orderMutationExecutor.updateOrderIdempotently(
+            orderId = event.orderId,
+            recordConsumption = recordConsumption,
+        ) { current ->
+            if (current.paymentStatus != OrderStepStatus.PENDING) return@updateOrderIdempotently current
             current.copy(
                 paymentStatus = OrderStepStatus.SUCCEEDED,
                 paymentResult = OrderPaymentResult(
@@ -31,50 +31,50 @@ class HandleOrderPaymentEventUseCase(
                     approvalNumber = event.approvalNumber,
                 ),
             )
-        }
+        } ?: return
 
         orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 
-    fun applyFailedPayment(event: OrderPaymentFailedEvent) {
-        val updated = orderMutationExecutor.updateOrder(event.orderId) { current ->
-            if (current.paymentStatus != OrderStepStatus.PENDING) {
-                return@updateOrder current
-            }
-
+    fun applyFailedPayment(event: OrderPaymentFailedEvent, recordConsumption: () -> Unit) {
+        val updated = orderMutationExecutor.updateOrderIdempotently(
+            orderId = event.orderId,
+            recordConsumption = recordConsumption,
+        ) { current ->
+            if (current.paymentStatus != OrderStepStatus.PENDING) return@updateOrderIdempotently current
             current.copy(
                 paymentStatus = OrderStepStatus.FAILED,
                 failureReason = current.failureReason ?: event.reason,
             )
-        }
+        } ?: return
 
         orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 
-    fun applyCompensatedPayment(event: OrderPaymentCompensatedEvent) {
-        val updated = orderMutationExecutor.updateOrder(event.orderId) { current ->
-            if (current.paymentStatus != OrderStepStatus.SUCCEEDED) {
-                return@updateOrder current
-            }
-
+    fun applyCompensatedPayment(event: OrderPaymentCompensatedEvent, recordConsumption: () -> Unit) {
+        val updated = orderMutationExecutor.updateOrderIdempotently(
+            orderId = event.orderId,
+            recordConsumption = recordConsumption,
+        ) { current ->
+            if (current.paymentStatus != OrderStepStatus.SUCCEEDED) return@updateOrderIdempotently current
             current.copy(paymentStatus = OrderStepStatus.COMPENSATED)
-        }
+        } ?: return
 
-        orderLifecycleProcessor.completePendingOrderIfFinal(updated)
+        orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 
-    fun applyPaymentCompensationFailure(event: OrderPaymentCompensationFailedEvent) {
-        val updated = orderMutationExecutor.updateOrder(event.orderId) { current ->
-            if (current.paymentStatus != OrderStepStatus.SUCCEEDED) {
-                return@updateOrder current
-            }
-
+    fun applyPaymentCompensationFailure(event: OrderPaymentCompensationFailedEvent, recordConsumption: () -> Unit) {
+        val updated = orderMutationExecutor.updateOrderIdempotently(
+            orderId = event.orderId,
+            recordConsumption = recordConsumption,
+        ) { current ->
+            if (current.paymentStatus != OrderStepStatus.SUCCEEDED) return@updateOrderIdempotently current
             current.copy(
                 paymentStatus = OrderStepStatus.COMPENSATION_FAILED,
                 failureReason = current.failureReason ?: event.reason,
             )
-        }
+        } ?: return
 
-        orderLifecycleProcessor.completePendingOrderIfFinal(updated)
+        orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 }

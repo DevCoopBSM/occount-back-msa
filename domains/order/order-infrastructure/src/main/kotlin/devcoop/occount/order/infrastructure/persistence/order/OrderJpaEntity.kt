@@ -1,6 +1,5 @@
 package devcoop.occount.order.infrastructure.persistence.order
 
-import devcoop.occount.core.common.event.OrderPaymentType
 import devcoop.occount.order.domain.order.OrderStatus
 import devcoop.occount.order.domain.order.OrderStepStatus
 import jakarta.persistence.CascadeType
@@ -20,13 +19,10 @@ class OrderJpaEntity(
     @Id
     @field:Column(name = "order_id", nullable = false, length = 36)
     private var orderId: String = "",
-    @field:Column(name = "user_id", nullable = false)
-    private var userId: Long = 0L,
+    @field:Column(name = "user_id", nullable = true)
+    private var userId: Long? = null,
     @field:OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true)
     private var lines: MutableList<OrderLineJpaEntity> = mutableListOf(),
-    @Enumerated(EnumType.STRING)
-    @field:Column(name = "payment_type", nullable = false)
-    private var paymentType: OrderPaymentType = OrderPaymentType.PAYMENT,
     @field:Column(name = "total_amount", nullable = false)
     private var totalAmount: Int = 0,
     @Enumerated(EnumType.STRING)
@@ -42,6 +38,8 @@ class OrderJpaEntity(
     private var cancelRequested: Boolean = false,
     @field:Column(name = "failure_reason")
     private var failureReason: String? = null,
+    @field:Column(name = "kiosk_id", nullable = false)
+    private var kioskId: String = "",
     @field:Column(name = "expires_at", nullable = false)
     private var expiresAt: Instant = Instant.now(),
     @field:Column(name = "payment_log_id")
@@ -71,13 +69,13 @@ class OrderJpaEntity(
     fun getOrderId() = orderId
     fun getUserId() = userId
     fun getLines() = lines.toList()
-    fun getPaymentType() = paymentType
     fun getTotalAmount() = totalAmount
     fun getStatus() = status
     fun getPaymentStatus() = paymentStatus
     fun getStockStatus() = stockStatus
     fun isCancelRequested() = cancelRequested
     fun getFailureReason() = failureReason
+    fun getKioskId() = kioskId
     fun getExpiresAt() = expiresAt
     fun getPaymentLogId() = paymentLogId
     fun getPointsUsed() = pointsUsed

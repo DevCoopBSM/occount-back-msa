@@ -1,7 +1,7 @@
 package devcoop.occount.order.application.usecase.order.timeout
 
 import devcoop.occount.order.application.output.OrderRepository
-import devcoop.occount.order.application.usecase.order.create.ExpireOrderUseCase
+import devcoop.occount.order.application.usecase.order.timeout.ExpireOrderUseCase
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.Instant

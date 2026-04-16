@@ -20,7 +20,21 @@ import org.springframework.stereotype.Component
 class PgCardPaymentClient(
     private val pgTerminalClient: PgTerminalClient,
 ) : CardPaymentPort {
-    private val log = LoggerFactory.getLogger(PgCardPaymentClient::class.java)
+    companion object {
+        private val log = LoggerFactory.getLogger(PgCardPaymentClient::class.java)
+    }
+
+    override fun cancel(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int): PgResult {
+        if (approvalNumber == null) throw InvalidPaymentRequestException()
+        return handleResult(
+            pgTerminalClient.cancel(
+                amount = amount,
+                approvalDate = approvalDate,
+                approvalNumber = approvalNumber,
+            ).toApplicationResult(),
+            "카드 취소",
+        )
+    }
 
     override fun approve(amount: Int, items: List<ItemCommand>): PgResult {
         return handleResult(
@@ -50,7 +64,10 @@ class PgCardPaymentClient(
                 throw InvalidPaymentRequestException()
             }
 
-            null -> throw PaymentFailedException()
+            null -> {
+                log.warn("{} 실패 - errorCode 없음, message: {}", action, result.message)
+                throw PaymentFailedException()
+            }
             else -> {
                 log.warn("{} 실패 - code: {}, message: {}", action, result.errorCode, result.message)
                 throw PaymentFailedException()
