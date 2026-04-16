@@ -40,7 +40,16 @@ class OrderPaymentRequestScheduler(
                     )
                 }
                 // DB 커밋 후 이벤트 발행 — 트랜잭션 내 발행 시 DB 롤백과 이벤트 불일치 방지
-                orderToPublish?.let { publishPaymentRequested(it, attempt) }
+                orderToPublish?.let { order ->
+                    try {
+                        publishPaymentRequested(order, attempt)
+                    } catch (ex: Exception) {
+                        log.error("결제 요청 이벤트 발행 실패, 플래그 초기화 시도 - 주문={}", orderId, ex)
+                        runCatching { resetPaymentRequestedFlag(orderId) }
+                            .onFailure { log.warn("결제 요청 플래그 초기화 실패 - 주문={}", orderId, it) }
+                        throw ex
+                    }
+                }
                 return
             } catch (ex: OrderConcurrencyException) {
                 log.warn("결제 요청 스케줄링 중 낙관적 락 충돌 - 주문={} 시도={}", orderId, attempt)
