@@ -34,18 +34,31 @@ Use module-scoped tasks when changing one area, for example `./gradlew :domains:
 - Prefer names ending in `Test` or `Tests`, matching existing examples like `ArchitectureBoundaryTest` and `DbKioskApplicationTests`.
 - Add focused module-level tests for controller wiring, boundary rules, and service behavior when changing public flows.
 
+## Compile Verification (REQUIRED)
+After **every** code change, always run a compile check before considering the task done:
+```
+./gradlew compileKotlin compileTestKotlin --console=plain
+```
+For changes scoped to a single domain, prefer the module-scoped variant, e.g.:
+```
+./gradlew :domains:order:order-application:compileKotlin :domains:order:order-application:compileTestKotlin --console=plain
+```
+Do not skip this step. Compile errors in related files (imports, constructor changes, deleted classes) are a common source of breakage that must be caught before finishing.
+
 ## Safe Change Policy
 - Keep diffs minimal and changes localized.
 - Follow the existing codebase structure, patterns, and architecture.
 - Do not introduce arbitrary default values for environment variables in code, config, or docs.
 - Prefer extending existing patterns over introducing new frameworks.
 - Repository rules take precedence over suggestions.
-- Always verify build/tests with the CLI commands above after code changes.
 
 ## Commit & Pull Request Guidelines
 - If a commit is requested, check `COMMIT.md` first and follow its rules.
+- **커밋은 반드시 관심사별로 분리해서 여러 개로 나눠야 한다. 하나의 커밋에 여러 관심사를 절대 섞지 말 것.**
+  - fix, refactor, feat, test, chore 등 타입이 다르면 무조건 별도 커밋으로 분리한다.
+  - 영향받는 모듈이나 레이어가 다르면 별도 커밋으로 분리한다.
+  - 관련 테스트 코드도 구현 커밋과 별도로 분리한다.
 - Split commits into small, clear units by role and responsibility.
-- Separate different change types when possible, such as refactoring, feature work, bug fixes, tests, and docs.
 - Write commit messages in Korean.
 - Do not run `commit`, `amend`, or `push` unless the user explicitly asks.
 
@@ -54,6 +67,26 @@ For pull requests:
 - link the related issue or ticket,
 - include test/compile results,
 - add request/response examples when changing API behavior.
+
+## API Specification
+
+`docs/API_SPEC.yaml` 은 프론트엔드와 소통하는 **유일한 API 계약서**입니다.
+
+아래 변경이 발생하면 **반드시** 해당 파일을 함께 수정해야 합니다:
+- 컨트롤러에 엔드포인트 추가 / 삭제 / 경로 변경
+- 요청(Request) 또는 응답(Response) 필드 추가 / 삭제 / 타입 변경
+- 헤더 요구사항 변경 (`X-Kiosk-Id`, `Authorization` 등)
+- 인증 방식 변경 (PERMIT_ALL / OPTIONAL_AUTH / AUTHENTICATED / ADMIN_ONLY)
+- HTTP 상태 코드 변경
+
+수정 대상 컨트롤러:
+- `domains/member/member-api/.../AuthController.kt`
+- `domains/member/member-api/.../MemberController.kt`
+- `domains/item/item-api/.../ItemController.kt`
+- `domains/order/order-api/.../OrderController.kt`
+- `domains/payment/payment-api/.../PaymentController.kt`
+- `domains/payment/payment-api/.../WalletController.kt`
+- `gateway/api-gateway/.../AuthenticationPolicy.kt` (인증 정책 변경 시)
 
 ## Security & Configuration Tips
 - Copy `.env.example` when preparing local configuration.

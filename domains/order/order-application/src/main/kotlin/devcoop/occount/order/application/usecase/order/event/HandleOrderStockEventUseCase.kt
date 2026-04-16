@@ -16,58 +16,58 @@ class HandleOrderStockEventUseCase(
     private val orderLifecycleProcessor: OrderLifecycleProcessor,
     private val orderPaymentRequestScheduler: OrderPaymentRequestScheduler,
 ) {
-    fun applyCompletedStock(event: OrderStockCompletedEvent) {
-        val updated = orderMutationExecutor.updateOrder(event.orderId) { current ->
-            if (current.stockStatus != OrderStepStatus.PENDING) {
-                return@updateOrder current
-            }
-
+    fun applyCompletedStock(event: OrderStockCompletedEvent, recordConsumption: () -> Unit) {
+        val updated = orderMutationExecutor.updateOrderIdempotently(
+            orderId = event.orderId,
+            recordConsumption = recordConsumption,
+        ) { current ->
+            if (current.stockStatus != OrderStepStatus.PENDING) return@updateOrderIdempotently current
             current.copy(stockStatus = OrderStepStatus.SUCCEEDED)
-        }
+        } ?: return
 
         orderLifecycleProcessor.processAfterOrderStateChange(updated)
         orderPaymentRequestScheduler.schedulePaymentRequestIfEligible(updated.orderId)
     }
 
-    fun applyFailedStock(event: OrderStockFailedEvent) {
-        val updated = orderMutationExecutor.updateOrder(event.orderId) { current ->
-            if (current.stockStatus != OrderStepStatus.PENDING) {
-                return@updateOrder current
-            }
-
+    fun applyFailedStock(event: OrderStockFailedEvent, recordConsumption: () -> Unit) {
+        val updated = orderMutationExecutor.updateOrderIdempotently(
+            orderId = event.orderId,
+            recordConsumption = recordConsumption,
+        ) { current ->
+            if (current.stockStatus != OrderStepStatus.PENDING) return@updateOrderIdempotently current
             current.copy(
                 stockStatus = OrderStepStatus.FAILED,
                 failureReason = current.failureReason ?: event.reason,
             )
-        }
+        } ?: return
 
         orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 
-    fun applyCompensatedStock(event: OrderStockCompensatedEvent) {
-        val updated = orderMutationExecutor.updateOrder(event.orderId) { current ->
-            if (current.stockStatus != OrderStepStatus.SUCCEEDED) {
-                return@updateOrder current
-            }
-
+    fun applyCompensatedStock(event: OrderStockCompensatedEvent, recordConsumption: () -> Unit) {
+        val updated = orderMutationExecutor.updateOrderIdempotently(
+            orderId = event.orderId,
+            recordConsumption = recordConsumption,
+        ) { current ->
+            if (current.stockStatus != OrderStepStatus.SUCCEEDED) return@updateOrderIdempotently current
             current.copy(stockStatus = OrderStepStatus.COMPENSATED)
-        }
+        } ?: return
 
-        orderLifecycleProcessor.completePendingOrderIfFinal(updated)
+        orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 
-    fun applyStockCompensationFailure(event: OrderStockCompensationFailedEvent) {
-        val updated = orderMutationExecutor.updateOrder(event.orderId) { current ->
-            if (current.stockStatus != OrderStepStatus.SUCCEEDED) {
-                return@updateOrder current
-            }
-
+    fun applyStockCompensationFailure(event: OrderStockCompensationFailedEvent, recordConsumption: () -> Unit) {
+        val updated = orderMutationExecutor.updateOrderIdempotently(
+            orderId = event.orderId,
+            recordConsumption = recordConsumption,
+        ) { current ->
+            if (current.stockStatus != OrderStepStatus.SUCCEEDED) return@updateOrderIdempotently current
             current.copy(
                 stockStatus = OrderStepStatus.COMPENSATION_FAILED,
                 failureReason = current.failureReason ?: event.reason,
             )
-        }
+        } ?: return
 
-        orderLifecycleProcessor.completePendingOrderIfFinal(updated)
+        orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 }

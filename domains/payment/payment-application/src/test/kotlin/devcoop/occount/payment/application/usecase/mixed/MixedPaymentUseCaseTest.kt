@@ -123,7 +123,7 @@ class MixedPaymentUseCaseTest {
             )
         }
 
-        override fun cancel(transactionId: String?, approvalNumber: String?, amount: Int): PgResult {
+        override fun cancel(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int): PgResult {
             cancelledAmounts += amount
             return PgResult(
                 success = true,

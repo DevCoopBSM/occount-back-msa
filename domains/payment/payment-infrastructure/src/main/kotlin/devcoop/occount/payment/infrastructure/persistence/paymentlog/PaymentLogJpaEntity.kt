@@ -23,8 +23,8 @@ class PaymentLogJpaEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @field:Column(name = "payment_id")
     private var paymentId: Long = 0L,
-    @field:Column(name = "user_id", nullable = false)
-    private var userId: Long = 0L,
+    @field:Column(name = "user_id", nullable = true)
+    private var userId: Long? = null,
     @field:CreationTimestamp
     @field:Column(name = "payment_date", nullable = false, updatable = false)
     private var paymentDate: LocalDateTime = LocalDateTime.now(),
@@ -51,7 +51,7 @@ class PaymentLogJpaEntity(
     private var refundRequesterId: String? = null,
 ) {
     fun getPaymentId() = paymentId
-    fun getUserId() = userId
+    fun getUserId(): Long? = userId
     fun getPaymentDate() = paymentDate
     fun getPaymentType() = paymentType
     fun getTotalAmount() = totalAmount

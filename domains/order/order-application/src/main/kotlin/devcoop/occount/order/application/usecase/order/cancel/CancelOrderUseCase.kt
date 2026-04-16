@@ -16,20 +16,14 @@ class CancelOrderUseCase(
     private val orderLifecycleProcessor: OrderLifecycleProcessor,
     private val orderResponseMapper: OrderResponseMapper,
 ) {
-    fun cancel(orderId: String, userId: Long): OrderResponse {
-        val updated = orderMutationExecutor.updateOrder(orderId) { current ->
-            if (current.userId != userId) {
-                throw OrderAccessDeniedException()
-            }
-
-            if (!current.status.canCancel()) {
-                throw OrderCannotCancelException()
-            }
-
-            current.copy(
+    fun cancel(orderId: String, kioskId: String): OrderResponse {
+        val updated = orderMutationExecutor.updateOrder(orderId) { order ->
+            if (order.kioskId != kioskId) throw OrderAccessDeniedException()
+            if (!order.status.canCancel()) throw OrderCannotCancelException()
+            order.copy(
                 cancelRequested = true,
                 status = OrderStatus.CANCEL_REQUESTED,
-                failureReason = current.failureReason ?: "사용자에 의해 주문이 취소되었습니다",
+                failureReason = order.failureReason ?: "사용자에 의해 주문이 취소되었습니다",
             )
         }
 

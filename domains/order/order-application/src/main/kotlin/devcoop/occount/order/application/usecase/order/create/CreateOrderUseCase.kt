@@ -10,65 +10,50 @@ import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
 import devcoop.occount.order.application.support.OrderMutationExecutor
-import devcoop.occount.order.application.support.OrderPendingResultRegistry
 import devcoop.occount.order.application.support.OrderRequestValidator
 import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderPayment
 import devcoop.occount.order.domain.order.OrderStatus
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
-import java.util.concurrent.CompletableFuture
 
 @Service
 class CreateOrderUseCase(
     private val orderMutationExecutor: OrderMutationExecutor,
     private val orderRepository: OrderRepository,
     private val orderRequestValidator: OrderRequestValidator,
-    private val orderPendingResultRegistry: OrderPendingResultRegistry,
-    private val expireOrderUseCase: ExpireOrderUseCase,
     private val eventPublisher: EventPublisher,
-    @param:Value("\${order.timeout-seconds:30}") private val timeoutSeconds: Long,
 ) {
-    fun placeOrder(request: OrderRequest, userId: Long): CompletableFuture<OrderResponse> {
+    fun placeOrder(request: OrderRequest, userId: Long?): OrderResponse {
         val validatedRequest = orderRequestValidator.validate(request)
         val orderId = UUID.randomUUID().toString()
-        val responseFuture = orderPendingResultRegistry.registerPendingOrder(orderId, timeoutSeconds) {
-            log.warn("주문 처리 시간 초과 - 주문={}", orderId)
-            expireOrderUseCase.expire(orderId)
-        }
 
-        try {
-            val createdOrder = orderMutationExecutor.executeInNewTransaction {
-                val savedOrder = orderRepository.save(
-                    OrderAggregate(
-                        orderId = orderId,
-                        userId = userId,
-                        lines = validatedRequest.lines,
-                        payment = OrderPayment(
-                            type = request.paymentType,
-                            totalAmount = validatedRequest.totalAmount,
-                        ),
-                        status = OrderStatus.PROCESSING,
-                        expiresAt = Instant.now().plus(Duration.ofSeconds(timeoutSeconds)),
+        val createdOrder = orderMutationExecutor.executeInNewTransaction {
+            orderRepository.save(
+                OrderAggregate(
+                    orderId = orderId,
+                    userId = userId,
+                    lines = validatedRequest.lines,
+                    payment = OrderPayment(
+                        totalAmount = validatedRequest.totalAmount,
                     ),
-                )
-
-                publishOrderRequested(savedOrder, userId)
-                savedOrder
-            }
-            log.info("주문 생성 완료 - 주문={} 사용자={}", createdOrder.orderId, userId)
-        } catch (ex: Exception) {
-            orderPendingResultRegistry.failPendingOrder(orderId, ex)
+                    status = OrderStatus.PROCESSING,
+                    kioskId = request.kioskId,
+                    expiresAt = Instant.now().plus(TIMEOUT_SECONDS),
+                ),
+            )
         }
+        // DB 커밋 후 이벤트 발행 — 트랜잭션 내 발행 시 DB 롤백과 이벤트 불일치 방지
+        publishOrderRequested(createdOrder, userId)
+        log.info("주문 생성 완료 - 주문={} 사용자={}", createdOrder.orderId, userId)
 
-        return responseFuture
+        return OrderResponse(orderId = createdOrder.orderId, status = createdOrder.status)
     }
 
-    private fun publishOrderRequested(createdOrder: OrderAggregate, userId: Long) {
+    private fun publishOrderRequested(createdOrder: OrderAggregate, userId: Long?) {
         eventPublisher.publish(
             topic = DomainTopics.ORDER_REQUESTED,
             key = createdOrder.orderId,
@@ -77,7 +62,6 @@ class CreateOrderUseCase(
                 orderId = createdOrder.orderId,
                 userId = userId,
                 payment = OrderPaymentPayload(
-                    type = createdOrder.payment.type,
                     totalAmount = createdOrder.payment.totalAmount,
                 ),
                 items = createdOrder.lines.map { line ->
@@ -95,5 +79,6 @@ class CreateOrderUseCase(
 
     companion object {
         private val log = LoggerFactory.getLogger(CreateOrderUseCase::class.java)
+        private val TIMEOUT_SECONDS = Duration.ofSeconds(30)
     }
 }

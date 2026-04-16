@@ -12,6 +12,10 @@ class AuthenticationRuleBuilder(
         sink(AuthenticationRule(method, pathPattern, access = AuthenticationRule.Access.PERMIT_ALL))
     }
 
+    fun optionalAuth() {
+        sink(AuthenticationRule(method, pathPattern, access = AuthenticationRule.Access.OPTIONAL_AUTH))
+    }
+
     fun authenticated() {
         sink(AuthenticationRule(method, pathPattern, access = AuthenticationRule.Access.AUTHENTICATED))
     }

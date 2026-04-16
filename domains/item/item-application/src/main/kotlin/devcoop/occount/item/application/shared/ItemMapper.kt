@@ -19,6 +19,7 @@ object ItemMapper {
             name = item.getName(),
             barcode = item.getBarcode(),
             price = item.getPrice(),
+            isActive = item.isActive(),
         )
     }
 }
