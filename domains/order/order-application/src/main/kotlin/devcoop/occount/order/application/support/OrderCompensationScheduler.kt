@@ -23,23 +23,67 @@ class OrderCompensationScheduler(
     private val transactionPort: TransactionPort,
 ) {
     fun scheduleRequiredCompensations(orderId: String) {
+        runCatching {
+            scheduleCompensationIfNeeded(
+                orderId = orderId,
+                logContext = "결제 보상",
+                shouldMark = { it.shouldRequestPaymentCompensation() },
+                mark = { it.copy(paymentCompensationRequested = true) },
+                resetMark = { it.copy(paymentCompensationRequested = false) },
+                publish = ::publishPaymentCompensationRequested,
+            )
+        }.onFailure { log.error("결제 보상 처리 실패 - 주문={}", orderId, it) }
+        runCatching {
+            scheduleCompensationIfNeeded(
+                orderId = orderId,
+                logContext = "재고 보상",
+                shouldMark = { it.shouldRequestStockCompensation() },
+                mark = { it.copy(stockCompensationRequested = true) },
+                resetMark = { it.copy(stockCompensationRequested = false) },
+                publish = ::publishStockCompensationRequested,
+            )
+        }.onFailure { log.error("재고 보상 처리 실패 - 주문={}", orderId, it) }
+    }
+
+    private fun scheduleCompensationIfNeeded(
+        orderId: String,
+        logContext: String,
+        shouldMark: (OrderAggregate) -> Boolean,
+        mark: (OrderAggregate) -> OrderAggregate,
+        resetMark: (OrderAggregate) -> OrderAggregate,
+        publish: (OrderAggregate) -> Unit,
+    ) {
         repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
             try {
-                var compensationsToPublish: RequestedCompensations? = null
+                var orderToPublish: OrderAggregate? = null
                 transactionPort.executeInNewTransaction {
-                    val persistedOrder = loadPersistedOrder(orderId)
-                    compensationsToPublish = markRequestedCompensations(persistedOrder)
+                    val persisted = loadPersistedOrder(orderId)
+                    if (!shouldMark(persisted.order)) return@executeInNewTransaction
+                    orderToPublish = orderRepository.save(mark(persisted.order), persisted.persistenceVersion)
                 }
-                // DB 커밋 후 이벤트 발행 — 트랜잭션 내 발행 시 DB 롤백과 이벤트 불일치 방지
-                compensationsToPublish?.let { publishRequestedCompensations(it, attempt) }
+                orderToPublish?.let { order ->
+                    try {
+                        publish(order)
+                    } catch (ex: Exception) {
+                        log.error("{} 이벤트 발행 실패, 플래그 초기화 시도 - 주문={}", logContext, orderId, ex)
+                        runCatching { resetPublishFlag(orderId, resetMark) }
+                            .onFailure { log.warn("{} 플래그 초기화 실패 - 주문={}", logContext, orderId, it) }
+                        throw ex
+                    }
+                }
                 return
             } catch (ex: OrderConcurrencyException) {
-                log.warn("보상 처리 중 낙관적 락 충돌 - 주문={} 시도={}", orderId, attempt)
-                if (attempt == OrderRetryPolicy.MAX_RETRY_COUNT - 1) {
-                    throw OrderTransactionFailedException()
-                }
+                log.warn("{} 중 낙관적 락 충돌 - 주문={} 시도={}", logContext, orderId, attempt)
+                if (attempt == OrderRetryPolicy.MAX_RETRY_COUNT - 1) throw OrderTransactionFailedException()
                 backoff(attempt)
             }
+        }
+    }
+
+    private fun resetPublishFlag(orderId: String, resetMark: (OrderAggregate) -> OrderAggregate) {
+        transactionPort.executeInNewTransaction {
+            val persisted = orderRepository.findPersistedById(orderId) ?: return@executeInNewTransaction
+            orderRepository.save(resetMark(persisted.order), persisted.persistenceVersion)
         }
     }
 
@@ -52,42 +96,8 @@ class OrderCompensationScheduler(
             ?: throw OrderNotFoundException()
     }
 
-    private fun markRequestedCompensations(persistedOrder: PersistedOrder): RequestedCompensations? {
-        val order = persistedOrder.order
-        val shouldRequestPaymentCompensation = order.shouldRequestPaymentCompensation()
-        val shouldRequestStockCompensation = order.shouldRequestStockCompensation()
-
-        if (!shouldRequestPaymentCompensation && !shouldRequestStockCompensation) {
-            return null
-        }
-
-        val updatedOrder = orderRepository.save(
-            order.copy(
-                paymentCompensationRequested = order.paymentCompensationRequested || shouldRequestPaymentCompensation,
-                stockCompensationRequested = order.stockCompensationRequested || shouldRequestStockCompensation,
-            ),
-            persistedOrder.persistenceVersion,
-        )
-
-        return RequestedCompensations(
-            order = updatedOrder,
-            paymentCompensationRequested = shouldRequestPaymentCompensation,
-            stockCompensationRequested = shouldRequestStockCompensation,
-        )
-    }
-
-    private fun publishRequestedCompensations(requestedCompensations: RequestedCompensations, attempt: Int) {
-        if (requestedCompensations.paymentCompensationRequested) {
-            publishPaymentCompensationRequested(requestedCompensations.order, attempt)
-        }
-
-        if (requestedCompensations.stockCompensationRequested) {
-            publishStockCompensationRequested(requestedCompensations.order, attempt)
-        }
-    }
-
-    private fun publishPaymentCompensationRequested(order: OrderAggregate, attempt: Int) {
-        log.info("결제 보상 요청 이벤트 발행 - 주문={} 시도={}", order.orderId, attempt)
+    private fun publishPaymentCompensationRequested(order: OrderAggregate) {
+        log.info("결제 보상 요청 이벤트 발행 - 주문={}", order.orderId)
         eventPublisher.publish(
             topic = DomainTopics.ORDER_PAYMENT_COMPENSATION_REQUESTED,
             key = order.orderId,
@@ -102,8 +112,8 @@ class OrderCompensationScheduler(
         )
     }
 
-    private fun publishStockCompensationRequested(order: OrderAggregate, attempt: Int) {
-        log.info("재고 보상 요청 이벤트 발행 - 주문={} 시도={}", order.orderId, attempt)
+    private fun publishStockCompensationRequested(order: OrderAggregate) {
+        log.info("재고 보상 요청 이벤트 발행 - 주문={}", order.orderId)
         eventPublisher.publish(
             topic = DomainTopics.ORDER_STOCK_COMPENSATION_REQUESTED,
             key = order.orderId,
@@ -123,10 +133,4 @@ class OrderCompensationScheduler(
     companion object {
         private val log = LoggerFactory.getLogger(OrderCompensationScheduler::class.java)
     }
-
-    private data class RequestedCompensations(
-        val order: OrderAggregate,
-        val paymentCompensationRequested: Boolean,
-        val stockCompensationRequested: Boolean,
-    )
 }
