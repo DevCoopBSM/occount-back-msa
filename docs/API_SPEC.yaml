@@ -347,7 +347,8 @@ paths:
         - `X-Kiosk-Id` 헤더는 항상 필수입니다.
         - 토큰이 있으면 회원 주문, 없으면 비회원 주문으로 처리합니다.
         - 비회원 주문은 `paymentType: CARD` 만 허용합니다.
-        - 응답은 비동기로 처리되며 최대 30초간 대기 후 결과를 반환합니다.
+        - 요청 즉시 `PROCESSING` 상태로 응답하며, 실제 처리는 비동기로 수행됩니다.
+        - 최종 결과는 `GET /api/v3/orders/{orderId}` 를 폴링하여 확인합니다.
       parameters:
         - name: X-Kiosk-Id
           in: header
@@ -375,15 +376,15 @@ paths:
               totalAmount: 4000
               kioskId: "KIOSK-001"
       responses:
-        "200":
-          description: 주문 완료 (COMPLETED)
+        "202":
+          description: 주문 접수 (PROCESSING)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrderResponse'
               example:
                 orderId: "550e8400-e29b-41d4-a716-446655440000"
-                status: "COMPLETED"
+                status: "PROCESSING"
                 failureReason: null
         "400":
           description: 비회원이 카드 외 결제 수단 사용 / 상품 검증 실패
@@ -393,18 +394,40 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "401":
           description: 잘못된 토큰
-        "409":
-          description: 주문 실패 / 취소됨 (FAILED, CANCELLED, COMPENSATION_FAILED)
+
+  /api/v3/orders/{orderId}:
+    get:
+      tags: [Order]
+      operationId: getOrder
+      summary: 주문 조회
+      description: |
+        주문 상태를 조회합니다. (PERMIT_ALL)
+
+        - `PROCESSING` 상태인 경우 최종 상태가 될 때까지 폴링합니다.
+        - 최종 상태: `COMPLETED`, `FAILED`, `CANCELLED`, `COMPENSATION_FAILED`, `TIMED_OUT`
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: 주문 ID
+          schema:
+            type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      security:
+        - {}
+      responses:
+        "200":
+          description: 주문 조회 성공
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrderResponse'
-        "504":
-          description: 주문 처리 시간 초과 (TIMED_OUT)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrderResponse'
+              example:
+                orderId: "550e8400-e29b-41d4-a716-446655440000"
+                status: "COMPLETED"
+                failureReason: null
+        "404":
+          description: 주문을 찾을 수 없음
 
   /api/v3/orders/{orderId}/cancel:
     post:
