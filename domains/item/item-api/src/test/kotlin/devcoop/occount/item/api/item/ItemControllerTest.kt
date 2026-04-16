@@ -79,6 +79,30 @@ class ItemControllerTest {
     }
 
     @Test
+    fun `get items by ids delegates to item query service`() {
+        val itemQueryService = mock(ItemQueryService::class.java)
+        val controller = controller(itemQueryService = itemQueryService)
+        val expected = ItemLookupListResponse(
+            items = listOf(
+                ItemLookupResponse(
+                    itemId = 1L,
+                    name = "Snack",
+                    barcode = null,
+                    price = 1500,
+                    isActive = true,
+                ),
+            ),
+        )
+
+        `when`(itemQueryService.getItemsByIds(listOf(1L))).thenReturn(expected)
+
+        val actual = controller.getItemsByIds(listOf(1L))
+
+        assertSame(expected, actual)
+        verify(itemQueryService).getItemsByIds(listOf(1L))
+    }
+
+    @Test
     fun `get item by barcode delegates to item query service`() {
         val itemQueryService = mock(ItemQueryService::class.java)
         val controller = controller(itemQueryService = itemQueryService)

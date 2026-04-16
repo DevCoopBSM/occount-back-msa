@@ -16,6 +16,7 @@ class AuthenticationRule(
 
     enum class Access {
         PERMIT_ALL,
+        OPTIONAL_AUTH,
         AUTHENTICATED,
         ADMIN_ONLY,
     }

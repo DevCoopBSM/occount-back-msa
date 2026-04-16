@@ -3,6 +3,7 @@ package devcoop.occount.order.api.support
 import devcoop.occount.core.common.error.ErrorResponse
 import devcoop.occount.core.common.error.ErrorMessage
 import devcoop.occount.core.common.exception.BusinessBaseException
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.FieldError
@@ -12,6 +13,15 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 
 @RestControllerAdvice
 class ApiAdviceHandler {
+    @ExceptionHandler(Exception::class)
+    fun handleUnexpectedException(e: Exception): ResponseEntity<ErrorResponse> {
+        log.error("Unexpected error", e)
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(ErrorResponse.of(ErrorMessage.INTERNAL_SERVER_ERROR))
+    }
+
+
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidationException(e: MethodArgumentNotValidException): ResponseEntity<Map<String, String>> {
         val errors = e.bindingResult.allErrors.associate {
@@ -27,6 +37,10 @@ class ApiAdviceHandler {
         return ResponseEntity
             .status(resolveStatus(e.errorMessage))
             .body(ErrorResponse.of(e.errorMessage))
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(ApiAdviceHandler::class.java)
     }
 
     private fun resolveStatus(errorMessage: ErrorMessage): HttpStatus {

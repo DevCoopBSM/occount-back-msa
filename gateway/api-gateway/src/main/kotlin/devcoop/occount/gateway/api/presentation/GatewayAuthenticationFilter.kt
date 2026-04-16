@@ -1,5 +1,6 @@
 package devcoop.occount.gateway.api.presentation
 
+import devcoop.occount.core.common.auth.AuthHeaders
 import devcoop.occount.core.common.exception.BusinessBaseException
 import devcoop.occount.gateway.api.application.TokenAuthenticator
 import org.springframework.cloud.gateway.filter.GatewayFilterChain
@@ -26,6 +27,23 @@ class GatewayAuthenticationFilter(
             return chain.filter(exchange)
         }
 
+        if (access == AuthenticationRule.Access.OPTIONAL_AUTH) {
+            val authHeader = request.headers.getFirst(HttpHeaders.AUTHORIZATION)
+                ?: return chain.filter(
+                    exchange.mutate().request(
+                        request.mutate().headers { it.remove(AuthHeaders.AUTHENTICATED_USER_ID) }.build()
+                    ).build()
+                )
+
+            val authenticatedUser = try {
+                tokenAuthenticator.authenticate(authHeader)
+            } catch (e: BusinessBaseException) {
+                return authenticationFailureWriter.writeUnauthorized(exchange, e)
+            }
+            val mutatedRequest = authenticatedRequestMutator.mutate(request, authenticatedUser)
+            return chain.filter(exchange.mutate().request(mutatedRequest).build())
+        }
+
         val authenticatedUser = try {
             tokenAuthenticator.authenticate(request.headers.getFirst(HttpHeaders.AUTHORIZATION))
         } catch (e: BusinessBaseException) {
@@ -37,6 +55,7 @@ class GatewayAuthenticationFilter(
         }
 
         val mutatedRequest = authenticatedRequestMutator.mutate(request, authenticatedUser)
+            .mutate().headers { it.remove(AuthHeaders.KIOSK_ID) }.build()
         return chain.filter(exchange.mutate().request(mutatedRequest).build())
     }
 }

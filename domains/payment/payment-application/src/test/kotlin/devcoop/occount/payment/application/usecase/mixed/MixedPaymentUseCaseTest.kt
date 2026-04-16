@@ -121,6 +121,19 @@ class MixedPaymentUseCaseTest {
                 rawResponse = null,
             )
         }
+
+        override fun cancel(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int): PgResult {
+            cancelledAmounts += amount
+            return PgResult(
+                success = true,
+                message = "cancelled",
+                errorCode = null,
+                transaction = null,
+                card = null,
+                additional = null,
+                rawResponse = null,
+            )
+        }
     }
 
     private class FakePaymentLogRepository : PaymentLogRepository {
