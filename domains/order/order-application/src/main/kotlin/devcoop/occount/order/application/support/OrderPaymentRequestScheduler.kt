@@ -86,6 +86,27 @@ class OrderPaymentRequestScheduler(
         )
     }
 
+    private fun resetPaymentRequestedFlag(orderId: String) {
+        repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
+            try {
+                transactionPort.executeInNewTransaction {
+                    val persistedOrder = orderRepository.findPersistedById(orderId) ?: return@executeInNewTransaction
+                    val order = persistedOrder.order
+                    if (order.paymentRequested) {
+                        orderRepository.save(
+                            order.copy(paymentRequested = false),
+                            persistedOrder.persistenceVersion,
+                        )
+                    }
+                }
+                return
+            } catch (ex: OrderConcurrencyException) {
+                if (attempt == OrderRetryPolicy.MAX_RETRY_COUNT - 1) throw ex
+                Thread.sleep(OrderRetryPolicy.BASE_BACKOFF_MILLIS * (1L shl attempt))
+            }
+        }
+    }
+
     companion object {
         private val log = LoggerFactory.getLogger(OrderPaymentRequestScheduler::class.java)
     }
