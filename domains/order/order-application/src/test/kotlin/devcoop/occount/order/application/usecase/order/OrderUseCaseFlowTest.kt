@@ -1,33 +1,16 @@
 package devcoop.occount.order.application.usecase.order
 
-import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
-import devcoop.occount.core.common.event.OrderPaymentCompletedEvent
-import devcoop.occount.core.common.event.OrderPaymentFailedEvent
-import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
-import devcoop.occount.core.common.event.OrderStockCompensationRequestedEvent
-import devcoop.occount.core.common.event.OrderStockCompletedEvent
+import devcoop.occount.core.common.event.*
 import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.output.PersistedOrder
 import devcoop.occount.order.application.output.TransactionPort
-import devcoop.occount.order.application.support.OrderCompensationScheduler
-import devcoop.occount.order.application.support.OrderLifecycleProcessor
-import devcoop.occount.order.application.support.OrderMutationExecutor
-import devcoop.occount.order.application.support.OrderPaymentRequestScheduler
-import devcoop.occount.order.application.support.OrderRequestValidator
-import devcoop.occount.order.application.support.OrderResponseMapper
+import devcoop.occount.order.application.support.*
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
-import devcoop.occount.order.application.usecase.order.create.ExpireOrderUseCase
 import devcoop.occount.order.application.usecase.order.event.HandleOrderPaymentEventUseCase
 import devcoop.occount.order.application.usecase.order.event.HandleOrderStockEventUseCase
+import devcoop.occount.order.application.usecase.order.timeout.ExpireOrderUseCase
 import devcoop.occount.order.application.usecase.order.timeout.ExpireTimedOutOrdersUseCase
-import devcoop.occount.order.domain.order.OrderAggregate
-import devcoop.occount.order.domain.order.OrderLine
-import devcoop.occount.order.domain.order.OrderPayment
-import devcoop.occount.order.domain.order.OrderPaymentResult
-import devcoop.occount.order.domain.order.OrderStatus
-import devcoop.occount.order.domain.order.OrderStepStatus
-import devcoop.occount.order.domain.order.isFinalForClient
+import devcoop.occount.order.domain.order.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
@@ -248,7 +231,6 @@ class OrderUseCaseFlowTest {
     ): CancelOrderUseCase {
         return CancelOrderUseCase(
             orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionPort()),
-            orderRepository = orderRepository,
             orderLifecycleProcessor = orderLifecycleProcessor(orderRepository, eventPublisher),
             orderResponseMapper = OrderResponseMapper(),
         )

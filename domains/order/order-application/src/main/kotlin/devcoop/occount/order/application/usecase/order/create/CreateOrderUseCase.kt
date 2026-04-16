@@ -6,7 +6,6 @@ import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.core.common.event.OrderItemPayload
 import devcoop.occount.core.common.event.OrderPaymentPayload
 import devcoop.occount.core.common.event.OrderRequestedEvent
-import devcoop.occount.order.application.config.OrderTimeoutConfig
 import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
@@ -27,7 +26,6 @@ class CreateOrderUseCase(
     private val orderRepository: OrderRepository,
     private val orderRequestValidator: OrderRequestValidator,
     private val eventPublisher: EventPublisher,
-    private val orderTimeoutConfig: OrderTimeoutConfig,
 ) {
     fun placeOrder(request: OrderRequest, userId: Long?): OrderResponse {
         val validatedRequest = orderRequestValidator.validate(request)
@@ -44,7 +42,7 @@ class CreateOrderUseCase(
                     ),
                     status = OrderStatus.PROCESSING,
                     kioskId = request.kioskId,
-                    expiresAt = Instant.now().plus(Duration.ofSeconds(orderTimeoutConfig.timeoutSeconds)),
+                    expiresAt = Instant.now().plus(TIMEOUT_SECONDS),
                 ),
             )
         }
@@ -81,5 +79,6 @@ class CreateOrderUseCase(
 
     companion object {
         private val log = LoggerFactory.getLogger(CreateOrderUseCase::class.java)
+        private val TIMEOUT_SECONDS = Duration.ofSeconds(30)
     }
 }
