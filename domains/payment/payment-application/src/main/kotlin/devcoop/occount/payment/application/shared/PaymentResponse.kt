@@ -43,6 +43,7 @@ data class PaymentResponse(
             remainingPoints: Int,
             approvalNumber: String?,
             transactionId: String?,
+            paymentLogId: Long? = null,
         ): PaymentResponse {
             return PaymentResponse(
                 status = "success",
@@ -56,6 +57,7 @@ data class PaymentResponse(
                 transactionId = transactionId,
                 chargedAmount = null,
                 message = null,
+                paymentLogId = paymentLogId,
             )
         }
 
