@@ -1,6 +1,5 @@
 package devcoop.occount.order.application.support
 
-import devcoop.occount.core.common.event.OrderPaymentType
 import devcoop.occount.order.application.exception.OrderInvalidTotalPriceException
 import devcoop.occount.order.application.exception.OrderItemNotFoundException
 import devcoop.occount.order.application.output.OrderItemData
@@ -41,7 +40,7 @@ class OrderRequestValidatorTest {
                     quantity = 1,
                 ),
             ),
-            paymentType = OrderPaymentType.PAYMENT,
+
             totalAmount = 1000,
             kioskId = "kiosk-1",
         )
@@ -62,7 +61,7 @@ class OrderRequestValidatorTest {
                     quantity = 1,
                 ),
             ),
-            paymentType = OrderPaymentType.PAYMENT,
+
             totalAmount = 3000,
             kioskId = "kiosk-1",
         )
@@ -83,7 +82,7 @@ class OrderRequestValidatorTest {
                     quantity = 2,
                 ),
             ),
-            paymentType = OrderPaymentType.PAYMENT,
+
             totalAmount = 4000,
             kioskId = "kiosk-1",
         )
