@@ -5,7 +5,6 @@ import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
 import devcoop.occount.core.common.event.OrderPaymentCompletedEvent
 import devcoop.occount.core.common.event.OrderPaymentFailedEvent
 import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
-import devcoop.occount.core.common.event.OrderPaymentType
 import devcoop.occount.core.common.event.OrderStockCompensationRequestedEvent
 import devcoop.occount.core.common.event.OrderStockCompletedEvent
 import devcoop.occount.order.application.output.OrderRepository
@@ -230,7 +229,6 @@ class OrderUseCaseFlowTest {
                 ),
             ),
             payment = OrderPayment(
-                type = OrderPaymentType.PAYMENT,
                 totalAmount = 2000,
             ),
             status = OrderStatus.PROCESSING,
