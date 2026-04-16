@@ -62,7 +62,6 @@ class OrderPaymentRequestScheduler(
                 orderId = order.orderId,
                 userId = order.userId,
                 payment = OrderPaymentPayload(
-                    type = order.payment.type,
                     totalAmount = order.payment.totalAmount,
                 ),
                 items = order.lines.map { line ->

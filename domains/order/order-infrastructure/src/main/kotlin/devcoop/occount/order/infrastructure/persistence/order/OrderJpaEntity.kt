@@ -1,6 +1,5 @@
 package devcoop.occount.order.infrastructure.persistence.order
 
-import devcoop.occount.core.common.event.OrderPaymentType
 import devcoop.occount.order.domain.order.OrderStatus
 import devcoop.occount.order.domain.order.OrderStepStatus
 import jakarta.persistence.CascadeType
@@ -24,9 +23,6 @@ class OrderJpaEntity(
     private var userId: Long? = null,
     @field:OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true)
     private var lines: MutableList<OrderLineJpaEntity> = mutableListOf(),
-    @Enumerated(EnumType.STRING)
-    @field:Column(name = "payment_type", nullable = false)
-    private var paymentType: OrderPaymentType = OrderPaymentType.PAYMENT,
     @field:Column(name = "total_amount", nullable = false)
     private var totalAmount: Int = 0,
     @Enumerated(EnumType.STRING)
@@ -73,7 +69,6 @@ class OrderJpaEntity(
     fun getOrderId() = orderId
     fun getUserId() = userId
     fun getLines() = lines.toList()
-    fun getPaymentType() = paymentType
     fun getTotalAmount() = totalAmount
     fun getStatus() = status
     fun getPaymentStatus() = paymentStatus

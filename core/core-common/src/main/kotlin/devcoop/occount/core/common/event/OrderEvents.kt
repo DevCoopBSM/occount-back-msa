@@ -15,15 +15,8 @@ data class OrderPaymentRequestedEvent(
 )
 
 data class OrderPaymentPayload(
-    val type: OrderPaymentType,
     val totalAmount: Int,
 )
-
-enum class OrderPaymentType {
-    PAYMENT,
-    MIXED,
-    CARD,
-}
 
 data class OrderItemPayload(
     val itemId: Long,
