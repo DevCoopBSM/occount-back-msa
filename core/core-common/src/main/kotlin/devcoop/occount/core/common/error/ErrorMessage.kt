@@ -45,6 +45,7 @@ enum class ErrorMessage(
     POINT_DEDUCTION_FAILED("포인트 차감에 실패했습니다."),
     INVALID_CHARGE_AMOUNT("유효하지 않은 충전 금액입니다."),
     INVALID_DEDUCT_AMOUNT("유효하지 않은 차감 금액입니다."),
+    PAYMENT_ALREADY_COMPLETED("이미 완료된 결제는 취소할 수 없습니다."),
     PAYMENT_LOG_NOT_FOUND("결제 로그를 찾을 수 없습니다."),
     PAYMENT_LOG_SAVE_FAILED("결제 로그 저장에 실패했습니다."),
     CHARGE_LOG_SAVE_FAILED("충전 기록 저장에 실패했습니다."),
