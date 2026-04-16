@@ -27,7 +27,7 @@ class CreateOrderUseCase(
     private val orderRequestValidator: OrderRequestValidator,
     private val eventPublisher: EventPublisher,
 ) {
-    fun placeOrder(request: OrderRequest, userId: Long?): OrderResponse {
+    fun placeOrder(request: OrderRequest, userId: Long?, kioskId: String): OrderResponse {
         val validatedRequest = orderRequestValidator.validate(request)
         val orderId = UUID.randomUUID().toString()
 
@@ -41,7 +41,7 @@ class CreateOrderUseCase(
                         totalAmount = validatedRequest.totalAmount,
                     ),
                     status = OrderStatus.PROCESSING,
-                    kioskId = request.kioskId,
+                    kioskId = kioskId,
                     expiresAt = Instant.now().plus(TIMEOUT_SECONDS),
                 ),
             )

@@ -30,9 +30,9 @@ class OrderControllerTest {
         )
         val expected = OrderResponse(orderId = "order-1", status = OrderStatus.PROCESSING)
 
-        `when`(createOrderUseCase.placeOrder(request, 7L)).thenReturn(expected)
+        `when`(createOrderUseCase.placeOrder(request, 7L, "kiosk-1")).thenReturn(expected)
 
-        val response = controller.createOrder(request, userIdHeader = "7")
+        val response = controller.createOrder(request, kioskId = "kiosk-1", userIdHeader = "7")
 
         assertEquals(HttpStatus.ACCEPTED, response.statusCode)
         assertEquals(expected, response.body)
@@ -47,9 +47,9 @@ class OrderControllerTest {
         )
         val expected = OrderResponse(orderId = "order-2", status = OrderStatus.PROCESSING)
 
-        `when`(createOrderUseCase.placeOrder(request, null)).thenReturn(expected)
+        `when`(createOrderUseCase.placeOrder(request, null, "kiosk-1")).thenReturn(expected)
 
-        val response = controller.createOrder(request, userIdHeader = null)
+        val response = controller.createOrder(request, kioskId = "kiosk-1", userIdHeader = null)
 
         assertEquals(HttpStatus.ACCEPTED, response.statusCode)
         assertEquals(expected, response.body)
@@ -63,10 +63,10 @@ class OrderControllerTest {
             kioskId = "kiosk-1",
         )
 
-        `when`(createOrderUseCase.placeOrder(request, 7L)).thenThrow(OrderInvalidTotalPriceException())
+        `when`(createOrderUseCase.placeOrder(request, 7L, "kiosk-1")).thenThrow(OrderInvalidTotalPriceException())
 
         assertThrows<OrderInvalidTotalPriceException> {
-            controller.createOrder(request, userIdHeader = "7")
+            controller.createOrder(request, kioskId = "kiosk-1", userIdHeader = "7")
         }
     }
 
