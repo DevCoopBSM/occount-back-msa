@@ -46,6 +46,7 @@ class CompensateOrderPaymentUseCase(
                 cardPaymentPort.cancel(
                     transactionId = paymentLog.getTransactionInfo()?.transactionId(),
                     approvalNumber = paymentLog.getTransactionInfo()?.approvalNumber(),
+                    approvalDate = paymentLog.getTransactionInfo()?.approvalDate() ?: "",
                     amount = event.cardAmount,
                 )
             }
