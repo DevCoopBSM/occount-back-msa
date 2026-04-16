@@ -2,7 +2,7 @@ package devcoop.occount.payment.application.usecase.mixed
 
 import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.dto.response.CardResult
-import devcoop.occount.payment.application.dto.response.PgResult
+import devcoop.occount.payment.application.dto.response.VanResult
 import devcoop.occount.payment.application.dto.response.TransactionResult
 import devcoop.occount.payment.application.output.CardPaymentPort
 import devcoop.occount.payment.application.output.PaymentLogRepository
@@ -85,9 +85,9 @@ class MixedPaymentUseCaseTest {
     private class FakeCardPaymentPort : CardPaymentPort {
         val approvedAmounts = mutableListOf<Int>()
 
-        override fun approve(amount: Int, items: List<ItemCommand>): PgResult {
+        override fun approve(amount: Int, items: List<ItemCommand>): VanResult {
             approvedAmounts += amount
-            return PgResult(
+            return VanResult(
                 success = true,
                 message = "ok",
                 errorCode = null,
@@ -122,18 +122,6 @@ class MixedPaymentUseCaseTest {
             )
         }
 
-        override fun cancel(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int): PgResult {
-            cancelledAmounts += amount
-            return PgResult(
-                success = true,
-                message = "cancelled",
-                errorCode = null,
-                transaction = null,
-                card = null,
-                additional = null,
-                rawResponse = null,
-            )
-        }
     }
 
     private class FakePaymentLogRepository : PaymentLogRepository {

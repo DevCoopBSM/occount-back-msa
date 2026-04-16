@@ -1,9 +1,9 @@
-package devcoop.occount.payment.infrastructure.client.pg
+package devcoop.occount.payment.infrastructure.client.van
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 
-@ConfigurationProperties("payment.api")
-data class PgProperties(
+@ConfigurationProperties("van.api")
+data class VanProperties(
     val url: String,
     val secret: String,
 )

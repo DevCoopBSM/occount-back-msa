@@ -22,7 +22,7 @@ jwt:
   header: ${JWT_HEADER}
   secret-key: ${JWT_SECRET_KEY}
 
-payment:
+van:
   api:
     url: ${PAYMENT_API_URL}
     secret: ${PAYMENT_API_SECRET_KEY}

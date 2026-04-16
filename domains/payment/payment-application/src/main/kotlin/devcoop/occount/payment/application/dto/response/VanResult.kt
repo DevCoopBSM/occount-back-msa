@@ -1,6 +1,6 @@
 package devcoop.occount.payment.application.dto.response
 
-data class PgResult(
+data class VanResult(
     val success: Boolean,
     val message: String?,
     val errorCode: String?,
