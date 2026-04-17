@@ -19,7 +19,6 @@ class AuthenticationPolicy {
         rule(HttpMethod.POST, "/api/v3/orders").optionalAuth()
         rule(HttpMethod.POST, "/api/v3/orders/{orderId}/cancel").optionalAuth()
         rule("/api/v3/orders/**").authenticated()
-        rule("/api/v3/payments/**").authenticated()
         rule("/api/v3/points/**").authenticated()
         rule("/api/v3/wallet/**").authenticated()
 
