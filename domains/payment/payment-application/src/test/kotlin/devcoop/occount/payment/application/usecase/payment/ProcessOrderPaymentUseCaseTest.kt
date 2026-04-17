@@ -105,7 +105,6 @@ class ProcessOrderPaymentUseCaseTest {
     }
 
     private fun paymentFacade(cardPaymentPort: FakeCardPaymentPort): PaymentFacade {
-        val executionRepository = FakeOrderPaymentExecutionRepository()
         return PaymentFacade(
             payWithPointsUseCase = devcoop.occount.payment.application.usecase.payment.PayWithPointsUseCase(
                 deductWalletUseCase = DeductWalletUseCase(FakeWalletRepository()),
@@ -122,7 +121,6 @@ class ProcessOrderPaymentUseCaseTest {
                 paymentLogRepository = FakePaymentLogRepository(),
             ),
             getWalletPointQueryService = GetWalletPointQueryService(FakeWalletRepository()),
-            orderPaymentExecutionRepository = executionRepository,
         )
     }
 
