@@ -1,5 +1,6 @@
 package devcoop.occount.item.application.support
 
+import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.item.application.output.ItemRepository
 import devcoop.occount.item.application.output.SoldItemPayload
 import devcoop.occount.item.application.output.TossItemPayload
@@ -214,6 +215,14 @@ class FakeTossItemPort(
     override fun getSoldItems(): List<SoldItemPayload> {
         getSoldItemsCount += 1
         return soldItemPayloads
+    }
+}
+
+class FakeEventPublisher : EventPublisher {
+    val published = mutableListOf<Any>()
+
+    override fun publish(topic: String, key: String, eventType: String, payload: Any) {
+        published += payload
     }
 }
 
