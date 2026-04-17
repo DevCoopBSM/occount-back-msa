@@ -1,72 +1,79 @@
 package devcoop.occount.payment.infrastructure.client.van
 
 import devcoop.occount.payment.application.dto.request.ItemCommand
-import devcoop.occount.payment.application.dto.request.VanCommand
 import devcoop.occount.payment.application.dto.response.VanResult
+import devcoop.occount.payment.application.exception.PaymentCancelledException
 import devcoop.occount.payment.application.exception.InvalidPaymentRequestException
 import devcoop.occount.payment.application.exception.PaymentFailedException
 import devcoop.occount.payment.application.exception.PaymentTimeoutException
 import devcoop.occount.payment.application.exception.TransactionInProgressException
 import devcoop.occount.payment.application.output.CardPaymentPort
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
-import org.springframework.web.client.RestClient
 
 @Component
 class VanCardPaymentClient(
-    @Qualifier("vanClient") private val restClient: RestClient,
+    private val vanTerminalClient: VanTerminalClient,
 ) : CardPaymentPort {
     private val log = LoggerFactory.getLogger(VanCardPaymentClient::class.java)
 
-    override fun approve(amount: Int, items: List<ItemCommand>): VanResult {
+    override fun approve(amount: Int, items: List<ItemCommand>, paymentKey: String?): VanResult {
         log.info("카드결제 요청 - 금액: {}원, 상품 수: {}개", amount, items.size)
-        return execute("/api/payment", VanCommand(amount = amount, items = items), "카드결제")
+        return execute("카드결제") {
+            vanTerminalClient.approve(amount = amount, items = items, paymentKey = paymentKey)
+        }
     }
 
-    override fun cancel(
+    override fun refund(
         transactionId: String?,
         approvalNumber: String?,
         approvalDate: String,
         amount: Int,
     ): VanResult {
         if (approvalNumber == null) throw InvalidPaymentRequestException()
-        log.info("카드취소 요청 - 승인번호: {}, 금액: {}원", approvalNumber, amount)
-        return execute(
-            "/api/payment/cancel",
-            VanCancelCommand(approvalNumber = approvalNumber, approvalDate = approvalDate, amount = amount),
-            "카드취소",
-        )
+        log.info("카드환불 요청 - 승인번호: {}, 금액: {}원", approvalNumber, amount)
+        return execute("카드환불") {
+            vanTerminalClient.refund(
+                approvalNumber = approvalNumber,
+                approvalDate = approvalDate,
+                amount = amount,
+            )
+        }
     }
 
-    private fun execute(uri: String, body: Any, actionName: String): VanResult {
-        return try {
-            restClient.post()
-                .uri(uri)
-                .body(body)
-                .retrieve()
-                .onStatus({ it.value() == 400 }) { _, _ -> throw InvalidPaymentRequestException() }
-                .onStatus({ it.value() == 409 }) { _, _ ->
-                    log.warn("진행 중인 거래 감지됨")
-                    throw TransactionInProgressException()
-                }
-                .onStatus({ it.value() == 408 }) { _, _ ->
-                    log.error("{} 타임아웃 발생", actionName)
-                    throw PaymentTimeoutException()
-                }
-                .body(VanResult::class.java)
-                ?: throw PaymentFailedException()
+    override fun requestPendingApprovalCancellation(paymentKey: String) {
+        vanTerminalClient.requestPendingApprovalCancellation(paymentKey)
+    }
+
+    private fun execute(actionName: String, operation: () -> VanResult): VanResult {
+        val result = try {
+            operation()
         } catch (e: Exception) {
-            when (e) {
-                is InvalidPaymentRequestException,
-                is TransactionInProgressException,
-                is PaymentTimeoutException,
-                -> throw e
-                else -> {
-                    log.error("{} 처리 중 오류 발생: {}", actionName, e.message, e)
-                    throw PaymentFailedException()
-                }
+            log.error("{} 처리 중 오류 발생: {}", actionName, e.message, e)
+            throw PaymentFailedException()
+        }
+
+        if (result.success) {
+            return result
+        }
+
+        when (result.errorCode) {
+            "TRANSACTION_TIMEOUT", "TIMEOUT" -> {
+                log.error("{} 타임아웃 발생", actionName)
+                throw PaymentTimeoutException()
             }
+
+            "TRANSACTION_IN_PROGRESS" -> {
+                log.warn("진행 중인 거래 감지됨")
+                throw TransactionInProgressException()
+            }
+
+            "USER_CANCELLED" -> throw PaymentCancelledException()
+
+            "CONNECTION_FAILED" -> throw PaymentFailedException()
+            null -> throw InvalidPaymentRequestException()
+
+            else -> throw InvalidPaymentRequestException()
         }
     }
 }
