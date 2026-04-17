@@ -14,6 +14,11 @@ data class OrderPaymentRequestedEvent(
     val items: List<OrderItemPayload>,
 )
 
+data class OrderPaymentCancellationRequestedEvent(
+    val orderId: String,
+    val userId: Long?,
+)
+
 data class OrderPaymentPayload(
     val totalAmount: Int,
 )
