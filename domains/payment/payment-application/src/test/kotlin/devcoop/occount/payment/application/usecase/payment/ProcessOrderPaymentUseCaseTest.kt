@@ -90,6 +90,7 @@ class ProcessOrderPaymentUseCaseTest {
     private fun requestedEvent(): OrderPaymentRequestedEvent {
         return OrderPaymentRequestedEvent(
             orderId = "order-1",
+            kioskId = "kiosk-1",
             userId = null,
             payment = OrderPaymentPayload(totalAmount = 2000),
             items = listOf(
@@ -152,7 +153,7 @@ class ProcessOrderPaymentUseCaseTest {
         val approvedAmounts = mutableListOf<Int>()
         var lastPaymentKey: String? = null
 
-        override fun approve(amount: Int, items: List<ItemCommand>, paymentKey: String?): VanResult {
+        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: String?): VanResult {
             error?.let { throw it }
             approvedAmounts += amount
             lastPaymentKey = paymentKey
@@ -191,11 +192,11 @@ class ProcessOrderPaymentUseCaseTest {
             )
         }
 
-        override fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int): VanResult {
+        override fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int, kioskId: String): VanResult {
             error("not used in this test")
         }
 
-        override fun requestPendingApprovalCancellation(paymentKey: String) = Unit
+        override fun requestPendingApprovalCancellation(paymentKey: String, kioskId: String) = Unit
     }
 
     private class FakePaymentLogRepository : PaymentLogRepository {
