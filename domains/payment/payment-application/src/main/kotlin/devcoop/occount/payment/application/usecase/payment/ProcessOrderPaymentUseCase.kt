@@ -48,6 +48,7 @@ class ProcessOrderPaymentUseCase(
         try {
             val result = paymentFacade.execute(
                 userId = event.userId,
+                kioskId = event.kioskId,
                 details = PaymentDetails(
                     items = event.items.map { item ->
                         PaymentItem(
