@@ -114,6 +114,24 @@ class OrderUseCaseFlowTest {
     }
 
     @Test
+    fun `cancel requests pending payment cancellation when payment is in progress`() {
+        val orderRepository = FakeOrderRepository(
+            initialOrder = orderFixture(
+                paymentStatus = OrderStepStatus.PENDING,
+                stockStatus = OrderStepStatus.SUCCEEDED,
+                paymentRequested = true,
+            ),
+        )
+        val eventPublisher = FakeEventPublisher()
+        val cancelOrderUseCase = cancelOrderUseCase(orderRepository, eventPublisher)
+
+        cancelOrderUseCase.cancel(ORDER_ID, KIOSK_ID)
+
+        assertEquals(1, eventPublisher.published.filter { it.payload is OrderPaymentCancellationRequestedEvent }.size)
+        assertEquals(true, orderRepository.findById(ORDER_ID)!!.paymentCancellationRequested)
+    }
+
+    @Test
     fun `expired order is timed out and compensation is requested only once`() {
         val orderRepository = FakeOrderRepository(
             initialOrder = orderFixture(
@@ -197,6 +215,7 @@ class OrderUseCaseFlowTest {
         paymentLogId: Long? = null,
         pointsUsed: Int = 0,
         expiresAt: Instant = Instant.now().plusSeconds(30),
+        paymentRequested: Boolean = false,
     ): OrderAggregate {
         return OrderAggregate(
             orderId = ORDER_ID,
@@ -222,6 +241,7 @@ class OrderUseCaseFlowTest {
                 pointsUsed = pointsUsed,
             ),
             expiresAt = expiresAt,
+            paymentRequested = paymentRequested,
         )
     }
 
@@ -232,6 +252,7 @@ class OrderUseCaseFlowTest {
         return CancelOrderUseCase(
             orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionPort()),
             orderLifecycleProcessor = orderLifecycleProcessor(orderRepository, eventPublisher),
+            orderPaymentCancellationEventPublisher = OrderPaymentCancellationEventPublisher(eventPublisher),
             orderResponseMapper = OrderResponseMapper(),
         )
     }
@@ -270,6 +291,7 @@ class OrderUseCaseFlowTest {
             expireOrderUseCase = ExpireOrderUseCase(
                 orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionPort()),
                 orderLifecycleProcessor = orderLifecycleProcessor(orderRepository, eventPublisher),
+                orderPaymentCancellationEventPublisher = OrderPaymentCancellationEventPublisher(eventPublisher),
                 orderResponseMapper = OrderResponseMapper(),
             ),
         )
