@@ -38,6 +38,13 @@ class ProcessOrderPaymentUseCase(
             OrderPaymentExecutionStartResult.STARTED -> Unit
         }
 
+        if (orderPaymentExecutionRepository.isCancellationRequested(event.orderId)) {
+            log.info("결제 시작 직전 취소 감지 - orderId={}", event.orderId)
+            orderPaymentExecutionRepository.markCancelled(event.orderId)
+            publishFailed(event, PaymentCancelledException().message ?: "Payment cancelled before approval started")
+            return
+        }
+
         try {
             val result = paymentFacade.execute(
                 userId = event.userId,
