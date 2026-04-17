@@ -1,7 +1,8 @@
 package devcoop.occount.order.api.order
 
 import devcoop.occount.core.common.auth.AuthHeaders
-import devcoop.occount.order.application.exception.OrderInvalidTotalPriceException
+import devcoop.occount.order.application.exception.OrderTransactionFailedException
+import devcoop.occount.order.application.shared.OrderItemRequest
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
@@ -24,9 +25,7 @@ class OrderControllerTest {
     @Test
     fun `createOrder returns ACCEPTED with response body`() {
         val request = OrderRequest(
-            items = emptyList(),
-            totalAmount = 0,
-            kioskId = "kiosk-1",
+            items = listOf(OrderItemRequest(itemId = 1L, quantity = 1)),
         )
         val expected = OrderResponse(orderId = "order-1", status = OrderStatus.PROCESSING)
 
@@ -41,9 +40,7 @@ class OrderControllerTest {
     @Test
     fun `createOrder with no user id header passes null userId`() {
         val request = OrderRequest(
-            items = emptyList(),
-            totalAmount = 0,
-            kioskId = "kiosk-1",
+            items = listOf(OrderItemRequest(itemId = 1L, quantity = 1)),
         )
         val expected = OrderResponse(orderId = "order-2", status = OrderStatus.PROCESSING)
 
@@ -58,14 +55,12 @@ class OrderControllerTest {
     @Test
     fun `createOrder propagates business exception`() {
         val request = OrderRequest(
-            items = emptyList(),
-            totalAmount = 0,
-            kioskId = "kiosk-1",
+            items = listOf(OrderItemRequest(itemId = 1L, quantity = 1)),
         )
 
-        `when`(createOrderUseCase.placeOrder(request, 7L, "kiosk-1")).thenThrow(OrderInvalidTotalPriceException())
+        `when`(createOrderUseCase.placeOrder(request, 7L, "kiosk-1")).thenThrow(OrderTransactionFailedException())
 
-        assertThrows<OrderInvalidTotalPriceException> {
+        assertThrows<OrderTransactionFailedException> {
             controller.createOrder(request, kioskId = "kiosk-1", userIdHeader = "7")
         }
     }

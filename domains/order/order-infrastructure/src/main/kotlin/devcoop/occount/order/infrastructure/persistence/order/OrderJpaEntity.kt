@@ -22,6 +22,8 @@ class OrderJpaEntity(
     @field:Column(name = "user_id", nullable = true)
     private var userId: Long? = null,
     @field:OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true)
+    private var requestedLines: MutableList<RequestedOrderLineJpaEntity> = mutableListOf(),
+    @field:OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true)
     private var lines: MutableList<OrderLineJpaEntity> = mutableListOf(),
     @field:Column(name = "total_amount", nullable = false)
     private var totalAmount: Int = 0,
@@ -62,12 +64,17 @@ class OrderJpaEntity(
     @field:Column(name = "version", nullable = false)
     private var version: Long = 0L,
 ) {
+    fun replaceRequestedLines(lines: MutableList<RequestedOrderLineJpaEntity>) {
+        requestedLines = lines
+    }
+
     fun replaceLines(lines: MutableList<OrderLineJpaEntity>) {
         this.lines = lines
     }
 
     fun getOrderId() = orderId
     fun getUserId() = userId
+    fun getRequestedLines() = requestedLines.toList()
     fun getLines() = lines.toList()
     fun getTotalAmount() = totalAmount
     fun getStatus() = status
