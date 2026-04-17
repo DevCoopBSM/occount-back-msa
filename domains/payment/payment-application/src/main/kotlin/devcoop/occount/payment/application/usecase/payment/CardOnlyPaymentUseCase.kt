@@ -16,10 +16,11 @@ class CardOnlyPaymentUseCase(
     private val paymentLogRepository: PaymentLogRepository,
 ) {
     @Transactional
-    fun execute(userId: Long?, details: PaymentDetails): PaymentResponse {
+    fun execute(userId: Long?, details: PaymentDetails, paymentKey: String? = null): PaymentResponse {
         val approved = cardPaymentPort.approve(
             amount = details.totalAmount,
             items = details.items.map(ItemCommand.Companion::from),
+            paymentKey = paymentKey,
         )
 
         val paymentLog = paymentLogRepository.save(
@@ -43,4 +44,5 @@ class CardOnlyPaymentUseCase(
             paymentLogId = paymentLog.getPaymentId(),
         )
     }
+
 }

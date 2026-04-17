@@ -85,7 +85,7 @@ class MixedPaymentUseCaseTest {
     private class FakeCardPaymentPort : CardPaymentPort {
         val approvedAmounts = mutableListOf<Int>()
 
-        override fun approve(amount: Int, items: List<ItemCommand>): VanResult {
+        override fun approve(amount: Int, items: List<ItemCommand>, paymentKey: String?): VanResult {
             approvedAmounts += amount
             return VanResult(
                 success = true,
@@ -122,6 +122,13 @@ class MixedPaymentUseCaseTest {
             )
         }
 
+        override fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int): VanResult {
+            error("not used in this test")
+        }
+
+        override fun requestPendingApprovalCancellation(paymentKey: String) {
+            error("not used in this test")
+        }
     }
 
     private class FakePaymentLogRepository : PaymentLogRepository {
@@ -133,4 +140,5 @@ class MixedPaymentUseCaseTest {
         override fun save(paymentLog: PaymentLog): PaymentLog { saved += paymentLog; return paymentLog }
         override fun saveAll(paymentLogs: List<PaymentLog>): List<PaymentLog> { saved += paymentLogs; return paymentLogs }
     }
+
 }
