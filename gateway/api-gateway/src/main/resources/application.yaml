@@ -34,10 +34,6 @@ spring:
               uri: ${ORDER_API_URL}
               predicates:
                 - Path=/api/v3/orders/**
-            - id: payment-api
-              uri: ${PAYMENT_API_URL}
-              predicates:
-                - Path=/api/v3/payments/**
             - id: wallet-api
               uri: ${PAYMENT_API_URL}
               predicates:
