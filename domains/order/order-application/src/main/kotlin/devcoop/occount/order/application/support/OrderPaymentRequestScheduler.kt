@@ -24,7 +24,6 @@ class OrderPaymentRequestScheduler(
     fun schedulePaymentRequestIfEligible(orderId: String) {
         repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
             try {
-                var orderToPublish: OrderAggregate? = null
                 transactionPort.executeInNewTransaction {
                     val persistedOrder = orderRepository.findPersistedById(orderId)
                         ?: throw OrderNotFoundException()
@@ -34,21 +33,11 @@ class OrderPaymentRequestScheduler(
                         return@executeInNewTransaction
                     }
 
-                    orderToPublish = orderRepository.save(
+                    val updatedOrder = orderRepository.save(
                         order.copy(paymentRequested = true),
                         persistedOrder.persistenceVersion,
                     )
-                }
-                // DB 커밋 후 이벤트 발행 — 트랜잭션 내 발행 시 DB 롤백과 이벤트 불일치 방지
-                orderToPublish?.let { order ->
-                    try {
-                        publishPaymentRequested(order, attempt)
-                    } catch (ex: Exception) {
-                        log.error("결제 요청 이벤트 발행 실패, 플래그 초기화 시도 - 주문={}", orderId, ex)
-                        runCatching { resetPaymentRequestedFlag(orderId) }
-                            .onFailure { log.warn("결제 요청 플래그 초기화 실패 - 주문={}", orderId, it) }
-                        throw ex
-                    }
+                    publishPaymentRequested(updatedOrder, attempt)
                 }
                 return
             } catch (ex: OrderConcurrencyException) {
@@ -84,27 +73,6 @@ class OrderPaymentRequestScheduler(
                 },
             ),
         )
-    }
-
-    private fun resetPaymentRequestedFlag(orderId: String) {
-        repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
-            try {
-                transactionPort.executeInNewTransaction {
-                    val persistedOrder = orderRepository.findPersistedById(orderId) ?: return@executeInNewTransaction
-                    val order = persistedOrder.order
-                    if (order.paymentRequested) {
-                        orderRepository.save(
-                            order.copy(paymentRequested = false),
-                            persistedOrder.persistenceVersion,
-                        )
-                    }
-                }
-                return
-            } catch (ex: OrderConcurrencyException) {
-                if (attempt == OrderRetryPolicy.MAX_RETRY_COUNT - 1) throw ex
-                Thread.sleep(OrderRetryPolicy.BASE_BACKOFF_MILLIS * (1L shl attempt))
-            }
-        }
     }
 
     companion object {

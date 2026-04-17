@@ -32,7 +32,7 @@ class CreateOrderUseCase(
         val orderId = UUID.randomUUID().toString()
 
         val createdOrder = orderMutationExecutor.executeInNewTransaction {
-            orderRepository.save(
+            val createdOrder = orderRepository.save(
                 OrderAggregate(
                     orderId = orderId,
                     userId = userId,
@@ -45,9 +45,9 @@ class CreateOrderUseCase(
                     expiresAt = Instant.now().plus(TIMEOUT_SECONDS),
                 ),
             )
+            publishOrderRequested(createdOrder, userId)
+            createdOrder
         }
-        // DB 커밋 후 이벤트 발행 — 트랜잭션 내 발행 시 DB 롤백과 이벤트 불일치 방지
-        publishOrderRequested(createdOrder, userId)
         log.info("주문 생성 완료 - 주문={} 사용자={}", createdOrder.orderId, userId)
 
         return OrderResponse(orderId = createdOrder.orderId, status = createdOrder.status)

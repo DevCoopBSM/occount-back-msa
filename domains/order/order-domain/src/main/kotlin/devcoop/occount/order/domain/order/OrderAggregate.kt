@@ -16,6 +16,7 @@ data class OrderAggregate(
     val expiresAt: Instant,
     val paymentResult: OrderPaymentResult = OrderPaymentResult(),
     val paymentRequested: Boolean = false,
+    val paymentCancellationRequested: Boolean = false,
     val paymentCompensationRequested: Boolean = false,
     val stockCompensationRequested: Boolean = false,
 ) {
@@ -49,6 +50,12 @@ data class OrderAggregate(
         requiresCompensation() &&
             paymentStatus == OrderStepStatus.SUCCEEDED &&
             !paymentCompensationRequested
+
+    fun shouldRequestPendingPaymentCancellation(): Boolean =
+        cancelRequested &&
+            paymentRequested &&
+            paymentStatus == OrderStepStatus.PENDING &&
+            !paymentCancellationRequested
 
     fun shouldRequestStockCompensation(): Boolean =
         requiresCompensation() &&
