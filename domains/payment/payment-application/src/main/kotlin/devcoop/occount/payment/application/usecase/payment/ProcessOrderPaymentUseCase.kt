@@ -6,21 +6,42 @@ import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.core.common.event.OrderPaymentCompletedEvent
 import devcoop.occount.core.common.event.OrderPaymentFailedEvent
 import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
+import devcoop.occount.payment.application.exception.PaymentCancelledException
+import devcoop.occount.payment.application.output.OrderPaymentExecutionRepository
+import devcoop.occount.payment.application.output.OrderPaymentExecutionStartResult
 import devcoop.occount.payment.application.shared.PaymentDetails
 import devcoop.occount.payment.application.shared.PaymentFacade
 import devcoop.occount.payment.application.shared.PaymentItem
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
 class ProcessOrderPaymentUseCase(
     private val paymentFacade: PaymentFacade,
+    private val orderPaymentExecutionRepository: OrderPaymentExecutionRepository,
     private val eventPublisher: EventPublisher,
 ) {
     fun process(event: OrderPaymentRequestedEvent) {
+        when (orderPaymentExecutionRepository.startProcessing(event.orderId)) {
+            OrderPaymentExecutionStartResult.CANCELLED_BEFORE_START -> {
+                log.info("결제 요청 스킵 - 선행 취소 상태 orderId={}", event.orderId)
+                orderPaymentExecutionRepository.markCancelled(event.orderId)
+                publishFailed(event, PaymentCancelledException().message ?: "Payment cancelled before approval started")
+                return
+            }
+
+            OrderPaymentExecutionStartResult.DUPLICATE -> {
+                log.info("결제 요청 중복 감지 - orderId={}", event.orderId)
+                return
+            }
+
+            OrderPaymentExecutionStartResult.STARTED -> Unit
+        }
+
         try {
             val result = paymentFacade.execute(
-                event.userId,
-                PaymentDetails(
+                userId = event.userId,
+                details = PaymentDetails(
                     items = event.items.map { item ->
                         PaymentItem(
                             itemId = item.itemId.toString(),
@@ -32,7 +53,9 @@ class ProcessOrderPaymentUseCase(
                     },
                     totalAmount = event.payment.totalAmount,
                 ),
+                paymentKey = event.orderId,
             )
+            orderPaymentExecutionRepository.markCompleted(event.orderId)
 
             eventPublisher.publish(
                 topic = DomainTopics.ORDER_PAYMENT_COMPLETED,
@@ -49,17 +72,29 @@ class ProcessOrderPaymentUseCase(
                     approvalNumber = result.approvalNumber,
                 ),
             )
+        } catch (ex: PaymentCancelledException) {
+            orderPaymentExecutionRepository.markCancelled(event.orderId)
+            publishFailed(event, ex.message ?: "Payment cancelled")
         } catch (ex: Exception) {
-            eventPublisher.publish(
-                topic = DomainTopics.ORDER_PAYMENT_FAILED,
-                key = event.orderId,
-                eventType = DomainEventTypes.ORDER_PAYMENT_FAILED,
-                payload = OrderPaymentFailedEvent(
-                    orderId = event.orderId,
-                    userId = event.userId,
-                    reason = ex.message ?: "Payment processing failed",
-                ),
-            )
+            orderPaymentExecutionRepository.markFailed(event.orderId)
+            publishFailed(event, ex.message ?: "Payment processing failed")
         }
+    }
+
+    private fun publishFailed(event: OrderPaymentRequestedEvent, reason: String) {
+        eventPublisher.publish(
+            topic = DomainTopics.ORDER_PAYMENT_FAILED,
+            key = event.orderId,
+            eventType = DomainEventTypes.ORDER_PAYMENT_FAILED,
+            payload = OrderPaymentFailedEvent(
+                orderId = event.orderId,
+                userId = event.userId,
+                reason = reason,
+            ),
+        )
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(ProcessOrderPaymentUseCase::class.java)
     }
 }
