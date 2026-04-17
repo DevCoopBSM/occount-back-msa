@@ -35,10 +35,7 @@ class OrderUseCaseFlowTest {
             recordConsumption = {},
         )
         handleOrderStockEventUseCase.applyCompletedStock(
-            OrderStockCompletedEvent(
-                orderId = ORDER_ID,
-                itemIds = listOf(ITEM_ID),
-            ),
+            completedStockEvent(),
             recordConsumption = {},
         )
 
@@ -56,10 +53,7 @@ class OrderUseCaseFlowTest {
         val handleOrderStockEventUseCase = handleOrderStockEventUseCase(orderRepository, eventPublisher)
 
         handleOrderStockEventUseCase.applyCompletedStock(
-            OrderStockCompletedEvent(
-                orderId = ORDER_ID,
-                itemIds = listOf(ITEM_ID),
-            ),
+            completedStockEvent(),
             recordConsumption = {},
         )
 
@@ -77,17 +71,11 @@ class OrderUseCaseFlowTest {
         val handleOrderStockEventUseCase = handleOrderStockEventUseCase(orderRepository, eventPublisher)
 
         handleOrderStockEventUseCase.applyCompletedStock(
-            OrderStockCompletedEvent(
-                orderId = ORDER_ID,
-                itemIds = listOf(ITEM_ID),
-            ),
+            completedStockEvent(),
             recordConsumption = {},
         )
         handleOrderStockEventUseCase.applyCompletedStock(
-            OrderStockCompletedEvent(
-                orderId = ORDER_ID,
-                itemIds = listOf(ITEM_ID),
-            ),
+            completedStockEvent(),
             recordConsumption = {},
         )
 
@@ -221,17 +209,27 @@ class OrderUseCaseFlowTest {
             orderId = ORDER_ID,
             userId = USER_ID,
             kioskId = KIOSK_ID,
-            lines = listOf(
-                OrderLine(
+            requestedLines = listOf(
+                RequestedOrderLine(
                     itemId = ITEM_ID,
-                    itemNameSnapshot = "Americano",
-                    unitPrice = 2000,
                     quantity = 1,
-                    totalPrice = 2000,
                 ),
             ),
+            lines = if (stockStatus == OrderStepStatus.SUCCEEDED) {
+                listOf(
+                    OrderLine(
+                        itemId = ITEM_ID,
+                        itemNameSnapshot = "Americano",
+                        unitPrice = 2000,
+                        quantity = 1,
+                        totalPrice = 2000,
+                    ),
+                )
+            } else {
+                emptyList()
+            },
             payment = OrderPayment(
-                totalAmount = 2000,
+                totalAmount = if (stockStatus == OrderStepStatus.SUCCEEDED) 2000 else 0,
             ),
             status = OrderStatus.PROCESSING,
             paymentStatus = paymentStatus,
@@ -242,6 +240,22 @@ class OrderUseCaseFlowTest {
             ),
             expiresAt = expiresAt,
             paymentRequested = paymentRequested,
+        )
+    }
+
+    private fun completedStockEvent(): OrderStockCompletedEvent {
+        return OrderStockCompletedEvent(
+            orderId = ORDER_ID,
+            items = listOf(
+                OrderItemPayload(
+                    itemId = ITEM_ID,
+                    itemName = "Americano",
+                    itemPrice = 2000,
+                    quantity = 1,
+                    totalPrice = 2000,
+                ),
+            ),
+            totalAmount = 2000,
         )
     }
 

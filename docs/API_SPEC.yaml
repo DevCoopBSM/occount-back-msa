@@ -346,8 +346,8 @@ paths:
 
         - `X-Kiosk-Id` 헤더는 항상 필수입니다.
         - 토큰이 있으면 회원 주문, 없으면 비회원 주문으로 처리합니다.
-        - 비회원 주문은 `paymentType: CARD` 만 허용합니다.
         - 요청 즉시 `PROCESSING` 상태로 응답하며, 실제 처리는 비동기로 수행됩니다.
+        - 상품 검증, 가격 확정, 재고 차감은 비동기로 처리됩니다.
         - 최종 결과는 `GET /api/v3/orders/{orderId}` 를 폴링하여 확인합니다.
       parameters:
         - name: X-Kiosk-Id
@@ -369,12 +369,7 @@ paths:
             example:
               items:
                 - itemId: 1
-                  itemName: "아메리카노"
-                  itemPrice: 2000
                   quantity: 2
-              paymentType: "CARD"
-              totalAmount: 4000
-              kioskId: "KIOSK-001"
       responses:
         "202":
           description: 주문 접수 (PROCESSING)
@@ -387,7 +382,7 @@ paths:
                 status: "PROCESSING"
                 failureReason: null
         "400":
-          description: 비회원이 카드 외 결제 수단 사용 / 상품 검증 실패
+          description: 요청 형식 오류
           content:
             application/json:
               schema:
@@ -668,45 +663,24 @@ components:
     # ── Order ──────────────────────────────────────
     OrderRequest:
       type: object
-      required: [items, paymentType, totalAmount, kioskId]
+      required: [items]
       properties:
         items:
           type: array
           description: 주문 상품 목록 (`orderInfos` 별칭 허용)
           items:
             $ref: '#/components/schemas/OrderItemRequest'
-        paymentType:
-          $ref: '#/components/schemas/OrderPaymentType'
-        totalAmount:
-          type: integer
-          description: 총 결제 금액 (서버 계산값과 일치해야 함)
-        kioskId:
-          type: string
-          description: 주문을 생성하는 키오스크 ID
 
     OrderItemRequest:
       type: object
-      required: [itemId, itemName, itemPrice, quantity]
+      required: [itemId, quantity]
       properties:
         itemId:
           type: integer
           format: int64
-        itemName:
-          type: string
-        itemPrice:
-          type: integer
-          minimum: 0
         quantity:
           type: integer
           minimum: 1
-
-    OrderPaymentType:
-      type: string
-      enum: [PAYMENT, MIXED, CARD]
-      description: |
-        - `PAYMENT`: 포인트 전액 결제 (회원 전용)
-        - `MIXED`: 포인트 + 카드 혼합 결제 (회원 전용)
-        - `CARD`: 카드 전액 결제 (회원/비회원 공통)
 
     OrderResponse:
       type: object
