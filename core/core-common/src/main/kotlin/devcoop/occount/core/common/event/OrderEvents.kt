@@ -9,6 +9,7 @@ data class OrderRequestedEvent(
 
 data class OrderPaymentRequestedEvent(
     val orderId: String,
+    val kioskId: String,
     val userId: Long?,
     val payment: OrderPaymentPayload,
     val items: List<OrderItemPayload>,
@@ -16,6 +17,7 @@ data class OrderPaymentRequestedEvent(
 
 data class OrderPaymentCancellationRequestedEvent(
     val orderId: String,
+    val kioskId: String,
     val userId: Long?,
 )
 

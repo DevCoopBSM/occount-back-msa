@@ -58,6 +58,7 @@ class OrderPaymentRequestScheduler(
             eventType = DomainEventTypes.ORDER_PAYMENT_REQUESTED,
             payload = OrderPaymentRequestedEvent(
                 orderId = order.orderId,
+                kioskId = order.kioskId,
                 userId = order.userId,
                 payment = OrderPaymentPayload(
                     totalAmount = order.payment.totalAmount,
