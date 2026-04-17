@@ -19,7 +19,7 @@ class CancelPendingOrderPaymentUseCaseTest {
         )
         val useCase = CancelPendingOrderPaymentUseCase(cardPaymentPort, executionRepository)
 
-        useCase.cancel(OrderPaymentCancellationRequestedEvent(orderId = "order-1", userId = 1L))
+        useCase.cancel(OrderPaymentCancellationRequestedEvent(orderId = "order-1", kioskId = "kiosk-1", userId = 1L))
 
         assertEquals("order-1", cardPaymentPort.cancelRequestedPaymentKey)
     }
@@ -32,7 +32,7 @@ class CancelPendingOrderPaymentUseCaseTest {
         )
         val useCase = CancelPendingOrderPaymentUseCase(cardPaymentPort, executionRepository)
 
-        useCase.cancel(OrderPaymentCancellationRequestedEvent(orderId = "order-1", userId = 1L))
+        useCase.cancel(OrderPaymentCancellationRequestedEvent(orderId = "order-1", kioskId = "kiosk-1", userId = 1L))
 
         assertEquals(null, cardPaymentPort.cancelRequestedPaymentKey)
         assertEquals("order-1", executionRepository.lastCancellationOrderId)
@@ -41,15 +41,15 @@ class CancelPendingOrderPaymentUseCaseTest {
     private class FakeCardPaymentPort : CardPaymentPort {
         var cancelRequestedPaymentKey: String? = null
 
-        override fun approve(amount: Int, items: List<ItemCommand>, paymentKey: String?): VanResult {
+        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: String?): VanResult {
             error("not used in this test")
         }
 
-        override fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int): VanResult {
+        override fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int, kioskId: String): VanResult {
             error("not used in this test")
         }
 
-        override fun requestPendingApprovalCancellation(paymentKey: String) {
+        override fun requestPendingApprovalCancellation(paymentKey: String, kioskId: String) {
             cancelRequestedPaymentKey = paymentKey
         }
     }
