@@ -36,6 +36,7 @@ enum class ErrorMessage(
     TRANSACTION_IN_PROGRESS("이미 진행 중인 거래가 있습니다."),
     INSUFFICIENT_POINTS("포인트가 부족합니다."),
     CARD_PAYMENT_FAILED("카드 결제에 실패했습니다."),
+    PAYMENT_CANCELLED("결제가 취소되었습니다."),
     PAYMENT_TIMEOUT("결제 시간이 초과되었습니다."),
     INVALID_PAYMENT_REQUEST("잘못된 결제 요청입니다."),
     POINT_NOT_FOUND("포인트 정보를 조회할 수 없습니다."),
