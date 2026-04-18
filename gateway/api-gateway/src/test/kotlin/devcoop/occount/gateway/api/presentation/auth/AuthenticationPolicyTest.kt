@@ -15,8 +15,8 @@ class AuthenticationPolicyTest {
     }
 
     @Test
-    fun `payment path requires authentication`() {
-        assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.POST, "/api/v3/payments/execute"))
+    fun `wallet path requires authentication`() {
+        assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.POST, "/api/v3/wallet/charge"))
     }
 
     @Test
@@ -30,9 +30,9 @@ class AuthenticationPolicyTest {
     }
 
     @Test
-    fun `without barcode path requires authentication`() {
+    fun `without barcode path is public`() {
         assertEquals(
-            AuthenticationRule.Access.AUTHENTICATED,
+            AuthenticationRule.Access.PERMIT_ALL,
             policy.resolveAccess(HttpMethod.GET, "/api/v3/items/without-barcode"),
         )
     }
@@ -43,9 +43,9 @@ class AuthenticationPolicyTest {
     }
 
     @Test
-    fun `order cancel requires authentication`() {
+    fun `order cancel allows optional auth`() {
         assertEquals(
-            AuthenticationRule.Access.AUTHENTICATED,
+            AuthenticationRule.Access.OPTIONAL_AUTH,
             policy.resolveAccess(HttpMethod.POST, "/api/v3/orders/order-1/cancel"),
         )
     }
