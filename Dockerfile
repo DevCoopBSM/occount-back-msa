@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk AS builder
+FROM gradle:8.14.3-jdk21 AS builder
 
 WORKDIR /workspace
 
@@ -13,13 +13,11 @@ COPY domains domains
 COPY gateway gateway
 COPY modules modules
 
-RUN chmod +x gradlew
-
 ARG APP_MODULE
 ARG APP_BUILD_DIR
 ARG APP_JAR_NAME
 
-RUN ./gradlew "${APP_MODULE}:bootJar" --no-daemon --console=plain \
+RUN gradle "${APP_MODULE}:bootJar" --no-daemon --console=plain \
     && APP_JAR="${APP_BUILD_DIR}/${APP_JAR_NAME}" \
     && ls -l "${APP_BUILD_DIR}" \
     && test -n "${APP_JAR}" \
