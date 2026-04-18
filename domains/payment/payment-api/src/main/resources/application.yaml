@@ -24,8 +24,30 @@ jwt:
 
 van:
   api:
-    url: ${PAYMENT_API_URL}
-    secret: ${PAYMENT_API_SECRET_KEY}
+    host: ${VAN_API_HOST}
+    port: ${VAN_API_PORT}
+    protocol:
+      stx: ${VAN_API_PROTOCOL_STX}
+      etx: ${VAN_API_PROTOCOL_ETX}
+      separator: ${VAN_API_PROTOCOL_SEPARATOR}
+      record-separator: ${VAN_API_PROTOCOL_RECORD_SEPARATOR}
+      blank: ${VAN_API_PROTOCOL_BLANK}
+      ack: ${VAN_API_PROTOCOL_ACK}
+      dle: ${VAN_API_PROTOCOL_DLE}
+      form-feed: ${VAN_API_PROTOCOL_FORM_FEED}
+      nak: ${VAN_API_PROTOCOL_NAK}
+      transaction-timeout-seconds: ${VAN_API_PROTOCOL_TRANSACTION_TIMEOUT_SECONDS}
+    message:
+      payment-service-type: ${VAN_API_MESSAGE_PAYMENT_SERVICE_TYPE}
+      refund-service-type: ${VAN_API_MESSAGE_REFUND_SERVICE_TYPE}
+      terminal-close-service-type: ${VAN_API_MESSAGE_TERMINAL_CLOSE_SERVICE_TYPE}
+      terminal-close-filler: ${VAN_API_MESSAGE_TERMINAL_CLOSE_FILLER}
+      transaction-type: ${VAN_API_MESSAGE_TRANSACTION_TYPE}
+      installment-months: ${VAN_API_MESSAGE_INSTALLMENT_MONTHS}
+    codes:
+      cancel-message-type: ${VAN_PROTOCOL_CODES_CANCEL_MESSAGE_TYPE}
+      reject-status-prefix: ${VAN_PROTOCOL_CODES_REJECT_STATUS_PREFIX}
+      card-insert-keyword: ${VAN_PROTOCOL_CODES_CARD_INSERT_KEYWORD}
 member:
   read-api:
     url: ${MEMBER_API_URL:http://localhost:8081/api/v3}
