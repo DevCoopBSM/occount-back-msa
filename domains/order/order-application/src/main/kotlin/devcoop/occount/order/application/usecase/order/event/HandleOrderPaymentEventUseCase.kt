@@ -4,6 +4,7 @@ import devcoop.occount.core.common.event.OrderPaymentCompensatedEvent
 import devcoop.occount.core.common.event.OrderPaymentCompensationFailedEvent
 import devcoop.occount.core.common.event.OrderPaymentCompletedEvent
 import devcoop.occount.core.common.event.OrderPaymentFailedEvent
+import devcoop.occount.order.application.support.OrderFailureReasonSanitizer
 import devcoop.occount.order.application.support.OrderLifecycleProcessor
 import devcoop.occount.order.application.support.OrderMutationExecutor
 import devcoop.occount.order.domain.order.OrderPaymentResult
@@ -44,7 +45,7 @@ class HandleOrderPaymentEventUseCase(
             if (current.paymentStatus != OrderStepStatus.PENDING) return@updateOrderIdempotently current
             current.copy(
                 paymentStatus = OrderStepStatus.FAILED,
-                failureReason = current.failureReason ?: event.reason,
+                failureReason = current.failureReason ?: OrderFailureReasonSanitizer.sanitize(event.reason),
             )
         } ?: return
 
@@ -71,7 +72,7 @@ class HandleOrderPaymentEventUseCase(
             if (current.paymentStatus != OrderStepStatus.SUCCEEDED) return@updateOrderIdempotently current
             current.copy(
                 paymentStatus = OrderStepStatus.COMPENSATION_FAILED,
-                failureReason = current.failureReason ?: event.reason,
+                failureReason = current.failureReason ?: OrderFailureReasonSanitizer.sanitize(event.reason),
             )
         } ?: return
 

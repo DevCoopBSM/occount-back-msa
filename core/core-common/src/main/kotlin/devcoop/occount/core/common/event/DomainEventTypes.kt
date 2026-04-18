@@ -5,6 +5,8 @@ object DomainEventTypes {
     const val ORDER_REQUESTED = "OrderRequestedEvent"
     const val ORDER_PAYMENT_REQUESTED = "OrderPaymentRequestedEvent"
     const val ORDER_PAYMENT_CANCELLATION_REQUESTED = "OrderPaymentCancellationRequestedEvent"
+    const val ORDER_STOCK_COMPLETED = "OrderStockCompletedEvent"
+    const val ORDER_STOCK_FAILED = "OrderStockFailedEvent"
     const val ORDER_PAYMENT_COMPLETED = "OrderPaymentCompletedEvent"
     const val ORDER_PAYMENT_FAILED = "OrderPaymentFailedEvent"
     const val ORDER_PAYMENT_COMPENSATION_REQUESTED = "OrderPaymentCompensationRequestedEvent"

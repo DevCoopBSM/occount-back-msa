@@ -5,7 +5,8 @@ import java.time.Instant
 data class OrderAggregate(
     val orderId: String,
     val userId: Long?,
-    val lines: List<OrderLine>,
+    val requestedLines: List<RequestedOrderLine> = emptyList(),
+    val lines: List<OrderLine> = emptyList(),
     val payment: OrderPayment,
     val status: OrderStatus = OrderStatus.PENDING,
     val paymentStatus: OrderStepStatus = OrderStepStatus.PENDING,
@@ -66,6 +67,8 @@ data class OrderAggregate(
         status == OrderStatus.PROCESSING &&
             stockStatus == OrderStepStatus.SUCCEEDED &&
             paymentStatus == OrderStepStatus.PENDING &&
+            lines.isNotEmpty() &&
+            payment.totalAmount > 0 &&
             !cancelRequested &&
             !paymentRequested
 
