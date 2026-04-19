@@ -13,6 +13,8 @@ object DomainEventTypes {
     const val ORDER_PAYMENT_COMPENSATION_FAILED = "OrderPaymentCompensationFailedEvent"
     const val ORDER_PAYMENT_COMPENSATED = "OrderPaymentCompensatedEvent"
     const val ORDER_STOCK_COMPENSATION_REQUESTED = "OrderStockCompensationRequestedEvent"
+    const val ORDER_STOCK_COMPENSATED = "OrderStockCompensatedEvent"
+    const val ORDER_STOCK_COMPENSATION_FAILED = "OrderStockCompensationFailedEvent"
     const val POINT_BALANCE_CHANGED = "PointBalanceChangedEvent"
     const val POINT_INITIALIZED = "PointInitializedEvent"
 }

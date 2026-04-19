@@ -348,6 +348,7 @@ paths:
         - 토큰이 있으면 회원 주문, 없으면 비회원 주문으로 처리합니다.
         - 요청 즉시 `PROCESSING` 상태로 응답하며, 실제 처리는 비동기로 수행됩니다.
         - 상품 검증, 가격 확정, 재고 차감은 비동기로 처리됩니다.
+        - 재고 부족 또는 상품 검증 실패 시 최종 상태는 `FAILED` 입니다.
         - 최종 결과는 `GET /api/v3/orders/{orderId}` 를 폴링하여 확인합니다.
       parameters:
         - name: X-Kiosk-Id
@@ -399,6 +400,7 @@ paths:
         주문 상태를 조회합니다. (PERMIT_ALL)
 
         - `PROCESSING` 상태인 경우 최종 상태가 될 때까지 폴링합니다.
+        - 재고 부족, 상품 미존재 등 재고 단계 실패는 `FAILED` 로 종료됩니다.
         - 최종 상태: `COMPLETED`, `FAILED`, `CANCELLED`, `COMPENSATION_FAILED`, `TIMED_OUT`
       parameters:
         - name: orderId

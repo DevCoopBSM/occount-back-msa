@@ -68,6 +68,7 @@ data class OrderStockFailedEvent(
 
 data class OrderPaymentCompensationRequestedEvent(
     val orderId: String,
+    val kioskId: String,
     val userId: Long?,
     val paymentLogId: Long?,
     val pointsUsed: Int,

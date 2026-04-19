@@ -82,7 +82,7 @@ data class OrderAggregate(
             return null
         }
 
-        if (hasPendingStep()) {
+        if (hasPendingInFlightStep()) {
             return timeoutAwareStatus(OrderStatus.CANCEL_REQUESTED)
         }
 
@@ -102,12 +102,12 @@ data class OrderAggregate(
             return null
         }
 
-        if (hasPendingStep()) {
-            return OrderStatus.PROCESSING
-        }
-
         if (hasSucceededStepNeedingCompensation()) {
             return OrderStatus.COMPENSATING
+        }
+
+        if (hasPendingInFlightStep()) {
+            return OrderStatus.PROCESSING
         }
 
         return OrderStatus.FAILED
@@ -131,8 +131,9 @@ data class OrderAggregate(
             stockStatus == OrderStepStatus.FAILED
     }
 
-    private fun hasPendingStep(): Boolean {
-        return paymentStatus.isPending() || stockStatus.isPending()
+    private fun hasPendingInFlightStep(): Boolean {
+        return stockStatus.isPending() ||
+            (paymentStatus.isPending() && paymentRequested)
     }
 
     private fun hasSucceededStepNeedingCompensation(): Boolean {

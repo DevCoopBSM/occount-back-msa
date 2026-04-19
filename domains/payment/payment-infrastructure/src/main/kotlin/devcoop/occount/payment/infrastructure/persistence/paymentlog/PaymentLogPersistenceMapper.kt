@@ -23,6 +23,8 @@ object PaymentLogPersistenceMapper {
             transactionInfo = entity.getTransactionInfo()?.let(::toDomainTransactionInfo),
             eventType = entity.getEventType(),
             refundState = entity.getRefundState(),
+            cardRefundState = entity.getCardRefundState(),
+            pointRefundState = entity.getPointRefundState(),
             refundDate = entity.getRefundDate(),
             refundRequesterId = entity.getRefundRequesterId(),
         )
@@ -43,6 +45,8 @@ object PaymentLogPersistenceMapper {
             transactionInfo = domain.getTransactionInfo()?.let(::toEntityTransactionInfo),
             eventType = domain.getEventType(),
             refundState = domain.getRefundState(),
+            cardRefundState = domain.getCardRefundState(),
+            pointRefundState = domain.getPointRefundState(),
             refundDate = domain.getRefundDate(),
             refundRequesterId = domain.getRefundRequesterId(),
         )

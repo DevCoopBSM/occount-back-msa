@@ -22,6 +22,10 @@ data class Item(
         return copy(stock = stock.decreaseQuantity(orderQuantity))
     }
 
+    fun increaseQuantity(quantity: Int): Item {
+        return copy(stock = stock.increaseQuantity(quantity))
+    }
+
     fun updateQuantity(quantity: Int): Item {
         return copy(stock = Stock(quantity))
     }

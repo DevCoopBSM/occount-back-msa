@@ -45,6 +45,12 @@ class PaymentLogJpaEntity(
     @Enumerated(EnumType.STRING)
     @field:Column(name = "refund_state", nullable = false)
     private var refundState: RefundState = RefundState.NONE,
+    @Enumerated(EnumType.STRING)
+    @field:Column(name = "card_refund_state", nullable = false)
+    private var cardRefundState: RefundState = RefundState.NONE,
+    @Enumerated(EnumType.STRING)
+    @field:Column(name = "point_refund_state", nullable = false)
+    private var pointRefundState: RefundState = RefundState.NONE,
     @field:Column(name = "refund_date")
     private var refundDate: LocalDateTime? = null,
     @field:Column(name = "refund_requester_id")
@@ -60,6 +66,8 @@ class PaymentLogJpaEntity(
     fun getTransactionInfo() = transactionInfo
     fun getEventType() = eventType
     fun getRefundState() = refundState
+    fun getCardRefundState() = cardRefundState
+    fun getPointRefundState() = pointRefundState
     fun getRefundDate() = refundDate
     fun getRefundRequesterId() = refundRequesterId
 }

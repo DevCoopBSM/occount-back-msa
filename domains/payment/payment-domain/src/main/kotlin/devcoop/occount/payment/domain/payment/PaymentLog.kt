@@ -14,6 +14,8 @@ class PaymentLog(
     private var transactionInfo: TransactionInfo? = null,
     private var eventType: EventType? = EventType.NONE,
     private var refundState: RefundState = RefundState.NONE,
+    private var cardRefundState: RefundState = RefundState.NONE,
+    private var pointRefundState: RefundState = RefundState.NONE,
     private var refundDate: LocalDateTime? = null,
     private var refundRequesterId: String? = null,
 ) {
@@ -27,17 +29,61 @@ class PaymentLog(
     fun getTransactionInfo(): TransactionInfo? = transactionInfo
     fun getEventType(): EventType? = eventType
     fun getRefundState(): RefundState = refundState
+    fun getCardRefundState(): RefundState = cardRefundState
+    fun getPointRefundState(): RefundState = pointRefundState
     fun getRefundDate(): LocalDateTime? = refundDate
     fun getRefundRequesterId(): String? = refundRequesterId
 
     fun requestRefund(requesterId: String) {
-        this.refundState = RefundState.REQUESTED
-        this.refundRequesterId = requesterId
+        if (this.refundState == RefundState.NONE) {
+            this.refundState = RefundState.REQUESTED
+        }
+        if (this.refundRequesterId == null) {
+            this.refundRequesterId = requesterId
+        }
     }
 
-    fun completeRefund() {
-        this.refundState = RefundState.COMPLETED
-        this.refundDate = LocalDateTime.now()
+    fun requestCardRefund() {
+        if (cardRefundState == RefundState.NONE) {
+            cardRefundState = RefundState.REQUESTED
+        }
+    }
+
+    fun completeCardRefund() {
+        cardRefundState = RefundState.COMPLETED
+    }
+
+    fun requestPointRefund() {
+        if (pointRefundState == RefundState.NONE) {
+            pointRefundState = RefundState.REQUESTED
+        }
+    }
+
+    fun completePointRefund() {
+        pointRefundState = RefundState.COMPLETED
+    }
+
+    fun syncRefundState(
+        requiresCardRefund: Boolean,
+        requiresPointRefund: Boolean,
+    ) {
+        if (isRefundCompleted(requiresCardRefund, requiresPointRefund)) {
+            refundState = RefundState.COMPLETED
+            if (refundDate == null) {
+                refundDate = LocalDateTime.now()
+            }
+        } else {
+            refundState = RefundState.REQUESTED
+        }
+    }
+
+    private fun isRefundCompleted(
+        requiresCardRefund: Boolean,
+        requiresPointRefund: Boolean,
+    ): Boolean {
+        val cardRefundCompleted = !requiresCardRefund || cardRefundState == RefundState.COMPLETED
+        val pointRefundCompleted = !requiresPointRefund || pointRefundState == RefundState.COMPLETED
+        return cardRefundCompleted && pointRefundCompleted
     }
 
     override fun equals(other: Any?): Boolean {

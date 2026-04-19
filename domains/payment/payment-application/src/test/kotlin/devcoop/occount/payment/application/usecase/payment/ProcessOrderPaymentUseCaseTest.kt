@@ -200,6 +200,7 @@ class ProcessOrderPaymentUseCaseTest {
     }
 
     private class FakePaymentLogRepository : PaymentLogRepository {
+        override fun findById(paymentId: Long): PaymentLog? = null
         override fun findByUserId(userId: Long): List<PaymentLog> = emptyList()
         override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<PaymentLog> = emptyList()
         override fun findByPaymentType(paymentType: PaymentType): List<PaymentLog> = emptyList()

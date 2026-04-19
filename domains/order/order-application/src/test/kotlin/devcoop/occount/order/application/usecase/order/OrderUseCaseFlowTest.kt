@@ -63,6 +63,28 @@ class OrderUseCaseFlowTest {
     }
 
     @Test
+    fun `stock failure without payment request ends order as failed`() {
+        val orderRepository = FakeOrderRepository(
+            initialOrder = orderFixture(),
+        )
+        val eventPublisher = FakeEventPublisher()
+        val handleOrderStockEventUseCase = handleOrderStockEventUseCase(orderRepository, eventPublisher)
+
+        handleOrderStockEventUseCase.applyFailedStock(
+            OrderStockFailedEvent(
+                orderId = ORDER_ID,
+                reason = "out of stock",
+            ),
+            recordConsumption = {},
+        )
+
+        val order = orderRepository.findById(ORDER_ID)!!
+        assertEquals(OrderStepStatus.FAILED, order.stockStatus)
+        assertEquals(OrderStatus.FAILED, order.status)
+        assertEquals(0, eventPublisher.published.size)
+    }
+
+    @Test
     fun `duplicate stock success does not request payment twice`() {
         val orderRepository = FakeOrderRepository(
             initialOrder = orderFixture(),
