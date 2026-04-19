@@ -17,8 +17,7 @@ class VanMessageParserTest {
     )
     private val protocolSpec = VanProtocolSpec(
         VanProperties(
-            host = "localhost",
-            port = 5555,
+            terminals = mapOf(1 to VanProperties.Terminal(host = "localhost", port = 5555)),
             protocol = VanProperties.Protocol(
                 stx = env("VAN_API_PROTOCOL_STX"),
                 etx = env("VAN_API_PROTOCOL_ETX"),
@@ -29,7 +28,7 @@ class VanMessageParserTest {
                 dle = env("VAN_API_PROTOCOL_DLE"),
                 formFeed = env("VAN_API_PROTOCOL_FORM_FEED"),
                 nak = env("VAN_API_PROTOCOL_NAK"),
-                transactionTimeoutSeconds = env("VAN_API_PROTOCOL_TRANSACTION_TIMEOUT_SECONDS").toLong(),
+                transactionTimeoutSeconds = env("VAN_API_PROTOCOL_TRANSACTION_TIMEOUT_SECONDS").toLongOrNull() ?: 30L,
             ),
             message = VanProperties.Message(
                 paymentServiceType = env("VAN_API_MESSAGE_PAYMENT_SERVICE_TYPE"),
