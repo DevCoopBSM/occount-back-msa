@@ -125,4 +125,6 @@ class VanMessageParserTest {
         assertEquals("TRANSACTION_REJECTED", result.errorCode)
         assertEquals("한도 초과", result.transaction?.rejectMessage)
     }
+
+    private fun env(name: String): String = System.getenv(name).orEmpty()
 }
