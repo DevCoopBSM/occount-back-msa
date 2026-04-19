@@ -6,7 +6,8 @@ import java.net.Socket
 import java.net.SocketTimeoutException
 
 class VanSocketConnection(
-    private val properties: VanProperties,
+    private val host: String,
+    private val port: Int,
 ) {
     private val log = LoggerFactory.getLogger(VanSocketConnection::class.java)
 
@@ -21,10 +22,10 @@ class VanSocketConnection(
             repeat(maxRetries) { attempt ->
                 try {
                     close()
-                    socket = Socket(properties.host, properties.port).apply {
+                    socket = Socket(host, port).apply {
                         soTimeout = receiveTimeoutMillis
                     }
-                    log.info("VAN 서버 연결 성공: {}:{}", properties.host, properties.port)
+                    log.info("VAN 서버 연결 성공: {}:{}", host, port)
                     return true
                 } catch (e: IOException) {
                     log.error("연결 실패 (시도 {}/{}): {}", attempt + 1, maxRetries, e.message)
@@ -35,7 +36,7 @@ class VanSocketConnection(
                 }
             }
 
-            log.error("VAN 서버 연결 실패: {}:{}", properties.host, properties.port)
+            log.error("VAN 서버 연결 실패: {}:{}", host, port)
             return false
         }
     }

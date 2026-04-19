@@ -4,11 +4,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties("van.api")
 data class VanProperties(
-    val host: String,
-    val port: Int,
+    val terminals: Map<Int, Terminal>,
     val protocol: Protocol,
     val message: Message,
 ) {
+    data class Terminal(
+        val host: String,
+        val port: Int,
+    )
+
+
     data class Protocol(
         val stx: String,
         val etx: String,

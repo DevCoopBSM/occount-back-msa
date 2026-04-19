@@ -2,6 +2,7 @@ package devcoop.occount.payment.infrastructure.client.van
 
 import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.dto.response.VanResult
+import devcoop.occount.core.common.exception.BusinessBaseException
 import devcoop.occount.payment.application.exception.PaymentCancelledException
 import devcoop.occount.payment.application.exception.InvalidPaymentRequestException
 import devcoop.occount.payment.application.exception.PaymentFailedException
@@ -13,14 +14,14 @@ import org.springframework.stereotype.Component
 
 @Component
 class VanCardPaymentClient(
-    private val vanTerminalClient: VanTerminalClient,
+    private val vanTerminalRegistry: VanTerminalRegistry,
 ) : CardPaymentPort {
     private val log = LoggerFactory.getLogger(VanCardPaymentClient::class.java)
 
     override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: String?): VanResult {
-        log.info("카드결제 요청 - 금액: {}원, 상품 수: {}개", amount, items.size)
+        log.info("카드결제 요청 - 키오스크: {}, 금액: {}원, 상품 수: {}개", kioskId, amount, items.size)
         return execute("카드결제") {
-            vanTerminalClient.approve(amount = amount, items = items, paymentKey = paymentKey)
+            vanTerminalRegistry.get(kioskId).approve(amount = amount, items = items, paymentKey = paymentKey)
         }
     }
 
@@ -32,9 +33,9 @@ class VanCardPaymentClient(
         kioskId: String,
     ): VanResult {
         if (approvalNumber == null) throw InvalidPaymentRequestException()
-        log.info("카드환불 요청 - 승인번호: {}, 금액: {}원", approvalNumber, amount)
+        log.info("카드환불 요청 - 키오스크: {}, 승인번호: {}, 금액: {}원", kioskId, approvalNumber, amount)
         return execute("카드환불") {
-            vanTerminalClient.refund(
+            vanTerminalRegistry.get(kioskId).refund(
                 approvalNumber = approvalNumber,
                 approvalDate = approvalDate,
                 amount = amount,
@@ -43,12 +44,14 @@ class VanCardPaymentClient(
     }
 
     override fun requestPendingApprovalCancellation(paymentKey: String, kioskId: String) {
-        vanTerminalClient.requestPendingApprovalCancellation(paymentKey)
+        vanTerminalRegistry.get(kioskId).requestPendingApprovalCancellation(paymentKey)
     }
 
     private fun execute(actionName: String, operation: () -> VanResult): VanResult {
         val result = try {
             operation()
+        } catch (e: BusinessBaseException) {
+            throw e
         } catch (e: Exception) {
             log.error("{} 처리 중 오류 발생: {}", actionName, e.message, e)
             throw PaymentFailedException()

@@ -52,6 +52,7 @@ enum class ErrorMessage(
     PAYMENT_LOG_NOT_FOUND("결제 로그를 찾을 수 없습니다."),
     PAYMENT_LOG_SAVE_FAILED("결제 로그 저장에 실패했습니다."),
     CHARGE_LOG_SAVE_FAILED("충전 기록 저장에 실패했습니다."),
+    KIOSK_TERMINAL_NOT_FOUND("등록되지 않은 키오스크입니다."),
 
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다."),
 }

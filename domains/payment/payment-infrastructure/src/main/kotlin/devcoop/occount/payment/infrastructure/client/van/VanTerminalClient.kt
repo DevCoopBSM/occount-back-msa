@@ -2,22 +2,19 @@ package devcoop.occount.payment.infrastructure.client.van
 
 import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.dto.response.VanResult
-import jakarta.annotation.PreDestroy
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Component
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
-@Component
 class VanTerminalClient(
-    properties: VanProperties,
+    terminal: VanProperties.Terminal,
     private val messageBuilder: VanMessageBuilder,
     private val messageParser: VanMessageParser,
     private val protocolSpec: VanProtocolSpec,
 ) {
     private val log = LoggerFactory.getLogger(VanTerminalClient::class.java)
-    private val socketConnection = VanSocketConnection(properties)
+    private val socketConnection = VanSocketConnection(terminal.host, terminal.port)
     private val transactionInProgress = AtomicBoolean(false)
     private val cancellationRequested = AtomicBoolean(false)
     private val currentTransactionType = AtomicReference(TransactionType.NONE)
@@ -264,7 +261,6 @@ class VanTerminalClient(
         )
     }
 
-    @PreDestroy
     fun close() {
         socketConnection.close()
     }

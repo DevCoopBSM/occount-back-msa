@@ -24,8 +24,19 @@ jwt:
 
 van:
   api:
-    host: ${VAN_API_HOST}
-    port: ${VAN_API_PORT}
+    terminals:
+      1:
+        host: ${VAN_API_HOST_1:}
+        port: ${VAN_API_PORT_1:0}
+      2:
+        host: ${VAN_API_HOST_2:}
+        port: ${VAN_API_PORT_2:0}
+      3:
+        host: ${VAN_API_HOST_3:}
+        port: ${VAN_API_PORT_3:0}
+      4:
+        host: ${VAN_API_HOST_4:}
+        port: ${VAN_API_PORT_4:0}
     protocol:
       stx: ${VAN_API_PROTOCOL_STX}
       etx: ${VAN_API_PROTOCOL_ETX}
