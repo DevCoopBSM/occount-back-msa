@@ -1,10 +1,10 @@
 package devcoop.occount.payment.infrastructure.client.van
 
+import devcoop.occount.core.common.exception.BusinessBaseException
 import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.dto.response.VanResult
-import devcoop.occount.core.common.exception.BusinessBaseException
-import devcoop.occount.payment.application.exception.PaymentCancelledException
 import devcoop.occount.payment.application.exception.InvalidPaymentRequestException
+import devcoop.occount.payment.application.exception.PaymentCancelledException
 import devcoop.occount.payment.application.exception.PaymentFailedException
 import devcoop.occount.payment.application.exception.PaymentTimeoutException
 import devcoop.occount.payment.application.exception.TransactionInProgressException
@@ -73,10 +73,8 @@ class VanCardPaymentClient(
             }
 
             "USER_CANCELLED" -> throw PaymentCancelledException()
-
             "CONNECTION_FAILED" -> throw PaymentFailedException()
             null -> throw InvalidPaymentRequestException()
-
             else -> throw InvalidPaymentRequestException()
         }
     }

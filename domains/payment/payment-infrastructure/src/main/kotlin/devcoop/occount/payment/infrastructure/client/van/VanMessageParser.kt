@@ -15,7 +15,6 @@ import java.time.format.DateTimeFormatter
 class VanMessageParser(
     private val protocolSpec: VanProtocolSpec,
     private val vanResponseParser: VanResponseParser,
-    private val protocolCodes: VanProtocolCodes,
 ) {
     private val log = LoggerFactory.getLogger(VanMessageParser::class.java)
     private val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -33,16 +32,16 @@ class VanMessageParser(
                 )
             }
 
-            // 새로운 객체 기반 파서로 응답 파싱
-            val vanResponse = vanResponseParser.parseToRawResponse(response)
-            if (vanResponse == null) {
-                // 제어 문자이거나 파싱 실패한 경우
+            if (response.first() != protocolSpec.stxByte) {
+                return parseNonStxResponse(rawResponse)
+            }
+
+            val vanResponse = vanResponseParser.parseToRawResponse(response) ?: run {
                 log.debug("제어 문자 또는 파싱 불가 응답 (무시): {}", rawResponse)
                 return null
             }
 
-            // 파싱된 응답을 VanResult로 변환
-            return convertToVanResult(vanResponse, startTime, rawResponse)
+            convertToVanResult(vanResponse, startTime, rawResponse)
         } catch (e: Exception) {
             log.error("응답 파싱 에러: {}", e.message, e)
             failureResult(
@@ -56,32 +55,32 @@ class VanMessageParser(
     private fun convertToVanResult(
         vanResponse: VanRawResponse,
         startTime: LocalDateTime,
-        rawResponse: String
+        rawResponse: String,
     ): VanResult? {
-        // 카드 삽입 메시지인 경우 무시
         if (vanResponse.isCardInsertMessage()) {
             log.info("중간 메시지 수신: {}", vanResponse.cardNumber?.trim())
             return null
         }
 
-        // 거래 거절인 경우
         if (vanResponse.isRejected()) {
             val rejectReason = vanResponse.getRejectionReason()
             return failureResult(
                 message = "거래가 거절되었습니다: $rejectReason",
                 errorCode = "TRANSACTION_REJECTED",
-                transaction = createTransactionResult(vanResponse, rejectCode = vanResponse.status, rejectMessage = rejectReason),
+                transaction = createTransactionResult(
+                    vanResponse,
+                    rejectCode = vanResponse.status,
+                    rejectMessage = rejectReason,
+                ),
                 rawResponse = rawResponse,
             )
         }
 
-        // 승인 정보 추출
         val (cardStatus, approvalNumber) = vanResponse.getApprovalInfo()
         if (approvalNumber.isNullOrBlank()) {
             return null
         }
 
-        // 카드 정보 추출
         val (cardBrand, cardName, _) = vanResponse.extractCardInfo()
         val isCancel = vanResponse.isCancelMessage()
         val endTime = LocalDateTime.now()
@@ -97,11 +96,23 @@ class VanMessageParser(
         )
     }
 
+    private fun parseNonStxResponse(rawResponse: String): VanResult? {
+        return when (rawResponse) {
+            protocolSpec.nakHex -> failureResult(
+                message = "거래가 거절되었습니다",
+                errorCode = "TRANSACTION_REJECTED",
+                rawResponse = rawResponse,
+            )
+
+            else -> null
+        }
+    }
+
     private fun createTransactionResult(
         vanResponse: VanRawResponse,
         approvalNumber: String? = null,
         rejectCode: String? = null,
-        rejectMessage: String? = null
+        rejectMessage: String? = null,
     ): TransactionResult {
         return TransactionResult(
             messageNumber = vanResponse.messageNumber?.drop(1),
@@ -125,7 +136,7 @@ class VanMessageParser(
         vanResponse: VanRawResponse,
         cardStatus: String?,
         cardBrand: String?,
-        cardName: String?
+        cardName: String?,
     ): CardResult {
         return CardResult(
             acquirerCode = vanResponse.acquirerCode,
@@ -144,7 +155,7 @@ class VanMessageParser(
         isCancel: Boolean,
         approvalNumber: String?,
         startTime: LocalDateTime,
-        endTime: LocalDateTime
+        endTime: LocalDateTime,
     ): AdditionalResult {
         return AdditionalResult(
             approvalStatus = if (isCancel) "CANCELLED" else "APPROVED",
@@ -174,5 +185,4 @@ class VanMessageParser(
             rawResponse = rawResponse,
         )
     }
-
 }

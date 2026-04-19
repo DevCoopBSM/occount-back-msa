@@ -12,8 +12,6 @@ data class VanProperties(
         val host: String,
         val port: Int,
     )
-
-
     data class Protocol(
         val stx: String,
         val etx: String,

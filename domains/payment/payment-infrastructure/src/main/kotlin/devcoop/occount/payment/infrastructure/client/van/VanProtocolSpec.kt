@@ -31,15 +31,6 @@ class VanProtocolSpec(
         return bytes.joinToString(separator = "") { "%02x".format(it.toInt() and 0xff) }
     }
 
-    private fun repeatByte(value: Byte): ByteArray {
-        return ByteArray(SIGNAL_BYTE_COUNT) { value }
-    }
-
-    companion object {
-        // VAN 프로토콜 신호 바이트는 3바이트 반복으로 전송
-        private const val SIGNAL_BYTE_COUNT = 3
-    }
-
     fun splitFrames(bytes: ByteArray): List<ByteArray> {
         val frames = mutableListOf<ByteArray>()
         var i = 0
@@ -75,6 +66,10 @@ class VanProtocolSpec(
         return frames
     }
 
+    private fun repeatByte(value: Byte): ByteArray {
+        return ByteArray(SIGNAL_BYTE_COUNT) { value }
+    }
+
     private fun parseSingleByte(value: String, fieldName: String): Byte {
         val normalized = value.removePrefix("0x").removePrefix("0X").lowercase()
         require(normalized.length == 2) {
@@ -82,5 +77,9 @@ class VanProtocolSpec(
         }
 
         return normalized.toInt(16).toByte()
+    }
+
+    companion object {
+        private const val SIGNAL_BYTE_COUNT = 3
     }
 }

@@ -1,4 +1,4 @@
-  package devcoop.occount.payment.infrastructure.client.van
+package devcoop.occount.payment.infrastructure.client.van
 
 import java.nio.charset.Charset
 import kotlin.test.Test
@@ -41,7 +41,7 @@ class VanMessageParserTest {
         ),
     )
     private val responseParser = VanResponseParser(protocolSpec, protocolCodes)
-    private val parser = VanMessageParser(protocolSpec, responseParser, protocolCodes)
+    private val parser = VanMessageParser(protocolSpec, responseParser)
 
     @Test
     fun `승인 응답을 VanResult로 파싱한다`() {
@@ -125,6 +125,4 @@ class VanMessageParserTest {
         assertEquals("TRANSACTION_REJECTED", result.errorCode)
         assertEquals("한도 초과", result.transaction?.rejectMessage)
     }
-
-    private fun env(name: String): String = System.getenv(name).orEmpty()
 }
