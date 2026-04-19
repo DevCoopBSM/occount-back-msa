@@ -13,22 +13,22 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 
-class ProcessOrderRequestedUseCaseTest {
+class DecreaseItemStockUseCaseTest {
     @Test
-    fun `process decreases stock and publishes stock completed`() {
+    fun `decrease reduces stock and publishes stock completed`() {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(
                 itemFixture(itemId = 1L, name = "Americano", price = 2000, quantity = 10),
             ),
         )
         val eventPublisher = FakeEventPublisher()
-        val useCase = ProcessOrderRequestedUseCase(
+        val useCase = DecreaseItemStockUseCase(
             itemRepository = itemRepository,
             eventPublisher = eventPublisher,
             transactionManager = TestTransactionManager(),
         )
 
-        useCase.process(requestedEvent()) {}
+        useCase.decrease(requestedEvent()) {}
 
         assertEquals(8, itemRepository.findById(1L)!!.getQuantity())
         val publishedEvent = assertInstanceOf(OrderStockCompletedEvent::class.java, eventPublisher.published.single())
@@ -48,20 +48,20 @@ class ProcessOrderRequestedUseCaseTest {
     }
 
     @Test
-    fun `process aggregates duplicated item requests before deducting stock`() {
+    fun `decrease aggregates duplicated item requests before deducting stock`() {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(
                 itemFixture(itemId = 1L, name = "Americano", price = 2000, quantity = 10),
             ),
         )
         val eventPublisher = FakeEventPublisher()
-        val useCase = ProcessOrderRequestedUseCase(
+        val useCase = DecreaseItemStockUseCase(
             itemRepository = itemRepository,
             eventPublisher = eventPublisher,
             transactionManager = TestTransactionManager(),
         )
 
-        useCase.process(
+        useCase.decrease(
             requestedEvent(
                 items = listOf(
                     OrderRequestedItemPayload(itemId = 1L, quantity = 1),
@@ -78,23 +78,23 @@ class ProcessOrderRequestedUseCaseTest {
     }
 
     @Test
-    fun `process publishes stock failed when item is missing`() {
+    fun `decrease publishes stock failed when item is missing`() {
         val itemRepository = FakeItemRepository()
         val eventPublisher = FakeEventPublisher()
-        val useCase = ProcessOrderRequestedUseCase(
+        val useCase = DecreaseItemStockUseCase(
             itemRepository = itemRepository,
             eventPublisher = eventPublisher,
             transactionManager = TestTransactionManager(),
         )
 
-        useCase.process(requestedEvent()) {}
+        useCase.decrease(requestedEvent()) {}
 
         val publishedEvent = assertInstanceOf(OrderStockFailedEvent::class.java, eventPublisher.published.single())
         assertEquals("order-1", publishedEvent.orderId)
     }
 
     @Test
-    fun `process retries optimistic lock failures before succeeding`() {
+    fun `decrease retries optimistic lock failures before succeeding`() {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(
                 itemFixture(itemId = 1L, name = "Americano", price = 2000, quantity = 10),
@@ -103,13 +103,13 @@ class ProcessOrderRequestedUseCaseTest {
             saveStockOptimisticLockFailuresRemaining = 1
         }
         val eventPublisher = FakeEventPublisher()
-        val useCase = ProcessOrderRequestedUseCase(
+        val useCase = DecreaseItemStockUseCase(
             itemRepository = itemRepository,
             eventPublisher = eventPublisher,
             transactionManager = TestTransactionManager(),
         )
 
-        useCase.process(requestedEvent()) {}
+        useCase.decrease(requestedEvent()) {}
 
         assertEquals(2, itemRepository.saveStocksCount)
         assertInstanceOf(OrderStockCompletedEvent::class.java, eventPublisher.published.single())

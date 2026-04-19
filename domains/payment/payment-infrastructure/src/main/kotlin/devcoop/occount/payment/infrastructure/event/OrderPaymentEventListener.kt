@@ -9,7 +9,7 @@ import devcoop.occount.db.outbox.ConsumedEventJpaEntity
 import devcoop.occount.db.outbox.ConsumedEventRepository
 import devcoop.occount.payment.application.usecase.payment.CancelPendingOrderPaymentUseCase
 import devcoop.occount.payment.application.usecase.payment.CompensateOrderPaymentUseCase
-import devcoop.occount.payment.application.usecase.payment.ProcessOrderPaymentUseCase
+import devcoop.occount.payment.application.usecase.payment.ExecuteVanPaymentUseCase
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Component
@@ -20,7 +20,7 @@ import java.time.Instant
 @Component
 class OrderPaymentEventListener(
     private val objectMapper: ObjectMapper,
-    private val processOrderPaymentUseCase: ProcessOrderPaymentUseCase,
+    private val executeVanPaymentUseCase: ExecuteVanPaymentUseCase,
     private val cancelPendingOrderPaymentUseCase: CancelPendingOrderPaymentUseCase,
     private val compensateOrderPaymentUseCase: CompensateOrderPaymentUseCase,
     private val consumedEventRepository: ConsumedEventRepository,
@@ -29,7 +29,7 @@ class OrderPaymentEventListener(
         topics = [DomainTopics.ORDER_PAYMENT_REQUESTED],
         groupId = PAYMENT_REQUESTED_CONSUMER,
     )
-    fun onPaymentRequested(
+    fun executeVanPayment(
         payload: String,
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {
@@ -37,7 +37,7 @@ class OrderPaymentEventListener(
             return
         }
 
-        processOrderPaymentUseCase.process(objectMapper.readValue<OrderPaymentRequestedEvent>(payload))
+        executeVanPaymentUseCase.execute(objectMapper.readValue<OrderPaymentRequestedEvent>(payload))
         markProcessed(PAYMENT_REQUESTED_CONSUMER, eventId)
     }
 
@@ -45,7 +45,7 @@ class OrderPaymentEventListener(
         topics = [DomainTopics.ORDER_PAYMENT_CANCELLATION_REQUESTED],
         groupId = PAYMENT_CANCELLATION_REQUESTED_CONSUMER,
     )
-    fun onPaymentCancellationRequested(
+    fun cancelPendingPayment(
         payload: String,
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {
@@ -61,7 +61,7 @@ class OrderPaymentEventListener(
         topics = [DomainTopics.ORDER_PAYMENT_COMPENSATION_REQUESTED],
         groupId = PAYMENT_COMPENSATION_REQUESTED_CONSUMER,
     )
-    fun onPaymentCompensationRequested(
+    fun compensatePayment(
         payload: String,
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {

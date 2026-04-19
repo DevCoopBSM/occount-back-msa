@@ -16,12 +16,12 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
-class ProcessOrderPaymentUseCase(
+class ExecuteVanPaymentUseCase(
     private val paymentFacade: PaymentFacade,
     private val orderPaymentExecutionRepository: OrderPaymentExecutionRepository,
     private val eventPublisher: EventPublisher,
 ) {
-    fun process(event: OrderPaymentRequestedEvent) {
+    fun execute(event: OrderPaymentRequestedEvent) {
         when (orderPaymentExecutionRepository.startProcessing(event.orderId)) {
             OrderPaymentExecutionStartResult.CANCELLED_BEFORE_START -> {
                 log.info("결제 요청 스킵 - 선행 취소 상태 orderId={}", event.orderId)
@@ -103,6 +103,6 @@ class ProcessOrderPaymentUseCase(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(ProcessOrderPaymentUseCase::class.java)
+        private val log = LoggerFactory.getLogger(ExecuteVanPaymentUseCase::class.java)
     }
 }

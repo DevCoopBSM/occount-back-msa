@@ -28,30 +28,30 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
-class ProcessOrderPaymentUseCaseTest {
+class ExecuteVanPaymentUseCaseTest {
     @Test
-    fun `process skips duplicate request`() {
+    fun `execute skips duplicate request`() {
         val executionRepository = FakeOrderPaymentExecutionRepository(startResult = OrderPaymentExecutionStartResult.DUPLICATE)
         val cardPaymentPort = FakeCardPaymentPort()
         val paymentFacade = paymentFacade(cardPaymentPort)
         val eventPublisher = FakeEventPublisher()
-        val useCase = ProcessOrderPaymentUseCase(paymentFacade, executionRepository, eventPublisher)
+        val useCase = ExecuteVanPaymentUseCase(paymentFacade, executionRepository, eventPublisher)
 
-        useCase.process(requestedEvent())
+        useCase.execute(requestedEvent())
 
         assertEquals(0, cardPaymentPort.approvedAmounts.size)
         assertEquals(0, eventPublisher.published.size)
     }
 
     @Test
-    fun `process publishes failed when request was cancelled before start`() {
+    fun `execute publishes failed when request was cancelled before start`() {
         val executionRepository = FakeOrderPaymentExecutionRepository(startResult = OrderPaymentExecutionStartResult.CANCELLED_BEFORE_START)
         val cardPaymentPort = FakeCardPaymentPort()
         val paymentFacade = paymentFacade(cardPaymentPort)
         val eventPublisher = FakeEventPublisher()
-        val useCase = ProcessOrderPaymentUseCase(paymentFacade, executionRepository, eventPublisher)
+        val useCase = ExecuteVanPaymentUseCase(paymentFacade, executionRepository, eventPublisher)
 
-        useCase.process(requestedEvent())
+        useCase.execute(requestedEvent())
 
         assertEquals("order-1", executionRepository.cancelledOrderId)
         assertEquals(0, cardPaymentPort.approvedAmounts.size)
@@ -59,14 +59,14 @@ class ProcessOrderPaymentUseCaseTest {
     }
 
     @Test
-    fun `process marks completed and publishes completed event on success`() {
+    fun `execute marks completed and publishes completed event on success`() {
         val executionRepository = FakeOrderPaymentExecutionRepository()
         val cardPaymentPort = FakeCardPaymentPort()
         val paymentFacade = paymentFacade(cardPaymentPort)
         val eventPublisher = FakeEventPublisher()
-        val useCase = ProcessOrderPaymentUseCase(paymentFacade, executionRepository, eventPublisher)
+        val useCase = ExecuteVanPaymentUseCase(paymentFacade, executionRepository, eventPublisher)
 
-        useCase.process(requestedEvent())
+        useCase.execute(requestedEvent())
 
         assertEquals("order-1", executionRepository.completedOrderId)
         assertEquals("order-1", cardPaymentPort.lastPaymentKey)
@@ -74,14 +74,14 @@ class ProcessOrderPaymentUseCaseTest {
     }
 
     @Test
-    fun `process marks cancelled and publishes failed event when payment is cancelled`() {
+    fun `execute marks cancelled and publishes failed event when payment is cancelled`() {
         val executionRepository = FakeOrderPaymentExecutionRepository()
         val cardPaymentPort = FakeCardPaymentPort(error = PaymentCancelledException())
         val paymentFacade = paymentFacade(cardPaymentPort)
         val eventPublisher = FakeEventPublisher()
-        val useCase = ProcessOrderPaymentUseCase(paymentFacade, executionRepository, eventPublisher)
+        val useCase = ExecuteVanPaymentUseCase(paymentFacade, executionRepository, eventPublisher)
 
-        useCase.process(requestedEvent())
+        useCase.execute(requestedEvent())
 
         assertEquals("order-1", executionRepository.cancelledOrderId)
         assertIs<OrderPaymentFailedEvent>(eventPublisher.published.single())

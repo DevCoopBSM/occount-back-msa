@@ -20,7 +20,7 @@ import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.support.TransactionTemplate
 
 @Service
-class ProcessOrderRequestedUseCase(
+class DecreaseItemStockUseCase(
     private val itemRepository: ItemRepository,
     private val eventPublisher: EventPublisher,
     transactionManager: PlatformTransactionManager,
@@ -29,7 +29,7 @@ class ProcessOrderRequestedUseCase(
         propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW
     }
 
-    fun process(event: OrderRequestedEvent, recordConsumption: () -> Unit) {
+    fun decrease(event: OrderRequestedEvent, recordConsumption: () -> Unit) {
         repeat(MAX_RETRY_COUNT) { attempt ->
             try {
                 transactionTemplate.executeWithoutResult {
