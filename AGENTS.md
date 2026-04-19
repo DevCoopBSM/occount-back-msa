@@ -12,12 +12,17 @@ This is a Gradle multi-module Kotlin/Spring Boot backend.
 ## Build, Test, and Development Commands
 - `./gradlew compileKotlin --console=plain`: fast compile check across modules.
 - `./gradlew test --console=plain`: runs JUnit 5 test suites.
-- `./gradlew :gateway:api-gateway:bootRun --console=plain`: starts the auth gateway locally.
-- `./gradlew :domains:member:member-api:bootRun --console=plain`: starts the member API locally.
-- `./gradlew :domains:item:item-api:bootRun --console=plain`: starts the item API locally.
-- `./gradlew :domains:order:order-api:bootRun --console=plain`: starts the order API locally.
-- `./gradlew :domains:payment:payment-api:bootRun --console=plain`: starts the payment API locally.
 - `./gradlew clean build --console=plain`: full build, including packaging.
+
+### Local Development (Docker Compose)
+- `docker compose up -d`: start all services (MySQL, Kafka, all APIs, gateway).
+- `docker compose up -d api-gateway`: start only the gateway.
+- `docker compose up -d member-api`: start only the member API.
+- `docker compose up -d item-api`: start only the item API.
+- `docker compose up -d order-api`: start only the order API.
+- `docker compose up -d payment-api`: start only the payment API.
+- `docker compose down`: stop all services.
+- `docker compose logs -f <service>`: tail logs for a specific service.
 
 Use module-scoped tasks when changing one area, for example `./gradlew :domains:payment:payment-api:compileKotlin`.
 
