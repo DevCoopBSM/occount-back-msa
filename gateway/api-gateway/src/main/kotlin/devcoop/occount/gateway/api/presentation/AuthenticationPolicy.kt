@@ -18,6 +18,7 @@ class AuthenticationPolicy {
         rule("/api/v3/users/**").authenticated()
         rule(HttpMethod.POST, "/api/v3/orders").optionalAuth()
         rule(HttpMethod.POST, "/api/v3/orders/{orderId}/cancel").optionalAuth()
+        rule(HttpMethod.GET, "/api/v3/orders/{orderId}").optionalAuth()
         rule("/api/v3/orders/**").authenticated()
         rule("/api/v3/points/**").authenticated()
         rule("/api/v3/wallet/**").authenticated()
