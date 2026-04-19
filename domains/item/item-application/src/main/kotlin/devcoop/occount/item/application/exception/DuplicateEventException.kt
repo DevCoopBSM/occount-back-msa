@@ -1,3 +1,6 @@
 package devcoop.occount.item.application.exception
 
-class DuplicateEventException : RuntimeException()
+import devcoop.occount.core.common.error.ErrorMessage
+import devcoop.occount.core.common.exception.BusinessBaseException
+
+class DuplicateEventException : BusinessBaseException(ErrorMessage.DUPLICATE_EVENT)

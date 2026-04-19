@@ -30,6 +30,8 @@ enum class ErrorMessage(
     ORDER_INVALID_PAYMENT_TYPE("비회원 주문은 카드 결제만 지원합니다."),
     ORDER_TRANSACTION_FAILED("주문 트랜잭션 처리에 실패했습니다."),
     ORDER_UNREACHABLE_STATE("도달할 수 없는 주문 처리 상태입니다."),
+    ORDER_CONCURRENCY_CONFLICT("동시 주문 처리 충돌이 발생했습니다. 잠시 후 다시 시도해주세요."),
+    DUPLICATE_EVENT("중복 이벤트가 감지되었습니다."),
 
 
     PAYMENT_FAILED("결제 처리에 실패했습니다."),
