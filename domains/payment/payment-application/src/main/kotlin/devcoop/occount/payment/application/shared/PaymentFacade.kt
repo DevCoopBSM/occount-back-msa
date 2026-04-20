@@ -14,17 +14,17 @@ class PaymentFacade(
     private val cardOnlyPaymentUseCase: CardOnlyPaymentUseCase,
     private val getWalletPointQueryService: GetWalletPointQueryService,
 ) {
-    fun execute(userId: Long?, details: PaymentDetails): PaymentResponse {
+    fun execute(userId: Long?, kioskId: String, details: PaymentDetails, paymentKey: String? = null): PaymentResponse {
         if (userId == null) {
-            return cardOnlyPaymentUseCase.execute(null, details)
+            return cardOnlyPaymentUseCase.execute(null, kioskId, details, paymentKey)
         }
         val balance = runCatching { getWalletPointQueryService.getPoint(userId) }
             .onFailure { log.warn("지갑 포인트 조회 실패, 카드 결제로 진행 - userId={}", userId, it) }
             .getOrDefault(0)
         return when {
             balance >= details.totalAmount -> payWithPointsUseCase.execute(userId, details)
-            balance > 0 -> mixedPaymentUseCase.execute(userId, details)
-            else -> cardOnlyPaymentUseCase.execute(userId, details)
+            balance > 0 -> mixedPaymentUseCase.execute(userId, kioskId, details, paymentKey)
+            else -> cardOnlyPaymentUseCase.execute(userId, kioskId, details, paymentKey)
         }
     }
 

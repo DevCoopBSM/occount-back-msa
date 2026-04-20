@@ -5,6 +5,7 @@ plugins {
 dependencies {
     implementation project(':core:core-common')
     implementation project(':domains:order:order-application')
+    implementation project(':domains:order:order-domain')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
 }

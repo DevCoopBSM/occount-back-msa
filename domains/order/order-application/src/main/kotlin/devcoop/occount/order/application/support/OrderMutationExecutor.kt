@@ -28,6 +28,7 @@ class OrderMutationExecutor(
     fun updateOrder(
         orderId: String,
         update: (OrderAggregate) -> OrderAggregate,
+        afterUpdate: (OrderAggregate) -> Unit = {},
     ): OrderAggregate {
         repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
             try {
@@ -36,7 +37,7 @@ class OrderMutationExecutor(
                         ?: throw OrderNotFoundException()
                     val reconciledOrder = update(persistedOrder.order).reconcileStatus()
 
-                    if (reconciledOrder == persistedOrder.order) {
+                    val updatedOrder = if (reconciledOrder == persistedOrder.order) {
                         persistedOrder.order
                     } else {
                         orderRepository.save(
@@ -44,6 +45,8 @@ class OrderMutationExecutor(
                             persistedOrder.persistenceVersion,
                         )
                     }
+                    afterUpdate(updatedOrder)
+                    updatedOrder
                 }
             } catch (ex: OrderConcurrencyException) {
                 log.warn("낙관적 락 충돌 - 주문={} 시도={}", orderId, attempt)

@@ -29,7 +29,6 @@ class OrderCompensationScheduler(
                 logContext = "결제 보상",
                 shouldMark = { it.shouldRequestPaymentCompensation() },
                 mark = { it.copy(paymentCompensationRequested = true) },
-                resetMark = { it.copy(paymentCompensationRequested = false) },
                 publish = ::publishPaymentCompensationRequested,
             )
         }.onFailure { log.error("결제 보상 처리 실패 - 주문={}", orderId, it) }
@@ -39,7 +38,6 @@ class OrderCompensationScheduler(
                 logContext = "재고 보상",
                 shouldMark = { it.shouldRequestStockCompensation() },
                 mark = { it.copy(stockCompensationRequested = true) },
-                resetMark = { it.copy(stockCompensationRequested = false) },
                 publish = ::publishStockCompensationRequested,
             )
         }.onFailure { log.error("재고 보상 처리 실패 - 주문={}", orderId, it) }
@@ -50,26 +48,15 @@ class OrderCompensationScheduler(
         logContext: String,
         shouldMark: (OrderAggregate) -> Boolean,
         mark: (OrderAggregate) -> OrderAggregate,
-        resetMark: (OrderAggregate) -> OrderAggregate,
         publish: (OrderAggregate) -> Unit,
     ) {
         repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
             try {
-                var orderToPublish: OrderAggregate? = null
                 transactionPort.executeInNewTransaction {
                     val persisted = loadPersistedOrder(orderId)
                     if (!shouldMark(persisted.order)) return@executeInNewTransaction
-                    orderToPublish = orderRepository.save(mark(persisted.order), persisted.persistenceVersion)
-                }
-                orderToPublish?.let { order ->
-                    try {
-                        publish(order)
-                    } catch (ex: Exception) {
-                        log.error("{} 이벤트 발행 실패, 플래그 초기화 시도 - 주문={}", logContext, orderId, ex)
-                        runCatching { resetPublishFlag(orderId, resetMark) }
-                            .onFailure { log.warn("{} 플래그 초기화 실패 - 주문={}", logContext, orderId, it) }
-                        throw ex
-                    }
+                    val updatedOrder = orderRepository.save(mark(persisted.order), persisted.persistenceVersion)
+                    publish(updatedOrder)
                 }
                 return
             } catch (ex: OrderConcurrencyException) {
@@ -77,13 +64,6 @@ class OrderCompensationScheduler(
                 if (attempt == OrderRetryPolicy.MAX_RETRY_COUNT - 1) throw OrderTransactionFailedException()
                 backoff(attempt)
             }
-        }
-    }
-
-    private fun resetPublishFlag(orderId: String, resetMark: (OrderAggregate) -> OrderAggregate) {
-        transactionPort.executeInNewTransaction {
-            val persisted = orderRepository.findPersistedById(orderId) ?: return@executeInNewTransaction
-            orderRepository.save(resetMark(persisted.order), persisted.persistenceVersion)
         }
     }
 
@@ -104,6 +84,7 @@ class OrderCompensationScheduler(
             eventType = DomainEventTypes.ORDER_PAYMENT_COMPENSATION_REQUESTED,
             payload = OrderPaymentCompensationRequestedEvent(
                 orderId = order.orderId,
+                kioskId = order.kioskId,
                 userId = order.userId,
                 paymentLogId = order.paymentResult.paymentLogId,
                 pointsUsed = order.paymentResult.pointsUsed,

@@ -11,6 +11,10 @@ data class Stock(
         return copy(quantity = quantity - orderQuantity)
     }
 
+    fun increaseQuantity(quantity: Int): Stock {
+        return copy(quantity = this.quantity + quantity)
+    }
+
     private fun validateQuantity(orderQuantity: Int) {
         if (quantity < orderQuantity) {
             throw ItemStockNegativeException()

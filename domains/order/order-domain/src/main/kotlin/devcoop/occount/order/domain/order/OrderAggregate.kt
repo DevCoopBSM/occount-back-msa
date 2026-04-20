@@ -5,7 +5,8 @@ import java.time.Instant
 data class OrderAggregate(
     val orderId: String,
     val userId: Long?,
-    val lines: List<OrderLine>,
+    val requestedLines: List<RequestedOrderLine> = emptyList(),
+    val lines: List<OrderLine> = emptyList(),
     val payment: OrderPayment,
     val status: OrderStatus = OrderStatus.PENDING,
     val paymentStatus: OrderStepStatus = OrderStepStatus.PENDING,
@@ -16,6 +17,7 @@ data class OrderAggregate(
     val expiresAt: Instant,
     val paymentResult: OrderPaymentResult = OrderPaymentResult(),
     val paymentRequested: Boolean = false,
+    val paymentCancellationRequested: Boolean = false,
     val paymentCompensationRequested: Boolean = false,
     val stockCompensationRequested: Boolean = false,
 ) {
@@ -50,6 +52,12 @@ data class OrderAggregate(
             paymentStatus == OrderStepStatus.SUCCEEDED &&
             !paymentCompensationRequested
 
+    fun shouldRequestPendingPaymentCancellation(): Boolean =
+        cancelRequested &&
+            paymentRequested &&
+            paymentStatus == OrderStepStatus.PENDING &&
+            !paymentCancellationRequested
+
     fun shouldRequestStockCompensation(): Boolean =
         requiresCompensation() &&
             stockStatus == OrderStepStatus.SUCCEEDED &&
@@ -59,6 +67,8 @@ data class OrderAggregate(
         status == OrderStatus.PROCESSING &&
             stockStatus == OrderStepStatus.SUCCEEDED &&
             paymentStatus == OrderStepStatus.PENDING &&
+            lines.isNotEmpty() &&
+            payment.totalAmount > 0 &&
             !cancelRequested &&
             !paymentRequested
 
@@ -72,7 +82,7 @@ data class OrderAggregate(
             return null
         }
 
-        if (hasPendingStep()) {
+        if (hasPendingInFlightStep()) {
             return timeoutAwareStatus(OrderStatus.CANCEL_REQUESTED)
         }
 
@@ -92,12 +102,12 @@ data class OrderAggregate(
             return null
         }
 
-        if (hasPendingStep()) {
-            return OrderStatus.PROCESSING
-        }
-
         if (hasSucceededStepNeedingCompensation()) {
             return OrderStatus.COMPENSATING
+        }
+
+        if (hasPendingInFlightStep()) {
+            return OrderStatus.PROCESSING
         }
 
         return OrderStatus.FAILED
@@ -121,8 +131,9 @@ data class OrderAggregate(
             stockStatus == OrderStepStatus.FAILED
     }
 
-    private fun hasPendingStep(): Boolean {
-        return paymentStatus.isPending() || stockStatus.isPending()
+    private fun hasPendingInFlightStep(): Boolean {
+        return stockStatus.isPending() ||
+            (paymentStatus.isPending() && paymentRequested)
     }
 
     private fun hasSucceededStepNeedingCompensation(): Boolean {

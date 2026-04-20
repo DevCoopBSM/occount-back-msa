@@ -2,7 +2,7 @@ package devcoop.occount.payment.application.usecase.mixed
 
 import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.dto.response.CardResult
-import devcoop.occount.payment.application.dto.response.PgResult
+import devcoop.occount.payment.application.dto.response.VanResult
 import devcoop.occount.payment.application.dto.response.TransactionResult
 import devcoop.occount.payment.application.output.CardPaymentPort
 import devcoop.occount.payment.application.output.PaymentLogRepository
@@ -39,6 +39,7 @@ class MixedPaymentUseCaseTest {
 
         val response = useCase.execute(
             userId = 1L,
+            kioskId = "kiosk-1",
             details = paymentDetails(totalAmount = 80),
         )
 
@@ -63,7 +64,7 @@ class MixedPaymentUseCaseTest {
         )
 
         assertFailsWith<InvalidPaymentRequestException> {
-            useCase.execute(userId = 1L, details = paymentDetails(totalAmount = 80))
+            useCase.execute(userId = 1L, kioskId = "kiosk-1", details = paymentDetails(totalAmount = 80))
         }
     }
 
@@ -85,9 +86,9 @@ class MixedPaymentUseCaseTest {
     private class FakeCardPaymentPort : CardPaymentPort {
         val approvedAmounts = mutableListOf<Int>()
 
-        override fun approve(amount: Int, items: List<ItemCommand>): PgResult {
+        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: String?): VanResult {
             approvedAmounts += amount
-            return PgResult(
+            return VanResult(
                 success = true,
                 message = "ok",
                 errorCode = null,
@@ -122,27 +123,24 @@ class MixedPaymentUseCaseTest {
             )
         }
 
-        override fun cancel(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int): PgResult {
-            cancelledAmounts += amount
-            return PgResult(
-                success = true,
-                message = "cancelled",
-                errorCode = null,
-                transaction = null,
-                card = null,
-                additional = null,
-                rawResponse = null,
-            )
+        override fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int, kioskId: String): VanResult {
+            error("not used in this test")
+        }
+
+        override fun requestPendingApprovalCancellation(paymentKey: String, kioskId: String) {
+            error("not used in this test")
         }
     }
 
     private class FakePaymentLogRepository : PaymentLogRepository {
         val saved = mutableListOf<PaymentLog>()
 
+        override fun findById(paymentId: Long): PaymentLog? = saved.firstOrNull { it.getPaymentId() == paymentId }
         override fun findByUserId(userId: Long): List<PaymentLog> = saved.filter { it.getUserId() == userId }
         override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<PaymentLog> = saved
         override fun findByPaymentType(paymentType: PaymentType): List<PaymentLog> = saved.filter { it.getPaymentType() == paymentType }
         override fun save(paymentLog: PaymentLog): PaymentLog { saved += paymentLog; return paymentLog }
         override fun saveAll(paymentLogs: List<PaymentLog>): List<PaymentLog> { saved += paymentLogs; return paymentLogs }
     }
+
 }

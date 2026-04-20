@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -27,10 +26,11 @@ class OrderController(
     @PostMapping
     fun createOrder(
         @RequestBody orderRequest: OrderRequest,
+        @RequestHeader(value = AuthHeaders.KIOSK_ID) kioskId: String,
         @RequestHeader(value = AuthHeaders.AUTHENTICATED_USER_ID, required = false) userIdHeader: String?,
     ): ResponseEntity<OrderResponse> {
         val userId = userIdHeader?.toLongOrNull()
-        val response = createOrderUseCase.placeOrder(orderRequest, userId)
+        val response = createOrderUseCase.placeOrder(orderRequest, userId, kioskId)
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response)
     }
 

@@ -14,7 +14,7 @@ class GatewayAuthenticatedRequestMutatorTest {
 
     @Test
     fun `mutate writes trusted headers and strips client authentication headers`() {
-        val request = MockServerHttpRequest.get("/api/v3/payments/execute")
+        val request = MockServerHttpRequest.post("/api/v3/wallet/charge")
             .header(HttpHeaders.AUTHORIZATION, "Bearer kiosk-token")
             .header(AuthHeaders.AUTHENTICATED_USER_ID, "999")
             .build()

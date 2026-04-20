@@ -1,10 +1,12 @@
 package devcoop.occount.payment.application.output
 
 import devcoop.occount.payment.application.dto.request.ItemCommand
-import devcoop.occount.payment.application.dto.response.PgResult
+import devcoop.occount.payment.application.dto.response.VanResult
 
 interface CardPaymentPort {
-    fun approve(amount: Int, items: List<ItemCommand>): PgResult
+    fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: String? = null): VanResult
 
-    fun cancel(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int): PgResult
+    fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int, kioskId: String): VanResult
+
+    fun requestPendingApprovalCancellation(paymentKey: String, kioskId: String)
 }

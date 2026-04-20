@@ -21,7 +21,7 @@ spec:
     kubernetes.io/hostname: worker-1
   containers:
   - name: gradle
-    image: gradle:8.5-jdk21-alpine
+    image: ${HARBOR_URL}/base/gradle:8.5-jdk21-alpine
     command: ['sleep']
     args: ['infinity']
     volumeMounts:
@@ -35,11 +35,11 @@ spec:
     - name: harbor-creds
       mountPath: /kaniko/.docker
   - name: git
-    image: alpine/git:2.43.0
+    image: ${HARBOR_URL}/base/alpine-git:2.43.0
     command: ['sleep']
     args: ['infinity']
   - name: jnlp
-    image: jenkins/inbound-agent:3355.v388858a_47b_33-16
+    image: ${HARBOR_URL}/base/inbound-agent:3355.v388858a_47b_33-16
   volumes:
   - name: harbor-creds
     secret:

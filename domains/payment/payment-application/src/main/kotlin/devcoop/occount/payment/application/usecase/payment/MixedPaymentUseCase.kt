@@ -22,7 +22,7 @@ class MixedPaymentUseCase(
     private val paymentLogRepository: PaymentLogRepository,
 ) {
     @Transactional
-    fun execute(userId: Long, details: PaymentDetails): PaymentResponse {
+    fun execute(userId: Long, kioskId: String, details: PaymentDetails, paymentKey: String? = null): PaymentResponse {
         val beforePoint = getWalletPointQueryService.getPoint(userId)
         val pointsUsed = min(beforePoint, details.totalAmount)
         val cardAmount = details.totalAmount - pointsUsed
@@ -34,10 +34,12 @@ class MixedPaymentUseCase(
         val approved = cardPaymentPort.approve(
             amount = cardAmount,
             items = details.items.map(ItemCommand.Companion::from),
+            kioskId = kioskId,
+            paymentKey = paymentKey,
         )
         val pointTransaction = deductWalletUseCase.deduct(userId, pointsUsed)
 
-        paymentLogRepository.save(
+        val paymentLog = paymentLogRepository.save(
             PaymentMapper.toMixedPaymentLog(
                 userId = userId,
                 paymentDetails = details,
@@ -56,6 +58,8 @@ class MixedPaymentUseCase(
             remainingPoints = pointTransaction.afterPoint,
             approvalNumber = approved.transaction?.approvalNumber,
             transactionId = approved.transaction?.transactionId,
+            paymentLogId = paymentLog.getPaymentId(),
         )
     }
+
 }

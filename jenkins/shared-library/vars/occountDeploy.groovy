@@ -7,6 +7,12 @@
 
 def call(Map cfg) {
 
+    def harborUrl = (cfg.harborUrl ?: env.HARBOR_URL)?.trim()
+    if (!harborUrl) {
+        error('HARBOR_URL is required to render the Kubernetes pod template')
+    }
+    def podYaml = readTrusted('jenkins/pod-template.yaml').replace('${HARBOR_URL}', harborUrl)
+
     def SERVICES = [
         [path: 'gateway/',         task: ':gateway:api-gateway:bootJar',              name: 'api-gateway',  dir: 'gateway/api-gateway',              yamlKey: 'apiGateway'],
         [path: 'domains/member/',  task: ':domains:member:member-bootstrap:bootJar',  name: 'member-api',   dir: 'domains/member/member-bootstrap',   yamlKey: 'memberApi'],
@@ -24,7 +30,7 @@ def call(Map cfg) {
     pipeline {
         agent {
             kubernetes {
-                yamlFile 'jenkins/pod-template.yaml'
+                yaml podYaml
             }
         }
 
@@ -141,6 +147,7 @@ def call(Map cfg) {
                                             --context=dir://${env.WORKSPACE}/${svc.dir} \\
                                             --dockerfile=${env.WORKSPACE}/${svc.dir}/Dockerfile \\
                                             --destination=${env.IMAGE_PREFIX}/${svc.name}:${imageTag} \\
+                                            --build-arg BASE_IMAGE=${env.HARBOR_URL}/base/eclipse-temurin:21-jre-alpine \\
                                             --snapshot-mode=redo \\
                                             --skip-tls-verify \\
                                             --skip-tls-verify-pull

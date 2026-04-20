@@ -38,7 +38,7 @@ class GatewayAuthenticationFilterTest {
 
     @Test
     fun `protected request authenticates and forwards mutated request`() {
-        val request = MockServerHttpRequest.get("/api/v3/payments/execute")
+        val request = MockServerHttpRequest.post("/api/v3/wallet/charge")
             .header(HttpHeaders.AUTHORIZATION, "Bearer kiosk-token")
             .build()
         val exchange = MockServerWebExchange.from(request)
@@ -102,7 +102,7 @@ class GatewayAuthenticationFilterTest {
         filter.filter(exchange, chain).block()
 
         assertNotNull(forwardedExchange)
-        assertTrue(forwardedExchange === exchange)
+        assertEquals("/api/v3/items/88012341234", forwardedExchange?.request?.path?.value())
         verifyNoInteractions(tokenAuthenticator, authenticatedRequestMutator, authenticationFailureWriter)
     }
 
@@ -149,7 +149,7 @@ class GatewayAuthenticationFilterTest {
         filter.filter(exchange, chain).block()
 
         assertNotNull(forwardedExchange)
-        assertTrue(forwardedExchange === exchange)
+        assertEquals("/api/v3/orders", forwardedExchange?.request?.path?.value())
         verifyNoInteractions(tokenAuthenticator, authenticatedRequestMutator, authenticationFailureWriter)
     }
 
