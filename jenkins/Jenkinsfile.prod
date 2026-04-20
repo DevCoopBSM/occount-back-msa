@@ -1,6 +1,7 @@
 @Library('occount-jenkins') _
 
 occountDeploy(
+    harborUrl:    "${env.HARBOR_URL}",
     imagePrefix:  "${env.HARBOR_URL}/occount",
     tagPrefix:    '',
     valuesFile:   'values.yaml',
