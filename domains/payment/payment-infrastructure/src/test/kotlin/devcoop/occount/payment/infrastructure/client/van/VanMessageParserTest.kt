@@ -45,37 +45,24 @@ class VanMessageParserTest {
 
     @Test
     fun `승인 응답을 VanResult로 파싱한다`() {
-        val response = (
-            "\u000201011234" +
-                "\u001cTYPE" +
-                "\u001c1234********5678" +
-                "\u001c1500" +
-                "\u001c00" +
-                "\u001cN" +
-                "\u001cTERM-1" +
-                "\u001cMERCHANT-1" +
-                "\u001c20260417" +
-                "\u001c101010" +
-                "\u001cTX-1" +
-                "\u001cACQ" +
-                "\u001cAcquirer" +
-                "\u001cKB VISA" +
-                "\u001cISS" +
-                "\u001c2" +
-                "\u001c정상승인\u001eAPPROVAL-1" +
-                "\u001cIC-1" +
-                "\u001cUUID-1"
-            ).toByteArray(eucKr)
+        val response = "0230313937303130321c30311c34363139353431302a2a2a2a3232322a1c313030301c39301c301c30301c32373036383132321c32303236303432301c3230343634311c3731303630343938363331361c303132363732313634361c32393736323332303034303037391c30333030bdc5c7d1c4abb5e5c3bcc5a91c30303037bdc5c7d1c4abb5e51c311c30301cc1a4bbf3bdc2c0ce1e32373036383132321c4943bdc5bfebbdc2c0ce1cb8b6c0ccbdc5c7d150c0dcbfa93a3637321e1c1c1c1c1c1c032e"
+            .hexToByteArray()
 
         val result = parser.parsePaymentResponse(response)
 
         assertNotNull(result)
         assertTrue(result.success)
         assertEquals("정상승인 완료", result.message)
-        assertEquals("APPROVAL-1", result.transaction?.approvalNumber)
-        assertEquals("TX-1", result.transaction?.transactionId)
-        assertEquals("KB", result.card?.cardName)
-        assertEquals("VISA", result.card?.cardBrand)
+        assertEquals("0102", result.transaction?.messageNumber)
+        assertEquals(0, result.transaction?.installmentMonths)
+        assertEquals("27068122", result.transaction?.approvalNumber)
+        assertEquals("710604986316", result.transaction?.transactionId)
+        assertEquals("27068122", result.transaction?.terminalId)
+        assertEquals("29762320040079", result.transaction?.merchantNumber)
+        assertEquals("신한카드체크", result.card?.acquirerName)
+        assertEquals("0300", result.card?.acquirerCode)
+        assertEquals("신한카드", result.card?.issuerName)
+        assertEquals("0007", result.card?.issuerCode)
         assertEquals("APPROVED", result.additional?.approvalStatus)
     }
 
@@ -97,23 +84,23 @@ class VanMessageParserTest {
     @Test
     fun `거절 응답을 실패 결과로 파싱한다`() {
         val response = (
-            "\u000201011234" +
-                "\u001cTYPE" +
+            "\u000201970102" +
+                "\u001c01" +
                 "\u001c1234********5678" +
                 "\u001c1500" +
-                "\u001c00" +
-                "\u001cN" +
+                "\u001c90" +
+                "\u001c0" +
+                "\u001c9Q01" +
                 "\u001cTERM-1" +
-                "\u001cMERCHANT-1" +
                 "\u001c20260417" +
                 "\u001c101010" +
                 "\u001cTX-1" +
-                "\u001cACQ" +
-                "\u001cAcquirer" +
-                "\u001cKB VISA" +
-                "\u001cISS" +
+                "\u001cACQ-CODE" +
+                "\u001cMERCHANT-1" +
+                "\u001c0300Acquirer" +
+                "\u001c0007KB VISA" +
                 "\u001c2" +
-                "\u001c9Q" +
+                "\u001c" +
                 "\u001cIC-1\u001e한도 초과" +
                 "\u001cUUID-1"
             ).toByteArray(eucKr)
@@ -124,6 +111,12 @@ class VanMessageParserTest {
         assertFalse(result.success)
         assertEquals("TRANSACTION_REJECTED", result.errorCode)
         assertEquals("한도 초과", result.transaction?.rejectMessage)
+    }
+
+    private fun String.hexToByteArray(): ByteArray {
+        return chunked(2)
+            .map { it.toInt(16).toByte() }
+            .toByteArray()
     }
 
     private fun env(name: String): String = System.getenv(name).orEmpty()

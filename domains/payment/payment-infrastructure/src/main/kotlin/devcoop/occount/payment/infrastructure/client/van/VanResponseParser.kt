@@ -63,27 +63,37 @@ class VanResponseParser(
     }
 
     private fun mapFieldsToResponse(fields: List<String>): VanRawResponse {
+        val serviceType = parseServiceType(getField(fields, 0))
+        val acquirer = parseInstitutionField(
+            primary = getField(fields, 13),
+            fallback = getField(fields, 12),
+        )
+        val issuer = parseInstitutionField(
+            primary = getField(fields, 14),
+            fallback = getField(fields, 13),
+        )
+
         return VanRawResponse(
             protocolCodes = protocolCodes,
-            messageNumber = getField(fields, 0),
+            serviceType = serviceType,
             typeCode = getField(fields, 1),
             cardNumber = getField(fields, 2),
             amount = getField(fields, 3)?.toIntOrNull(),
-            installmentMonths = getField(fields, 4)?.toIntOrNull(),
-            cancelType = getField(fields, 5),
-            terminalId = getField(fields, 6),
-            merchantNumber = getField(fields, 7),
+            installmentMonths = getField(fields, 5)?.toIntOrNull() ?: getField(fields, 4)?.toIntOrNull(),
+            cancelType = getField(fields, 4),
+            terminalId = getField(fields, 7) ?: getField(fields, 6),
+            merchantNumber = getField(fields, 12) ?: getField(fields, 11),
             approvalDate = getField(fields, 8),
             approvalTime = getField(fields, 9),
             transactionId = getField(fields, 10),
-            acquirerCode = getField(fields, 11),
-            acquirerName = getField(fields, 12),
-            issuerName = getField(fields, 13),
-            issuerCode = getField(fields, 14),
+            acquirerCode = acquirer.code ?: getField(fields, 11),
+            acquirerName = acquirer.name,
+            issuerName = issuer.name,
+            issuerCode = issuer.code,
             cardType = parseCardType(getField(fields, 15)),
             status = parseStatus(fields),
             icCredit = getField(fields, 17),
-            uuid = getField(fields, 18),
+            uuid = getField(fields, 19) ?: getField(fields, 18),
         )
     }
 
@@ -100,10 +110,38 @@ class VanResponseParser(
     }
 
     private fun parseStatus(fields: List<String>): String? {
-        // 취소 메시지인 경우 offset 적용
-        val messageType = getField(fields, 0)?.drop(1)?.take(4)
-        val isCancelMessage = messageType == protocolCodes.cancelMessageType
-        val statusIndex = if (isCancelMessage) 17 else 16
-        return getField(fields, statusIndex)
+        return getField(fields, 6) ?: getField(fields, 16) ?: getField(fields, 17)
     }
+
+    private fun parseServiceType(rawHeader: String?): String? {
+        val stxChar = (protocolSpec.stxByte.toInt() and 0xff).toChar()
+        val normalized = rawHeader?.removePrefix(stxChar.toString()).orEmpty()
+        if (normalized.length < 5) {
+            return normalized.ifBlank { null }
+        }
+
+        return normalized.drop(4).ifBlank { null }
+    }
+
+    private fun parseInstitutionField(primary: String?, fallback: String? = null): InstitutionField {
+        val value = primary ?: fallback?.takeIf(::looksLikeInstitutionField)
+        if (value.isNullOrBlank()) {
+            return InstitutionField(code = null, name = null)
+        }
+
+        val code = value.take(4).takeIf { it.length == 4 && it.all(Char::isDigit) }
+        val name = if (code != null) value.drop(4).trim().ifBlank { null } else value.trim().ifBlank { null }
+        return InstitutionField(code = code, name = name)
+    }
+
+    private fun looksLikeInstitutionField(value: String): Boolean {
+        return value.length > 4 &&
+            value.take(4).all(Char::isDigit) &&
+            value.drop(4).any { !it.isDigit() }
+    }
+
+    private data class InstitutionField(
+        val code: String?,
+        val name: String?,
+    )
 }
