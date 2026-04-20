@@ -15,7 +15,7 @@ import jakarta.persistence.Table
 class OrderLineJpaEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
-    private var order: OrderJpaEntity,
+    private var order: OrderJpaEntity? = null,
     @Column(name = "item_id", nullable = false)
     private var itemId: Long = 0L,
     @Column(name = "item_name_snapshot", nullable = false)

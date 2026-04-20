@@ -72,6 +72,7 @@ class PayWithPointsUseCaseTest {
     private class FakePaymentLogRepository : PaymentLogRepository {
         val saved = mutableListOf<PaymentLog>()
 
+        override fun findById(paymentId: Long): PaymentLog? = saved.firstOrNull { it.getPaymentId() == paymentId }
         override fun findByUserId(userId: Long): List<PaymentLog> = saved.filter { it.getUserId() == userId }
         override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<PaymentLog> = saved
         override fun findByPaymentType(paymentType: PaymentType): List<PaymentLog> = saved.filter { it.getPaymentType() == paymentType }

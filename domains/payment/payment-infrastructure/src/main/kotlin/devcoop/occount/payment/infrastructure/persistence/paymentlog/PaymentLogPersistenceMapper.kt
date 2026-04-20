@@ -1,6 +1,7 @@
 package devcoop.occount.payment.infrastructure.persistence.paymentlog
 
 import devcoop.occount.payment.domain.payment.PaymentLog
+import devcoop.occount.payment.domain.payment.PaymentType
 import devcoop.occount.payment.domain.payment.CardInfo
 import devcoop.occount.payment.domain.wallet.PointTransaction
 import devcoop.occount.payment.domain.payment.TransactionInfo
@@ -14,11 +15,16 @@ object PaymentLogPersistenceMapper {
             paymentDate = entity.getPaymentDate(),
             paymentType = entity.getPaymentType(),
             totalAmount = entity.getTotalAmount(),
-            pointTransaction = entity.getPointTransaction()?.let(::toDomainPointTransaction),
+            pointTransaction = when (entity.getPaymentType()) {
+                PaymentType.CARD -> null
+                else -> entity.getPointTransaction()?.let(::toDomainPointTransaction)
+            },
             cardInfo = entity.getCardInfo()?.let(::toDomainCardInfo),
             transactionInfo = entity.getTransactionInfo()?.let(::toDomainTransactionInfo),
             eventType = entity.getEventType(),
             refundState = entity.getRefundState(),
+            cardRefundState = entity.getCardRefundState(),
+            pointRefundState = entity.getPointRefundState(),
             refundDate = entity.getRefundDate(),
             refundRequesterId = entity.getRefundRequesterId(),
         )
@@ -31,11 +37,16 @@ object PaymentLogPersistenceMapper {
             paymentDate = domain.getPaymentDate(),
             paymentType = domain.getPaymentType(),
             totalAmount = domain.getTotalAmount(),
-            pointTransaction = domain.getPointTransaction()?.let(::toEntityPointTransaction),
+            pointTransaction = when (domain.getPaymentType()) {
+                PaymentType.CARD -> toEntityPointTransaction(domain.getPointTransaction() ?: zeroPointTransaction())
+                else -> domain.getPointTransaction()?.let(::toEntityPointTransaction)
+            },
             cardInfo = domain.getCardInfo()?.let(::toEntityCardInfo),
             transactionInfo = domain.getTransactionInfo()?.let(::toEntityTransactionInfo),
             eventType = domain.getEventType(),
             refundState = domain.getRefundState(),
+            cardRefundState = domain.getCardRefundState(),
+            pointRefundState = domain.getPointRefundState(),
             refundDate = domain.getRefundDate(),
             refundRequesterId = domain.getRefundRequesterId(),
         )
@@ -54,6 +65,14 @@ object PaymentLogPersistenceMapper {
             beforePoint = domain.beforePoint,
             changeAmount = domain.changeAmount,
             afterPoint = domain.afterPoint,
+        )
+    }
+
+    private fun zeroPointTransaction(): PointTransaction {
+        return PointTransaction(
+            beforePoint = 0,
+            changeAmount = 0,
+            afterPoint = 0,
         )
     }
 

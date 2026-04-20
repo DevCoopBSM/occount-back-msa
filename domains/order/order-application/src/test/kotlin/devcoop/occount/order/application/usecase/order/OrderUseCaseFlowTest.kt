@@ -35,10 +35,7 @@ class OrderUseCaseFlowTest {
             recordConsumption = {},
         )
         handleOrderStockEventUseCase.applyCompletedStock(
-            OrderStockCompletedEvent(
-                orderId = ORDER_ID,
-                itemIds = listOf(ITEM_ID),
-            ),
+            completedStockEvent(),
             recordConsumption = {},
         )
 
@@ -56,16 +53,35 @@ class OrderUseCaseFlowTest {
         val handleOrderStockEventUseCase = handleOrderStockEventUseCase(orderRepository, eventPublisher)
 
         handleOrderStockEventUseCase.applyCompletedStock(
-            OrderStockCompletedEvent(
-                orderId = ORDER_ID,
-                itemIds = listOf(ITEM_ID),
-            ),
+            completedStockEvent(),
             recordConsumption = {},
         )
 
         val publishedEvent = eventPublisher.published.single().payload
         assertInstanceOf(OrderPaymentRequestedEvent::class.java, publishedEvent)
         assertEquals(true, orderRepository.findById(ORDER_ID)!!.paymentRequested)
+    }
+
+    @Test
+    fun `stock failure without payment request ends order as failed`() {
+        val orderRepository = FakeOrderRepository(
+            initialOrder = orderFixture(),
+        )
+        val eventPublisher = FakeEventPublisher()
+        val handleOrderStockEventUseCase = handleOrderStockEventUseCase(orderRepository, eventPublisher)
+
+        handleOrderStockEventUseCase.applyFailedStock(
+            OrderStockFailedEvent(
+                orderId = ORDER_ID,
+                reason = "out of stock",
+            ),
+            recordConsumption = {},
+        )
+
+        val order = orderRepository.findById(ORDER_ID)!!
+        assertEquals(OrderStepStatus.FAILED, order.stockStatus)
+        assertEquals(OrderStatus.FAILED, order.status)
+        assertEquals(0, eventPublisher.published.size)
     }
 
     @Test
@@ -77,17 +93,11 @@ class OrderUseCaseFlowTest {
         val handleOrderStockEventUseCase = handleOrderStockEventUseCase(orderRepository, eventPublisher)
 
         handleOrderStockEventUseCase.applyCompletedStock(
-            OrderStockCompletedEvent(
-                orderId = ORDER_ID,
-                itemIds = listOf(ITEM_ID),
-            ),
+            completedStockEvent(),
             recordConsumption = {},
         )
         handleOrderStockEventUseCase.applyCompletedStock(
-            OrderStockCompletedEvent(
-                orderId = ORDER_ID,
-                itemIds = listOf(ITEM_ID),
-            ),
+            completedStockEvent(),
             recordConsumption = {},
         )
 
@@ -209,6 +219,26 @@ class OrderUseCaseFlowTest {
         assertEquals(0, eventPublisher.published.size)
     }
 
+    @Test
+    fun `payment failure truncates failure reason to fit order column`() {
+        val orderRepository = FakeOrderRepository(
+            initialOrder = orderFixture(),
+        )
+        val eventPublisher = FakeEventPublisher()
+        val handleOrderPaymentEventUseCase = handleOrderPaymentEventUseCase(orderRepository, eventPublisher)
+
+        handleOrderPaymentEventUseCase.applyFailedPayment(
+            OrderPaymentFailedEvent(
+                orderId = ORDER_ID,
+                userId = USER_ID,
+                reason = "x".repeat(400),
+            ),
+            recordConsumption = {},
+        )
+
+        assertEquals(255, orderRepository.findById(ORDER_ID)!!.failureReason!!.length)
+    }
+
     private fun orderFixture(
         paymentStatus: OrderStepStatus = OrderStepStatus.PENDING,
         stockStatus: OrderStepStatus = OrderStepStatus.PENDING,
@@ -221,17 +251,27 @@ class OrderUseCaseFlowTest {
             orderId = ORDER_ID,
             userId = USER_ID,
             kioskId = KIOSK_ID,
-            lines = listOf(
-                OrderLine(
+            requestedLines = listOf(
+                RequestedOrderLine(
                     itemId = ITEM_ID,
-                    itemNameSnapshot = "Americano",
-                    unitPrice = 2000,
                     quantity = 1,
-                    totalPrice = 2000,
                 ),
             ),
+            lines = if (stockStatus == OrderStepStatus.SUCCEEDED) {
+                listOf(
+                    OrderLine(
+                        itemId = ITEM_ID,
+                        itemNameSnapshot = "Americano",
+                        unitPrice = 2000,
+                        quantity = 1,
+                        totalPrice = 2000,
+                    ),
+                )
+            } else {
+                emptyList()
+            },
             payment = OrderPayment(
-                totalAmount = 2000,
+                totalAmount = if (stockStatus == OrderStepStatus.SUCCEEDED) 2000 else 0,
             ),
             status = OrderStatus.PROCESSING,
             paymentStatus = paymentStatus,
@@ -242,6 +282,22 @@ class OrderUseCaseFlowTest {
             ),
             expiresAt = expiresAt,
             paymentRequested = paymentRequested,
+        )
+    }
+
+    private fun completedStockEvent(): OrderStockCompletedEvent {
+        return OrderStockCompletedEvent(
+            orderId = ORDER_ID,
+            items = listOf(
+                OrderItemPayload(
+                    itemId = ITEM_ID,
+                    itemName = "Americano",
+                    itemPrice = 2000,
+                    quantity = 1,
+                    totalPrice = 2000,
+                ),
+            ),
+            totalAmount = 2000,
         )
     }
 

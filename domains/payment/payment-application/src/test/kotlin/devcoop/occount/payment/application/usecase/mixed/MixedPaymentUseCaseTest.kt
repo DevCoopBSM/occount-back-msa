@@ -39,6 +39,7 @@ class MixedPaymentUseCaseTest {
 
         val response = useCase.execute(
             userId = 1L,
+            kioskId = "kiosk-1",
             details = paymentDetails(totalAmount = 80),
         )
 
@@ -63,7 +64,7 @@ class MixedPaymentUseCaseTest {
         )
 
         assertFailsWith<InvalidPaymentRequestException> {
-            useCase.execute(userId = 1L, details = paymentDetails(totalAmount = 80))
+            useCase.execute(userId = 1L, kioskId = "kiosk-1", details = paymentDetails(totalAmount = 80))
         }
     }
 
@@ -85,7 +86,7 @@ class MixedPaymentUseCaseTest {
     private class FakeCardPaymentPort : CardPaymentPort {
         val approvedAmounts = mutableListOf<Int>()
 
-        override fun approve(amount: Int, items: List<ItemCommand>, paymentKey: String?): VanResult {
+        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: String?): VanResult {
             approvedAmounts += amount
             return VanResult(
                 success = true,
@@ -122,11 +123,11 @@ class MixedPaymentUseCaseTest {
             )
         }
 
-        override fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int): VanResult {
+        override fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int, kioskId: String): VanResult {
             error("not used in this test")
         }
 
-        override fun requestPendingApprovalCancellation(paymentKey: String) {
+        override fun requestPendingApprovalCancellation(paymentKey: String, kioskId: String) {
             error("not used in this test")
         }
     }
@@ -134,6 +135,7 @@ class MixedPaymentUseCaseTest {
     private class FakePaymentLogRepository : PaymentLogRepository {
         val saved = mutableListOf<PaymentLog>()
 
+        override fun findById(paymentId: Long): PaymentLog? = saved.firstOrNull { it.getPaymentId() == paymentId }
         override fun findByUserId(userId: Long): List<PaymentLog> = saved.filter { it.getUserId() == userId }
         override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<PaymentLog> = saved
         override fun findByPaymentType(paymentType: PaymentType): List<PaymentLog> = saved.filter { it.getPaymentType() == paymentType }

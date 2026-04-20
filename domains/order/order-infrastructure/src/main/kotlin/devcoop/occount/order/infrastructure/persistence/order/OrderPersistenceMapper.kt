@@ -4,6 +4,7 @@ import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderLine
 import devcoop.occount.order.domain.order.OrderPayment
 import devcoop.occount.order.domain.order.OrderPaymentResult
+import devcoop.occount.order.domain.order.RequestedOrderLine
 
 
 object OrderPersistenceMapper {
@@ -11,6 +12,7 @@ object OrderPersistenceMapper {
         return OrderAggregate(
             orderId = entity.getOrderId(),
             userId = entity.getUserId(),
+            requestedLines = entity.getRequestedLines().map(::toDomainRequestedLine),
             lines = entity.getLines().map(::toDomainLine),
             payment = OrderPayment(
                 totalAmount = entity.getTotalAmount(),
@@ -30,6 +32,7 @@ object OrderPersistenceMapper {
                 approvalNumber = entity.getApprovalNumber(),
             ),
             paymentRequested = entity.isPaymentRequested(),
+            paymentCancellationRequested = entity.isPaymentCancellationRequested(),
             paymentCompensationRequested = entity.isPaymentCompensationRequested(),
             stockCompensationRequested = entity.isStockCompensationRequested(),
         )
@@ -53,15 +56,25 @@ object OrderPersistenceMapper {
             transactionId = domain.paymentResult.transactionId,
             approvalNumber = domain.paymentResult.approvalNumber,
             paymentRequested = domain.paymentRequested,
+            paymentCancellationRequested = domain.paymentCancellationRequested,
             paymentCompensationRequested = domain.paymentCompensationRequested,
             stockCompensationRequested = domain.stockCompensationRequested,
             version = version,
         )
 
+        val requestedLines = domain.requestedLines.map { toEntityRequestedLine(entity, it) }.toMutableList()
         val lines = domain.lines.map { toEntityLine(entity, it) }.toMutableList()
+        entity.replaceRequestedLines(requestedLines)
         entity.replaceLines(lines)
 
         return entity
+    }
+
+    private fun toDomainRequestedLine(entity: RequestedOrderLineJpaEntity): RequestedOrderLine {
+        return RequestedOrderLine(
+            itemId = entity.getItemId(),
+            quantity = entity.getQuantity(),
+        )
     }
 
     private fun toDomainLine(entity: OrderLineJpaEntity): OrderLine {
@@ -71,6 +84,14 @@ object OrderPersistenceMapper {
             unitPrice = entity.getUnitPrice(),
             quantity = entity.getQuantity(),
             totalPrice = entity.getTotalPrice(),
+        )
+    }
+
+    private fun toEntityRequestedLine(order: OrderJpaEntity, domain: RequestedOrderLine): RequestedOrderLineJpaEntity {
+        return RequestedOrderLineJpaEntity(
+            order = order,
+            itemId = domain.itemId,
+            quantity = domain.quantity,
         )
     }
 

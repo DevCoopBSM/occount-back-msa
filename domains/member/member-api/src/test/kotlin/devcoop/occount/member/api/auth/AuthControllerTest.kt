@@ -34,7 +34,6 @@ class AuthControllerTest {
         val request = MemberRegisterRequest(
             userCiNumber = "CI123",
             userName = "홍길동",
-            userAddress = null,
             userPhone = null,
             userEmail = "test@test.com",
             password = "password1234",

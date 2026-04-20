@@ -84,6 +84,7 @@ class OrderCompensationScheduler(
             eventType = DomainEventTypes.ORDER_PAYMENT_COMPENSATION_REQUESTED,
             payload = OrderPaymentCompensationRequestedEvent(
                 orderId = order.orderId,
+                kioskId = order.kioskId,
                 userId = order.userId,
                 paymentLogId = order.paymentResult.paymentLogId,
                 pointsUsed = order.paymentResult.pointsUsed,

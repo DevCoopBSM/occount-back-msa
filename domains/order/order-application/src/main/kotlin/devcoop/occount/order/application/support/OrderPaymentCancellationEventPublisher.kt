@@ -18,6 +18,7 @@ class OrderPaymentCancellationEventPublisher(
             eventType = DomainEventTypes.ORDER_PAYMENT_CANCELLATION_REQUESTED,
             payload = OrderPaymentCancellationRequestedEvent(
                 orderId = order.orderId,
+                kioskId = order.kioskId,
                 userId = order.userId,
             ),
         )

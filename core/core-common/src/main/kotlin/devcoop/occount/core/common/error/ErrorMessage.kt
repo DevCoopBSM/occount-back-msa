@@ -30,6 +30,8 @@ enum class ErrorMessage(
     ORDER_INVALID_PAYMENT_TYPE("비회원 주문은 카드 결제만 지원합니다."),
     ORDER_TRANSACTION_FAILED("주문 트랜잭션 처리에 실패했습니다."),
     ORDER_UNREACHABLE_STATE("도달할 수 없는 주문 처리 상태입니다."),
+    ORDER_CONCURRENCY_CONFLICT("동시 주문 처리 충돌이 발생했습니다. 잠시 후 다시 시도해주세요."),
+    DUPLICATE_EVENT("중복 이벤트가 감지되었습니다."),
 
 
     PAYMENT_FAILED("결제 처리에 실패했습니다."),
@@ -50,6 +52,7 @@ enum class ErrorMessage(
     PAYMENT_LOG_NOT_FOUND("결제 로그를 찾을 수 없습니다."),
     PAYMENT_LOG_SAVE_FAILED("결제 로그 저장에 실패했습니다."),
     CHARGE_LOG_SAVE_FAILED("충전 기록 저장에 실패했습니다."),
+    KIOSK_TERMINAL_NOT_FOUND("등록되지 않은 키오스크입니다."),
 
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다."),
 }
