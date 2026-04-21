@@ -17,7 +17,7 @@ class OutboxRelay(
     private val kafkaTemplate: KafkaTemplate<String, String>,
 ) {
     @Transactional
-    @Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelay = 50)
     fun relay() {
         outboxEventRepository.findTop100ByPublishedFalseOrderByOccurredAtAsc()
             .forEach { event ->
@@ -40,8 +40,10 @@ class OutboxRelay(
                     )
                 }
 
-                kafkaTemplate.send(producerRecord).get()
-                event.markPublished(Instant.now())
+                kafkaTemplate.send(producerRecord)
+                    .whenComplete { _, ex ->
+                        if (ex == null) event.markPublished(Instant.now())
+                    }
             }
     }
 }
