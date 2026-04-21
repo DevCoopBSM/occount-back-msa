@@ -38,7 +38,7 @@ class KafkaConfig {
         }
 
     @Bean
-    fun kafkaListenerContainerFactory(observationRegistry: ObservationRegistry): ConcurrentKafkaListenerContainerFactory<String, String> =
+    fun kafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, String> =
         ConcurrentKafkaListenerContainerFactory<String, String>().apply {
             setConsumerFactory(DefaultKafkaConsumerFactory(mapOf(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
@@ -47,7 +47,6 @@ class KafkaConfig {
                 ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG to 50,
                 ConsumerConfig.FETCH_MIN_BYTES_CONFIG to 1,
             )))
-            setObservationRegistry(observationRegistry)
             containerProperties.isObservationEnabled = true
         }
 }
