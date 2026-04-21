@@ -13,6 +13,7 @@ import devcoop.occount.payment.application.usecase.payment.ExecuteVanPaymentUseC
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Component
+import org.slf4j.LoggerFactory
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.module.kotlin.readValue
 import java.time.Instant
@@ -34,10 +35,13 @@ class OrderPaymentEventListener(
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {
         if (isProcessed(PAYMENT_REQUESTED_CONSUMER, eventId)) {
+            log.info("결제 요청 이벤트 중복 스킵 - eventId={}", eventId)
             return
         }
 
-        executeVanPaymentUseCase.execute(objectMapper.readValue<OrderPaymentRequestedEvent>(payload))
+        val event = objectMapper.readValue<OrderPaymentRequestedEvent>(payload)
+        log.info("결제 요청 이벤트 수신 - orderId={} eventId={}", event.orderId, eventId)
+        executeVanPaymentUseCase.execute(event)
         markProcessed(PAYMENT_REQUESTED_CONSUMER, eventId)
     }
 
@@ -50,10 +54,13 @@ class OrderPaymentEventListener(
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {
         if (isProcessed(PAYMENT_CANCELLATION_REQUESTED_CONSUMER, eventId)) {
+            log.info("결제 취소 요청 이벤트 중복 스킵 - eventId={}", eventId)
             return
         }
 
-        cancelPendingOrderPaymentUseCase.cancel(objectMapper.readValue<OrderPaymentCancellationRequestedEvent>(payload))
+        val event = objectMapper.readValue<OrderPaymentCancellationRequestedEvent>(payload)
+        log.info("결제 취소 요청 이벤트 수신 - orderId={} eventId={}", event.orderId, eventId)
+        cancelPendingOrderPaymentUseCase.cancel(event)
         markProcessed(PAYMENT_CANCELLATION_REQUESTED_CONSUMER, eventId)
     }
 
@@ -66,10 +73,13 @@ class OrderPaymentEventListener(
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
     ) {
         if (isProcessed(PAYMENT_COMPENSATION_REQUESTED_CONSUMER, eventId)) {
+            log.info("결제 보상 요청 이벤트 중복 스킵 - eventId={}", eventId)
             return
         }
 
-        compensateOrderPaymentUseCase.compensate(objectMapper.readValue<OrderPaymentCompensationRequestedEvent>(payload))
+        val event = objectMapper.readValue<OrderPaymentCompensationRequestedEvent>(payload)
+        log.info("결제 보상 요청 이벤트 수신 - orderId={} eventId={}", event.orderId, eventId)
+        compensateOrderPaymentUseCase.compensate(event)
         markProcessed(PAYMENT_COMPENSATION_REQUESTED_CONSUMER, eventId)
     }
 
@@ -93,6 +103,7 @@ class OrderPaymentEventListener(
     }
 
     companion object {
+        private val log = LoggerFactory.getLogger(OrderPaymentEventListener::class.java)
         private const val PAYMENT_REQUESTED_CONSUMER = "order-payment-requested-v1"
         private const val PAYMENT_CANCELLATION_REQUESTED_CONSUMER = "order-payment-cancellation-requested-v1"
         private const val PAYMENT_COMPENSATION_REQUESTED_CONSUMER = "order-payment-compensation-requested-v1"
