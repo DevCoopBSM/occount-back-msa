@@ -45,10 +45,8 @@ class OutboxRelay(
                     }
                 }
 
-                kafkaTemplate.send(producerRecord)
-                    .whenComplete { _, ex ->
-                        if (ex == null) event.markPublished(Instant.now())
-                    }
+                kafkaTemplate.send(producerRecord).get()
+                event.markPublished(Instant.now())
             }
     }
 }
