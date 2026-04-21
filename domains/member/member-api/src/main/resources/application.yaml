@@ -26,6 +26,12 @@ app:
   default-pin: ${DEFAULT_PIN:0000}
 
 management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}
   endpoints:
     web:
       exposure:
