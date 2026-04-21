@@ -359,6 +359,7 @@ class OrderUseCaseFlowTest {
     ): OrderLifecycleProcessor {
         return OrderLifecycleProcessor(
             orderCompensationScheduler = OrderCompensationScheduler(orderRepository, eventPublisher, TestTransactionPort()),
+            orderStatusNotifier = NoOpOrderStatusNotifier(),
         )
     }
 
@@ -418,6 +419,10 @@ class OrderUseCaseFlowTest {
 
     private class TestTransactionPort : TransactionPort {
         override fun <T : Any> executeInNewTransaction(action: () -> T): T = action()
+    }
+
+    private class NoOpOrderStatusNotifier : devcoop.occount.order.application.port.OrderStatusNotifier {
+        override fun notify(orderId: String, status: OrderStatus, failureReason: String?) = Unit
     }
 
     private companion object {

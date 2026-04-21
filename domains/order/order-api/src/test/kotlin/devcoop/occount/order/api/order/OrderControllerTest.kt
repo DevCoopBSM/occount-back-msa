@@ -1,6 +1,7 @@
 package devcoop.occount.order.api.order
 
 import devcoop.occount.core.common.auth.AuthHeaders
+import devcoop.occount.order.api.sse.OrderSseRegistry
 import devcoop.occount.order.application.exception.OrderTransactionFailedException
 import devcoop.occount.order.application.shared.OrderItemRequest
 import devcoop.occount.order.application.shared.OrderRequest
@@ -20,7 +21,15 @@ class OrderControllerTest {
     private val createOrderUseCase = mock(CreateOrderUseCase::class.java)
     private val cancelOrderUseCase = mock(CancelOrderUseCase::class.java)
     private val getOrderUseCase = mock(GetOrderUseCase::class.java)
-    private val controller = OrderController(createOrderUseCase, cancelOrderUseCase, getOrderUseCase)
+    private val orderSseRegistry = mock(OrderSseRegistry::class.java)
+    private val controller = OrderController(
+        createOrderUseCase,
+        cancelOrderUseCase,
+        getOrderUseCase,
+        orderSseRegistry,
+        30L,
+        10_000L,
+    )
 
     @Test
     fun `createOrder returns ACCEPTED with response body`() {

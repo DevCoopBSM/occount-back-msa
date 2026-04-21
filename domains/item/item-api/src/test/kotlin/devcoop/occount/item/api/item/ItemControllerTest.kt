@@ -8,7 +8,6 @@ import devcoop.occount.item.application.shared.ItemLookupResponse
 import devcoop.occount.item.application.shared.ItemResponse
 import devcoop.occount.item.application.usecase.create.CreateItemUseCase
 import devcoop.occount.item.application.usecase.delete.DeleteItemUseCase
-import devcoop.occount.item.application.usecase.sync.SyncItemsFromTossUseCase
 import devcoop.occount.item.application.usecase.update.ItemUpdateRequest
 import devcoop.occount.item.application.usecase.update.UpdateItemUseCase
 import devcoop.occount.item.domain.item.Category
@@ -123,16 +122,6 @@ class ItemControllerTest {
     }
 
     @Test
-    fun `sync delegates to sync items from toss use case`() {
-        val syncItemsFromTossUseCase = mock(SyncItemsFromTossUseCase::class.java)
-        val controller = controller(syncItemsFromTossUseCase = syncItemsFromTossUseCase)
-
-        controller.syncItemsFromToss()
-
-        verify(syncItemsFromTossUseCase).sync()
-    }
-
-    @Test
     fun `update delegates to update item use case`() {
         val updateItemUseCase = mock(UpdateItemUseCase::class.java)
         val controller = controller(updateItemUseCase = updateItemUseCase)
@@ -171,14 +160,12 @@ class ItemControllerTest {
 
     private fun controller(
         itemQueryService: ItemQueryService = mock(ItemQueryService::class.java),
-        syncItemsFromTossUseCase: SyncItemsFromTossUseCase = mock(SyncItemsFromTossUseCase::class.java),
         createItemUseCase: CreateItemUseCase = mock(CreateItemUseCase::class.java),
         updateItemUseCase: UpdateItemUseCase = mock(UpdateItemUseCase::class.java),
         deleteItemUseCase: DeleteItemUseCase = mock(DeleteItemUseCase::class.java),
     ): ItemController {
         return ItemController(
             itemQueryService = itemQueryService,
-            syncItemsFromTossUseCase = syncItemsFromTossUseCase,
             createItemUseCase = createItemUseCase,
             updateItemUseCase = updateItemUseCase,
             deleteItemUseCase = deleteItemUseCase,
