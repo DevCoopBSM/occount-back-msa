@@ -356,7 +356,8 @@ paths:
         - 요청 즉시 `PROCESSING` 상태로 응답하며, 실제 처리는 비동기로 수행됩니다.
         - 상품 검증, 가격 확정, 재고 차감은 비동기로 처리됩니다.
         - 재고 부족 또는 상품 검증 실패 시 최종 상태는 `FAILED` 입니다.
-        - 최종 결과는 `GET /api/v3/orders/{orderId}` 를 폴링하여 확인합니다.
+        - 최종 결과는 `GET /api/v3/orders/{orderId}/stream` (SSE) 로 실시간 수신하거나,
+          `GET /api/v3/orders/{orderId}` 를 폴링하여 확인합니다.
       parameters:
         - name: X-Kiosk-Id
           in: header
@@ -404,11 +405,11 @@ paths:
       operationId: getOrder
       summary: 주문 조회
       description: |
-        주문 상태를 조회합니다. (PERMIT_ALL)
+        주문 상태를 단건 조회합니다. (PERMIT_ALL)
 
-        - `PROCESSING` 상태인 경우 최종 상태가 될 때까지 폴링합니다.
         - 재고 부족, 상품 미존재 등 재고 단계 실패는 `FAILED` 로 종료됩니다.
         - 최종 상태: `COMPLETED`, `FAILED`, `CANCELLED`, `COMPENSATION_FAILED`, `TIMED_OUT`
+        - 실시간 상태 수신이 필요한 경우 `GET /api/v3/orders/{orderId}/stream` (SSE) 를 사용하세요.
       parameters:
         - name: orderId
           in: path
@@ -424,6 +425,41 @@ paths:
           description: 주문 조회 성공
           content:
             application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+              example:
+                orderId: "550e8400-e29b-41d4-a716-446655440000"
+                status: "COMPLETED"
+                failureReason: null
+        "404":
+          description: 주문을 찾을 수 없음
+
+  /api/v3/orders/{orderId}/stream:
+    get:
+      tags: [Order]
+      operationId: streamOrder
+      summary: 주문 상태 실시간 스트리밍 (SSE)
+      description: |
+        Server-Sent Events(SSE) 방식으로 주문 상태 변경을 실시간 수신합니다. (PERMIT_ALL)
+
+        - 연결 즉시 현재 주문 상태를 전송합니다.
+        - 주문이 최종 상태(`COMPLETED`, `FAILED`, `CANCELLED`, `COMPENSATION_FAILED`, `TIMED_OUT`)에 도달하면 서버가 연결을 종료합니다.
+        - 주문 생성 직후 SSE 연결을 맺어 비동기 처리 결과를 수신하는 용도로 사용합니다.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: 주문 ID
+          schema:
+            type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      security:
+        - {}
+      responses:
+        "200":
+          description: SSE 스트림 연결 성공
+          content:
+            text/event-stream:
               schema:
                 $ref: '#/components/schemas/OrderResponse'
               example:
@@ -724,6 +760,21 @@ components:
 
     OrderStatus:
       type: string
+      description: |
+        주문 상태 값.
+
+        **최종 상태** (SSE 연결이 자동 종료됨):
+        - `COMPLETED` — 주문 완료
+        - `FAILED` — 주문 실패 (재고 부족, 상품 미존재 등)
+        - `CANCELLED` — 주문 취소 완료
+        - `COMPENSATION_FAILED` — 보상 트랜잭션 실패
+        - `TIMED_OUT` — 처리 시간 초과
+
+        **중간 상태**:
+        - `PENDING` — 초기 상태
+        - `PROCESSING` — 처리 중
+        - `CANCEL_REQUESTED` — 취소 요청됨
+        - `COMPENSATING` — 보상 처리 중
       enum:
         - PENDING
         - PROCESSING
