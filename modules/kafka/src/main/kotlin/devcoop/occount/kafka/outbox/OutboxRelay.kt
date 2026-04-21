@@ -4,10 +4,10 @@ import devcoop.occount.core.common.event.DomainEventHeaders
 import devcoop.occount.db.outbox.OutboxEventRepository
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.internals.RecordHeader
+import org.slf4j.LoggerFactory
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.nio.charset.StandardCharsets
 
@@ -16,7 +16,6 @@ class OutboxRelay(
     private val outboxEventRepository: OutboxEventRepository,
     private val kafkaTemplate: KafkaTemplate<String, String>,
 ) {
-    @Transactional
     @Scheduled(fixedDelay = 50)
     fun relay() {
         outboxEventRepository.findTop100ByPublishedFalseOrderByOccurredAtAsc()
@@ -45,10 +44,17 @@ class OutboxRelay(
                     }
                 }
 
-                kafkaTemplate.send(producerRecord)
-                    .whenComplete { _, ex ->
-                        if (ex == null) event.markPublished(Instant.now())
-                    }
+                try {
+                    kafkaTemplate.send(producerRecord).get()
+                    outboxEventRepository.markPublished(event.getEventId(), Instant.now())
+                } catch (ex: Exception) {
+                    log.warn("Failed to relay outbox event. eventId={}", event.getEventId(), ex)
+                    throw ex
+                }
             }
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(OutboxRelay::class.java)
     }
 }
