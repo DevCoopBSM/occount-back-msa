@@ -67,8 +67,11 @@ def call(Map cfg) {
                             return
                         }
 
+                        def prevCommit = env.GIT_PREVIOUS_SUCCESSFUL_COMMIT ?: ''
                         def changedFiles = sh(
-                            script: 'git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "__ALL__"',
+                            script: prevCommit
+                                ? "git diff --name-only ${prevCommit} HEAD 2>/dev/null || echo '__ALL__'"
+                                : 'echo "__ALL__"',
                             returnStdout: true
                         ).trim()
 
