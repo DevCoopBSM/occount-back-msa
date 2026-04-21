@@ -33,8 +33,6 @@ tags:
     description: 상품 조회 및 관리
   - name: Order
     description: 주문 생성 및 취소
-  - name: Payment
-    description: 결제 실행 및 내역 조회
   - name: Wallet
     description: 포인트 잔액 및 충전 내역
 
@@ -709,36 +707,6 @@ components:
         - CANCELLED
         - COMPENSATION_FAILED
         - TIMED_OUT
-
-    PaymentLogResult:
-      type: object
-      properties:
-        paymentId:
-          type: integer
-          format: int64
-        userId:
-          type: integer
-          format: int64
-        paymentDate:
-          type: string
-          format: date-time
-        paymentType:
-          type: string
-          enum: [POINT, CARD, MIXED]
-        totalAmount:
-          type: integer
-        pointTransaction:
-          nullable: true
-          type: object
-        cardInfo:
-          nullable: true
-          type: object
-        transactionInfo:
-          nullable: true
-          type: object
-        eventType:
-          type: string
-          nullable: true
 
     # ── Wallet ─────────────────────────────────────
     WalletPointResponse:
