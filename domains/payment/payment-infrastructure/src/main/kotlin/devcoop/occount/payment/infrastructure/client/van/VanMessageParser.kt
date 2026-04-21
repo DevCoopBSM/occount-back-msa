@@ -115,7 +115,7 @@ class VanMessageParser(
         rejectMessage: String? = null,
     ): TransactionResult {
         return TransactionResult(
-            messageNumber = vanResponse.messageNumber?.drop(1),
+            messageNumber = vanResponse.serviceType,
             typeCode = vanResponse.typeCode,
             cardNumber = vanResponse.cardNumber,
             amount = vanResponse.amount ?: 0,

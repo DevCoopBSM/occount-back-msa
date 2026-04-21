@@ -122,9 +122,11 @@ class VanTerminalClient(
     private fun waitForResponse(actionName: String): VanResult {
         val deadline = System.nanoTime() + protocolSpec.transactionTimeoutNanos
         var lastStxResponse: ByteArray? = null
+        var approvalCandidate: VanResult? = null
 
         while (System.nanoTime() < deadline) {
             if (cancellationRequested.get()) {
+                approvalCandidate?.let { return finalizeApprovedOnStx(it) }
                 return userCancelledResult()
             }
 
@@ -132,6 +134,7 @@ class VanTerminalClient(
                 socketConnection.receive()
             } catch (e: IOException) {
                 if (cancellationRequested.get()) {
+                    approvalCandidate?.let { return finalizeApprovedOnStx(it) }
                     return userCancelledResult()
                 }
                 log.error("{} 응답 수신 중 오류 발생: {}", actionName, e.message, e)
@@ -143,6 +146,7 @@ class VanTerminalClient(
 
             if (response == null) {
                 if (cancellationRequested.get()) {
+                    approvalCandidate?.let { return finalizeApprovedOnStx(it) }
                     return userCancelledResult()
                 }
                 continue
@@ -167,10 +171,15 @@ class VanTerminalClient(
                         if (currentTransactionType.get() == TransactionType.APPROVE) {
                             approvalPhase.set(ApprovalPhase.CARD_PROCESSING)
                         }
+                        if (isApprovalCandidate(parsed)) {
+                            approvalCandidate = parsed
+                        }
                         lastStxResponse = frame
                     }
 
                     responseHex == protocolSpec.dleHex || responseHex == protocolSpec.dleCompletedHex -> {
+                        approvalCandidate?.let { return finalizeApprovedOnStx(it) }
+
                         if (cancellationRequested.get() || lastStxResponse == null) {
                             return userCancelledResult()
                         }
@@ -201,7 +210,23 @@ class VanTerminalClient(
             }
         }
 
+        approvalCandidate?.let { return finalizeApprovedOnStx(it) }
         return timeoutResult()
+    }
+
+    private fun isApprovalCandidate(result: VanResult): Boolean {
+        return result.success &&
+            result.additional?.approvalStatus == APPROVED_STATUS &&
+            !result.transaction?.approvalNumber.isNullOrBlank()
+    }
+
+    private fun finalizeApprovedOnStx(result: VanResult): VanResult {
+        log.info(
+            "최종 성공 STX 기준 결제 승인 확정 - approvalNumber={} transactionId={}",
+            result.transaction?.approvalNumber,
+            result.transaction?.transactionId,
+        )
+        return result
     }
 
     private fun sendTerminalCloseRequest(paymentKey: String): Boolean {
@@ -277,5 +302,9 @@ class VanTerminalClient(
         WAITING_FOR_CARD,
         CARD_PROCESSING,
         NOT_CANCELLABLE,
+    }
+
+    companion object {
+        private const val APPROVED_STATUS = "APPROVED"
     }
 }
