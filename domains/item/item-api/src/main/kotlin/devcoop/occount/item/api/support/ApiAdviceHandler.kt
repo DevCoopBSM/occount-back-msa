@@ -44,6 +44,7 @@ class ApiAdviceHandler {
             -> HttpStatus.NOT_FOUND
 
             ErrorMessage.USER_ALREADY_EXISTS,
+            ErrorMessage.ITEM_ALREADY_EXISTS,
             ErrorMessage.TRANSACTION_IN_PROGRESS,
             ErrorMessage.ITEM_CONCURRENT_UPDATE,
             -> HttpStatus.CONFLICT
