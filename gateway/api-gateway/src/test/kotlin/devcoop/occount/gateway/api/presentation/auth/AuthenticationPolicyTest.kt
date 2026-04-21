@@ -54,4 +54,12 @@ class AuthenticationPolicyTest {
             policy.resolveAccess(HttpMethod.POST, "/api/v3/orders/order-1/cancel"),
         )
     }
+
+    @Test
+    fun `order stream allows optional auth`() {
+        assertEquals(
+            AuthenticationRule.Access.OPTIONAL_AUTH,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/orders/order-1/stream"),
+        )
+    }
 }
