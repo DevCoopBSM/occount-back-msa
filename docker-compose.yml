@@ -2,6 +2,9 @@ services:
   mysql:
     image: mysql:8.0
     restart: unless-stopped
+    command:
+      - --skip-name-resolve
+      - --performance-schema=OFF
     environment:
       MYSQL_ROOT_PASSWORD: 123456
     ports:
@@ -66,7 +69,7 @@ services:
     ports:
       - "8083:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_member?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_member?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true&cacheServerConfiguration=true&rewriteBatchedStatements=true&useLocalSessionState=true&elideSetAutoCommits=true&maintainTimeStats=false
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 123456
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
@@ -100,7 +103,7 @@ services:
     ports:
       - "8084:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_item?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_item?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true&cacheServerConfiguration=true&rewriteBatchedStatements=true&useLocalSessionState=true&elideSetAutoCommits=true&maintainTimeStats=false
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 123456
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
@@ -135,7 +138,7 @@ services:
     ports:
       - "8081:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_order?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_order?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true&cacheServerConfiguration=true&rewriteBatchedStatements=true&useLocalSessionState=true&elideSetAutoCommits=true&maintainTimeStats=false
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 123456
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
@@ -172,7 +175,7 @@ services:
     ports:
       - "8082:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_payment?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_payment?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true&cacheServerConfiguration=true&rewriteBatchedStatements=true&useLocalSessionState=true&elideSetAutoCommits=true&maintainTimeStats=false
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 123456
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
