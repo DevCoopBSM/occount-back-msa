@@ -38,6 +38,11 @@ class OutboxRelay(
                             event.getEventType().toByteArray(StandardCharsets.UTF_8),
                         ),
                     )
+                    event.getTraceId()?.let { traceparent ->
+                        headers().add(
+                            RecordHeader("traceparent", traceparent.toByteArray(StandardCharsets.UTF_8)),
+                        )
+                    }
                 }
 
                 kafkaTemplate.send(producerRecord)

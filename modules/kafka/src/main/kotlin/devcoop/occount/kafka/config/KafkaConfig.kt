@@ -1,5 +1,6 @@
 package devcoop.occount.kafka.config
 
+import io.micrometer.observation.ObservationRegistry
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -30,11 +31,14 @@ class KafkaConfig {
         ))
 
     @Bean
-    fun kafkaTemplate(): KafkaTemplate<String, String> =
-        KafkaTemplate(producerFactory())
+    fun kafkaTemplate(observationRegistry: ObservationRegistry): KafkaTemplate<String, String> =
+        KafkaTemplate(producerFactory()).apply {
+            setObservationEnabled(true)
+            setObservationRegistry(observationRegistry)
+        }
 
     @Bean
-    fun kafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, String> =
+    fun kafkaListenerContainerFactory(observationRegistry: ObservationRegistry): ConcurrentKafkaListenerContainerFactory<String, String> =
         ConcurrentKafkaListenerContainerFactory<String, String>().apply {
             setConsumerFactory(DefaultKafkaConsumerFactory(mapOf(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
@@ -43,5 +47,7 @@ class KafkaConfig {
                 ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG to 50,
                 ConsumerConfig.FETCH_MIN_BYTES_CONFIG to 1,
             )))
+            setObservationRegistry(observationRegistry)
+            containerProperties.isObservationEnabled = true
         }
 }
