@@ -6,6 +6,7 @@ import devcoop.occount.item.application.query.ItemLookupListResponse
 import devcoop.occount.item.application.query.ItemQueryService
 import devcoop.occount.item.application.shared.ItemLookupResponse
 import devcoop.occount.item.application.shared.ItemResponse
+import devcoop.occount.item.application.usecase.create.CreateItemUseCase
 import devcoop.occount.item.application.usecase.delete.DeleteItemUseCase
 import devcoop.occount.item.application.usecase.sync.SyncItemsFromTossUseCase
 import devcoop.occount.item.application.usecase.update.ItemUpdateRequest
@@ -171,12 +172,14 @@ class ItemControllerTest {
     private fun controller(
         itemQueryService: ItemQueryService = mock(ItemQueryService::class.java),
         syncItemsFromTossUseCase: SyncItemsFromTossUseCase = mock(SyncItemsFromTossUseCase::class.java),
+        createItemUseCase: CreateItemUseCase = mock(CreateItemUseCase::class.java),
         updateItemUseCase: UpdateItemUseCase = mock(UpdateItemUseCase::class.java),
         deleteItemUseCase: DeleteItemUseCase = mock(DeleteItemUseCase::class.java),
     ): ItemController {
         return ItemController(
             itemQueryService = itemQueryService,
             syncItemsFromTossUseCase = syncItemsFromTossUseCase,
+            createItemUseCase = createItemUseCase,
             updateItemUseCase = updateItemUseCase,
             deleteItemUseCase = deleteItemUseCase,
         )

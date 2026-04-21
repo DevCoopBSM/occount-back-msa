@@ -6,6 +6,8 @@ import devcoop.occount.item.application.query.ItemLookupListResponse
 import devcoop.occount.item.application.query.ItemQueryService
 import devcoop.occount.item.application.shared.ItemLookupResponse
 import devcoop.occount.item.application.shared.ItemResponse
+import devcoop.occount.item.application.usecase.create.CreateItemRequest
+import devcoop.occount.item.application.usecase.create.CreateItemUseCase
 import devcoop.occount.item.application.usecase.delete.DeleteItemUseCase
 import devcoop.occount.item.application.usecase.sync.SyncItemsFromTossUseCase
 import devcoop.occount.item.application.usecase.update.ItemUpdateRequest
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController
 class ItemController(
     private val itemQueryService: ItemQueryService,
     private val syncItemsFromTossUseCase: SyncItemsFromTossUseCase,
+    private val createItemUseCase: CreateItemUseCase,
     private val updateItemUseCase: UpdateItemUseCase,
     private val deleteItemUseCase: DeleteItemUseCase,
 ) {
@@ -58,6 +61,14 @@ class ItemController(
     @ResponseStatus(HttpStatus.OK)
     fun getItemByBarcode(@PathVariable barcode: String): ItemLookupResponse {
         return itemQueryService.getItemByBarcode(barcode)
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    fun createItem(
+        @RequestBody request: CreateItemRequest,
+    ): ItemResponse {
+        return createItemUseCase.create(request)
     }
 
     @PostMapping("/sync")

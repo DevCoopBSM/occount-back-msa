@@ -38,6 +38,11 @@ class AuthenticationPolicyTest {
     }
 
     @Test
+    fun `item creation requires admin`() {
+        assertEquals(AuthenticationRule.Access.ADMIN_ONLY, policy.resolveAccess(HttpMethod.POST, "/api/v3/items"))
+    }
+
+    @Test
     fun `order creation allows optional auth`() {
         assertEquals(AuthenticationRule.Access.OPTIONAL_AUTH, policy.resolveAccess(HttpMethod.POST, "/api/v3/orders"))
     }
