@@ -64,6 +64,12 @@ member:
     url: ${MEMBER_API_URL:http://localhost:8081/api/v3}
 
 management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}
   endpoints:
     web:
       exposure:
