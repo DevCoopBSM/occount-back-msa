@@ -17,7 +17,7 @@ class ServletWarmupTargetTest {
             properties = StartupWarmupProperties(),
         )
 
-        assertEquals("http://127.0.0.1:8080/api/v3/actuator/health", target.toString())
+        assertEquals("http://127.0.0.1:8080/api/v3/actuator/health/ping", target.toString())
     }
 
     @Test
