@@ -22,6 +22,13 @@ class ExecuteVanPaymentUseCase(
     private val eventPublisher: EventPublisher,
 ) {
     fun execute(event: OrderPaymentRequestedEvent) {
+        log.info(
+            "결제 처리 시작 - orderId={} kioskId={} userId={} amount={}",
+            event.orderId,
+            event.kioskId,
+            event.userId,
+            event.payment.totalAmount,
+        )
         when (orderPaymentExecutionRepository.startProcessing(event.orderId)) {
             OrderPaymentExecutionStartResult.CANCELLED_BEFORE_START -> {
                 log.info("결제 요청 스킵 - 선행 취소 상태 orderId={}", event.orderId)
@@ -64,6 +71,13 @@ class ExecuteVanPaymentUseCase(
                 paymentKey = event.orderId,
             )
             orderPaymentExecutionRepository.markCompleted(event.orderId)
+            log.info(
+                "결제 처리 성공 - orderId={} paymentLogId={} approvalNumber={} transactionId={}",
+                event.orderId,
+                result.paymentLogId,
+                result.approvalNumber,
+                result.transactionId,
+            )
 
             eventPublisher.publish(
                 topic = DomainTopics.ORDER_PAYMENT_COMPLETED,
@@ -81,9 +95,11 @@ class ExecuteVanPaymentUseCase(
                 ),
             )
         } catch (ex: PaymentCancelledException) {
+            log.warn("결제 처리 취소 - orderId={} reason={}", event.orderId, ex.message, ex)
             orderPaymentExecutionRepository.markCancelled(event.orderId)
             publishFailed(event, ex.message ?: "Payment cancelled")
         } catch (ex: Exception) {
+            log.error("결제 처리 실패 - orderId={} message={}", event.orderId, ex.message, ex)
             orderPaymentExecutionRepository.markFailed(event.orderId)
             publishFailed(event, ex.message ?: "Payment processing failed")
         }

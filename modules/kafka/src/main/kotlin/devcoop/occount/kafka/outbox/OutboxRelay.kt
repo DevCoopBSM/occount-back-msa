@@ -2,12 +2,18 @@ package devcoop.occount.kafka.outbox
 
 import devcoop.occount.core.common.event.DomainEventHeaders
 import devcoop.occount.db.outbox.OutboxEventRepository
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanContext
+import io.opentelemetry.api.trace.TraceFlags
+import io.opentelemetry.api.trace.TraceState
+import io.opentelemetry.context.Context
+import io.opentelemetry.context.Scope
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.internals.RecordHeader
+import org.slf4j.LoggerFactory
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.nio.charset.StandardCharsets
 
@@ -16,7 +22,6 @@ class OutboxRelay(
     private val outboxEventRepository: OutboxEventRepository,
     private val kafkaTemplate: KafkaTemplate<String, String>,
 ) {
-    @Transactional
     @Scheduled(fixedDelay = 50)
     fun relay() {
         outboxEventRepository.findTop100ByPublishedFalseOrderByOccurredAtAsc()
@@ -40,10 +45,38 @@ class OutboxRelay(
                     )
                 }
 
-                kafkaTemplate.send(producerRecord)
-                    .whenComplete { _, ex ->
-                        if (ex == null) event.markPublished(Instant.now())
-                    }
+                val scope = restoreTraceContext(event.getTraceId())
+                try {
+                    kafkaTemplate.send(producerRecord).get()
+                    outboxEventRepository.markPublished(event.getEventId(), Instant.now())
+                } catch (ex: Exception) {
+                    log.warn("Failed to relay outbox event. eventId={}", event.getEventId(), ex)
+                    throw ex
+                } finally {
+                    scope?.close()
+                }
             }
+    }
+
+    private fun restoreTraceContext(traceparent: String?): Scope? {
+        if (traceparent == null) return null
+        val parts = traceparent.split("-")
+        if (parts.size < 4) return null
+
+        val spanContext = SpanContext.createFromRemoteParent(
+            parts[1],
+            parts[2],
+            TraceFlags.fromHex(parts[3], 0),
+            TraceState.getDefault(),
+        )
+        if (!spanContext.isValid) return null
+
+        return Span.wrap(spanContext)
+            .storeInContext(Context.root())
+            .makeCurrent()
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(OutboxRelay::class.java)
     }
 }

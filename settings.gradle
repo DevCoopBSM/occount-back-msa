@@ -31,3 +31,5 @@ include 'gateway:api-gateway'
 
 include 'modules:db'
 include 'modules:kafka'
+include 'modules:observability'
+include 'modules:warmup'

@@ -11,11 +11,11 @@ dependencies {
     implementation project(':domains:member:member-infrastructure')
     implementation project(':modules:db')
     implementation project(':modules:kafka')
+    implementation project(':modules:observability')
+    implementation project(':modules:warmup')
 
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     implementation 'tools.jackson.module:jackson-module-kotlin'
 
     runtimeOnly 'com.mysql:mysql-connector-j'

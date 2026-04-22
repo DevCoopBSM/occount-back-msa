@@ -26,12 +26,15 @@ class OutboxEventJpaEntity(
     private var published: Boolean = false,
     @field:Column
     private var publishedAt: Instant? = null,
+    @field:Column(length = 55)
+    private var traceId: String? = null,
 ) {
     fun getEventId() = eventId
     fun getTopic() = topic
     fun getMessageKey() = messageKey
     fun getEventType() = eventType
     fun getPayload() = payload
+    fun getTraceId() = traceId
     fun isPublished() = published
 
     fun markPublished(publishedAt: Instant) {

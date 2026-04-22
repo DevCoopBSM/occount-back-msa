@@ -1,5 +1,6 @@
 package devcoop.occount.kafka.config
 
+import io.micrometer.observation.ObservationRegistry
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -9,10 +10,13 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
+import org.springframework.kafka.config.ContainerCustomizer
+import org.springframework.kafka.core.ConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaProducerFactory
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.core.ProducerFactory
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 
 @EnableKafka
 @Configuration
@@ -30,18 +34,32 @@ class KafkaConfig {
         ))
 
     @Bean
-    fun kafkaTemplate(): KafkaTemplate<String, String> =
-        KafkaTemplate(producerFactory())
+    fun kafkaTemplate(observationRegistry: ObservationRegistry): KafkaTemplate<String, String> =
+        KafkaTemplate(producerFactory()).apply {
+            setObservationEnabled(true)
+            setObservationRegistry(observationRegistry)
+        }
 
     @Bean
-    fun kafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, String> =
+    fun kafkaListenerContainerFactory(
+        kafkaConsumerFactory: ConsumerFactory<String, String>,
+        observationRegistry: ObservationRegistry,
+    ): ConcurrentKafkaListenerContainerFactory<String, String> =
         ConcurrentKafkaListenerContainerFactory<String, String>().apply {
-            setConsumerFactory(DefaultKafkaConsumerFactory(mapOf(
-                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
-                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-                ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG to 50,
-                ConsumerConfig.FETCH_MIN_BYTES_CONFIG to 1,
-            )))
+            setConsumerFactory(kafkaConsumerFactory)
+            setContainerCustomizer { container ->
+                container.containerProperties.isObservationEnabled = true
+                container.containerProperties.setObservationRegistry(observationRegistry)
+            }
         }
+
+    @Bean
+    fun kafkaConsumerFactory(): ConsumerFactory<String, String> =
+        DefaultKafkaConsumerFactory(mapOf(
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+            ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG to 50,
+            ConsumerConfig.FETCH_MIN_BYTES_CONFIG to 1,
+        ))
 }

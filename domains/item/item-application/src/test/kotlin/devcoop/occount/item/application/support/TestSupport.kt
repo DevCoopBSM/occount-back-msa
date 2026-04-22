@@ -2,9 +2,6 @@ package devcoop.occount.item.application.support
 
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.item.application.output.ItemRepository
-import devcoop.occount.item.application.output.SoldItemPayload
-import devcoop.occount.item.application.output.TossItemPayload
-import devcoop.occount.item.application.output.TossItemPort
 import devcoop.occount.item.domain.item.Category
 import devcoop.occount.item.domain.item.Item
 import devcoop.occount.item.domain.item.ItemInfo
@@ -195,26 +192,6 @@ class FakeItemRepository(
             catalogVersion = item.getCatalogVersion() + 1,
             stockVersion = item.getStockVersion() + 1,
         )
-    }
-}
-
-class FakeTossItemPort(
-    var itemPayloads: List<TossItemPayload> = emptyList(),
-    var soldItemPayloads: List<SoldItemPayload> = emptyList(),
-) : TossItemPort {
-    var getItemsCount: Int = 0
-        private set
-    var getSoldItemsCount: Int = 0
-        private set
-
-    override fun getItems(): List<TossItemPayload> {
-        getItemsCount += 1
-        return itemPayloads
-    }
-
-    override fun getSoldItems(): List<SoldItemPayload> {
-        getSoldItemsCount += 1
-        return soldItemPayloads
     }
 }
 

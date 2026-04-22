@@ -9,9 +9,8 @@ bootJar {
 
 dependencies {
     implementation project(':core:core-common')
+    implementation project(':modules:observability')
 
     implementation 'org.springframework.cloud:spring-cloud-starter-gateway-server-webflux'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     implementation 'io.jsonwebtoken:jjwt:0.12.6'
 }
