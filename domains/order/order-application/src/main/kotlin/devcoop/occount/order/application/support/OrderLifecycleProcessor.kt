@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component
 class OrderLifecycleProcessor(
     private val orderCompensationScheduler: OrderCompensationScheduler,
     private val orderStatusNotifier: OrderStatusNotifier,
+    private val orderStreamEventMapper: OrderStreamEventMapper,
 ) {
     fun processAfterOrderStateChange(order: OrderAggregate) {
         if (order.requiresCompensation()) {
@@ -15,7 +16,7 @@ class OrderLifecycleProcessor(
         }
         val reconciledOrder = order.reconcileStatus()
         try {
-            orderStatusNotifier.notify(reconciledOrder.orderId, reconciledOrder.status, reconciledOrder.failureReason)
+            orderStatusNotifier.notify(orderStreamEventMapper.toStreamEvent(reconciledOrder))
         } catch (_: Exception) {
             // SSE 알림 실패는 주문 처리에 영향을 주지 않음
         }
