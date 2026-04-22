@@ -1,0 +1,20 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+bootJar {
+    archiveFileName.set('suggestion-api.jar')
+}
+
+dependencies {
+    implementation project(':domains:suggestion:suggestion-api')
+    implementation project(':domains:suggestion:suggestion-infrastructure')
+    implementation project(':modules:observability')
+    implementation project(':modules:warmup')
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'tools.jackson.module:jackson-module-kotlin'
+
+    runtimeOnly 'com.mysql:mysql-connector-j'
+}
