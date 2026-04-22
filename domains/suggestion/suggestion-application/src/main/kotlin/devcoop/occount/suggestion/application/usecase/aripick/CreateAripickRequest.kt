@@ -1,6 +1,6 @@
 package devcoop.occount.suggestion.application.usecase.aripick
 
-class CreateAripickRequest(
+data class CreateAripickRequest(
     val typeNSeq: Long,
     val reason: String,
 )

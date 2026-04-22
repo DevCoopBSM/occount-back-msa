@@ -6,7 +6,6 @@ import devcoop.occount.suggestion.application.shared.AripickResponse
 import devcoop.occount.suggestion.domain.aripick.AripickNotFoundException
 import devcoop.occount.suggestion.domain.aripick.AripickStatus
 import org.springframework.stereotype.Service
-import kotlin.collections.map
 
 @Service
 class AripickQueryService(

@@ -32,6 +32,7 @@ fun aripickFixture(
 
 class FakeAripickRepository(
     initialItems: List<AripickItem> = emptyList(),
+    private val statusUpdateFailIds: Set<Long> = emptySet(),
 ) : AripickRepository {
     private val itemsById = linkedMapOf<Long, AripickItem>().apply {
         initialItems.forEach { put(it.getProposalId(), it) }
@@ -66,6 +67,9 @@ class FakeAripickRepository(
     }
 
     override fun updateStatus(proposalId: Long, status: AripickStatus): Boolean {
+        if (statusUpdateFailIds.contains(proposalId)) {
+            return false
+        }
         val current = itemsById[proposalId] ?: return false
         itemsById[proposalId] = when (status) {
             AripickStatus.검토중 -> current.pending()
@@ -127,6 +131,10 @@ class FakeAripickPolicyRepository(
         return keywordsById.values.any { keyword ->
             name.contains(keyword.getKeyword(), ignoreCase = true)
         }
+    }
+
+    override fun existsBlockedKeyword(keyword: String): Boolean {
+        return keywordsById.values.any { it.getKeyword().equals(keyword.trim(), ignoreCase = true) }
     }
 
     override fun findBlockedKeywords(): List<AripickBlockedKeyword> {

@@ -9,18 +9,18 @@ import org.springframework.data.repository.query.Param
 interface AripickPersistenceRepository : JpaRepository<AripickJpaEntity, Long> {
     fun countByStatus(status: AripickStatus): Long
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE AripickJpaEntity p SET p.status = :status WHERE p.proposalId = :proposalId")
     fun updateStatus(
         @Param("proposalId") proposalId: Long,
         @Param("status") status: AripickStatus,
     ): Int
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE AripickJpaEntity p SET p.likeCount = p.likeCount + 1 WHERE p.proposalId = :proposalId")
     fun increaseLikeCount(@Param("proposalId") proposalId: Long): Int
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE AripickJpaEntity p SET p.likeCount = p.likeCount - 1 WHERE p.proposalId = :proposalId AND p.likeCount > 0")
     fun decreaseLikeCount(@Param("proposalId") proposalId: Long): Int
 }

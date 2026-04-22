@@ -48,6 +48,7 @@ class ApiAdviceHandler {
             ErrorMessage.ITEM_ALREADY_EXISTS,
             ErrorMessage.TRANSACTION_IN_PROGRESS,
             ErrorMessage.ITEM_CONCURRENT_UPDATE,
+            ErrorMessage.ARIPICK_BLOCKED_KEYWORD_ALREADY_EXISTS,
             -> HttpStatus.CONFLICT
 
             ErrorMessage.PAYMENT_TIMEOUT -> HttpStatus.REQUEST_TIMEOUT
