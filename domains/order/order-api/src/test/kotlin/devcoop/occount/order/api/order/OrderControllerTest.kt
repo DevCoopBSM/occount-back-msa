@@ -27,8 +27,6 @@ class OrderControllerTest {
         cancelOrderUseCase,
         getOrderUseCase,
         orderSseRegistry,
-        30L,
-        10_000L,
     )
 
     @Test
