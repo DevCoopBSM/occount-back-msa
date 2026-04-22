@@ -36,6 +36,8 @@ toss:
     url: ${OCCOUNT_TOSS_API_URL}
 
 app:
+  food-safety:
+    base-url: https://www.foodsafetykorea.go.kr
   stock-sync:
     cron: ${APP_STOCK_SYNC_CRON:0 */5 * * * *}
 
