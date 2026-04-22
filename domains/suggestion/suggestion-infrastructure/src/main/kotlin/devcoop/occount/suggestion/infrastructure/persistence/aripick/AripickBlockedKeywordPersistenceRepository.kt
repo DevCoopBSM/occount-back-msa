@@ -12,5 +12,5 @@ interface AripickBlockedKeywordPersistenceRepository : JpaRepository<AripickBloc
     )
     fun hasBlockedKeyword(@Param("name") name: String): Boolean
 
-    fun findByKeywordIgnoreCase(keyword: String): AripickBlockedKeywordJpaEntity?
+    fun existsByKeywordIgnoreCase(keyword: String): Boolean
 }

@@ -3,7 +3,7 @@ package devcoop.occount.suggestion.application.shared
 import devcoop.occount.suggestion.domain.aripick.AripickStatus
 import java.time.LocalDate
 
-class AripickResponse (
+data class AripickResponse(
     val proposalId: Long,
     val name: String,
     val reason: String,

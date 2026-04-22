@@ -9,6 +9,7 @@ import devcoop.occount.suggestion.domain.aripick.AripickAccessDeniedException
 import devcoop.occount.suggestion.domain.aripick.AripickItem
 import devcoop.occount.suggestion.domain.aripick.AripickNotFoundException
 import devcoop.occount.suggestion.domain.aripick.AripickPolicyViolationException
+import devcoop.occount.suggestion.domain.aripick.AripickStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -44,23 +45,26 @@ class AripickCommandUseCase(
         return aripickMapper.toResponse(created)
     }
 
+    @Transactional
     fun approve(proposalId: Long): AripickResponse {
         val proposal = getProposal(proposalId)
-        aripickRepository.updateStatus(proposalId, proposal.approve().getStatus())
+        changeStatus(proposalId, proposal.approve().getStatus())
         val approved = getProposal(proposalId)
         return aripickMapper.toResponse(approved)
     }
 
+    @Transactional
     fun reject(proposalId: Long): AripickResponse {
         val proposal = getProposal(proposalId)
-        aripickRepository.updateStatus(proposalId, proposal.reject().getStatus())
+        changeStatus(proposalId, proposal.reject().getStatus())
         val rejected = getProposal(proposalId)
         return aripickMapper.toResponse(rejected)
     }
 
+    @Transactional
     fun pending(proposalId: Long): AripickResponse {
         val proposal = getProposal(proposalId)
-        aripickRepository.updateStatus(proposalId, proposal.pending().getStatus())
+        changeStatus(proposalId, proposal.pending().getStatus())
         val pending = getProposal(proposalId)
         return aripickMapper.toResponse(pending)
     }
@@ -117,5 +121,14 @@ class AripickCommandUseCase(
     private fun getProposal(proposalId: Long): AripickItem {
         return aripickRepository.findById(proposalId)
             ?: throw AripickNotFoundException()
+    }
+
+    private fun changeStatus(
+        proposalId: Long,
+        status: AripickStatus,
+    ) {
+        if (!aripickRepository.updateStatus(proposalId, status)) {
+            throw AripickNotFoundException()
+        }
     }
 }

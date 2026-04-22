@@ -1,6 +1,8 @@
 package devcoop.occount.suggestion.application.usecase.aripick
 
 import devcoop.occount.suggestion.application.output.AripickPolicyRepository
+import devcoop.occount.suggestion.domain.aripick.AripickBlockedKeywordAlreadyExistsException
+import devcoop.occount.suggestion.domain.aripick.AripickInvalidBlockedKeywordException
 import org.springframework.stereotype.Service
 
 @Service
@@ -20,7 +22,14 @@ class AripickPolicyUseCase(
     }
 
     fun blockKeyword(request: CreateAripickBlockedKeywordRequest): AripickBlockedKeywordResponse {
-        val saved = aripickPolicyRepository.saveBlockedKeyword(request.keyword.trim())
+        val normalized = request.keyword.trim()
+        if (normalized.isBlank()) {
+            throw AripickInvalidBlockedKeywordException()
+        }
+        if (aripickPolicyRepository.existsBlockedKeyword(normalized)) {
+            throw AripickBlockedKeywordAlreadyExistsException()
+        }
+        val saved = aripickPolicyRepository.saveBlockedKeyword(normalized)
         return AripickBlockedKeywordResponse(
             keywordId = saved.getKeywordId(),
             keyword = saved.getKeyword(),

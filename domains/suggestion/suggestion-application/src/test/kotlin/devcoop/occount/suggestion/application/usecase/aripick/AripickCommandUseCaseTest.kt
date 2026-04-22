@@ -112,6 +112,19 @@ class AripickCommandUseCaseTest {
     }
 
     @Test
+    fun `approve throws when status update fails`() {
+        val repository = FakeAripickRepository(
+            initialItems = listOf(aripickFixture(proposalId = 1L)),
+            statusUpdateFailIds = setOf(1L),
+        )
+        val useCase = AripickCommandUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository(), AripickMapper())
+
+        assertThrows(AripickNotFoundException::class.java) {
+            useCase.approve(1L)
+        }
+    }
+
+    @Test
     fun `reject changes status to rejected`() {
         val repository = FakeAripickRepository(initialItems = listOf(aripickFixture(proposalId = 1L)))
         val useCase = AripickCommandUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository(), AripickMapper())

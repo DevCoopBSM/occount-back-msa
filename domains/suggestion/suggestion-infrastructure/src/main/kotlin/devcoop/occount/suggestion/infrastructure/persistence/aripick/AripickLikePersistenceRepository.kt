@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param
 interface AripickLikePersistenceRepository : JpaRepository<AripickLikeJpaEntity, Long> {
     fun existsByProposalIdAndUserId(proposalId: Long, userId: Long): Boolean
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
         value = "INSERT IGNORE INTO aripick_like (proposal_id, user_id) VALUES (:proposalId, :userId)",
         nativeQuery = true,
@@ -18,14 +18,14 @@ interface AripickLikePersistenceRepository : JpaRepository<AripickLikeJpaEntity,
         @Param("userId") userId: Long,
     ): Int
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM AripickLikeJpaEntity l WHERE l.proposalId = :proposalId AND l.userId = :userId")
     fun deleteByProposalIdAndUserId(
         @Param("proposalId") proposalId: Long,
         @Param("userId") userId: Long,
     ): Int
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM AripickLikeJpaEntity l WHERE l.proposalId = :proposalId")
     fun deleteByProposalId(@Param("proposalId") proposalId: Long): Int
 }

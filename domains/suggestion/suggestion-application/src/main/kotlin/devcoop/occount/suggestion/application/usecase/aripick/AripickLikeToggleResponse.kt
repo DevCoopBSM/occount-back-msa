@@ -1,6 +1,6 @@
 package devcoop.occount.suggestion.application.usecase.aripick
 
-class AripickLikeToggleResponse(
+data class AripickLikeToggleResponse(
     val proposalId: Long,
     val liked: Boolean,
     val likeCount: Int,

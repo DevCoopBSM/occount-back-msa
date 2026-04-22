@@ -473,6 +473,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AripickBlockedKeywordResponse'
+        "400":
+          description: 금지 키워드가 비어 있음
+        "409":
+          description: 이미 등록된 금지 키워드
         "403":
           description: 관리자 권한 없음
 

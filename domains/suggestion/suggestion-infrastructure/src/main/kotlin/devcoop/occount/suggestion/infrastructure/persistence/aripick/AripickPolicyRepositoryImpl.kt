@@ -12,6 +12,10 @@ class AripickPolicyRepositoryImpl(
         return blockedKeywordPersistenceRepository.hasBlockedKeyword(name.trim())
     }
 
+    override fun existsBlockedKeyword(keyword: String): Boolean {
+        return blockedKeywordPersistenceRepository.existsByKeywordIgnoreCase(keyword.trim())
+    }
+
     override fun findBlockedKeywords(): List<AripickBlockedKeyword> {
         return blockedKeywordPersistenceRepository.findAll()
             .sortedByDescending { it.getKeywordId() }
@@ -20,11 +24,6 @@ class AripickPolicyRepositoryImpl(
 
     override fun saveBlockedKeyword(keyword: String): AripickBlockedKeyword {
         val normalized = keyword.trim()
-        val existing = blockedKeywordPersistenceRepository.findByKeywordIgnoreCase(normalized)
-        if (existing != null) {
-            return toDomain(existing)
-        }
-
         val saved = blockedKeywordPersistenceRepository.save(
             AripickBlockedKeywordJpaEntity(keyword = normalized),
         )
