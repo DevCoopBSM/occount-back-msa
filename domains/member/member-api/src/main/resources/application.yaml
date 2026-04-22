@@ -32,7 +32,7 @@ jwt:
   secret-key: ${JWT_SECRET_KEY}
 
 app:
-  default-pin: ${DEFAULT_PIN:0000}
+  default-pin: ${DEFAULT_PIN}
 
 management:
   tracing:
