@@ -11,6 +11,7 @@ dependencies {
     implementation project(':domains:item:item-infrastructure')
     implementation project(':modules:kafka')
     implementation project(':modules:observability')
+    implementation project(':modules:warmup')
 
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
