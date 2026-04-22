@@ -8,4 +8,5 @@ dependencies {
     implementation 'tools.jackson.module:jackson-module-kotlin'
     implementation project(':core:core-common')
     implementation 'io.micrometer:micrometer-tracing'
+    implementation 'io.opentelemetry.instrumentation:opentelemetry-jdbc:2.13.3-alpha'
 }
