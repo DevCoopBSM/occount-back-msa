@@ -29,7 +29,7 @@ spring:
             - id: item-api
               uri: ${ITEM_API_URL}
               predicates:
-                - Path=/api/v3/items/**
+                - Path=/api/v3/items/**,/api/v3/ari-pick/**
             - id: order-api
               uri: ${ORDER_API_URL}
               predicates:
