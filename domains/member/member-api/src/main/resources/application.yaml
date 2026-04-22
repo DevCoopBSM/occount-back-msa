@@ -18,6 +18,7 @@ spring:
       keepalive-time: 30000
       max-lifetime: 600000
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: update
   kafka:
