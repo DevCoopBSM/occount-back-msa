@@ -37,7 +37,7 @@ toss:
 
 app:
   food-safety:
-    base-url: https://www.foodsafetykorea.go.kr
+    base-url: ${APP_FOOD_SAFETY}
   stock-sync:
     cron: ${APP_STOCK_SYNC_CRON:0 */5 * * * *}
 
