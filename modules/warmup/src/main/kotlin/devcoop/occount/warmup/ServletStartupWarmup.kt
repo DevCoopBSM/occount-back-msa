@@ -12,11 +12,16 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import kotlin.system.measureTimeMillis
 
 @Component
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-@ConditionalOnProperty(prefix = "app.startup-warmup", name = ["enabled"], havingValue = "true", matchIfMissing = true)
-@ConditionalOnProperty(prefix = "app.startup-warmup", name = ["servlet-enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+    prefix = "app.startup-warmup",
+    name = ["enabled", "servlet-enabled"],
+    havingValue = "true",
+    matchIfMissing = true,
+)
 class ServletStartupWarmup(
     private val applicationContext: ServletWebServerApplicationContext,
     private val environment: Environment,
@@ -30,26 +35,41 @@ class ServletStartupWarmup(
         }
 
         val target = ServletWarmupTarget.resolve(port, environment, properties)
+        val repeatCount = properties.servletRepeat.coerceIn(1, 10)
+
         val client = HttpClient.newBuilder()
             .connectTimeout(properties.servletTimeout)
             .build()
-        val request = HttpRequest.newBuilder(target)
-            .GET()
-            .timeout(properties.servletTimeout)
-            .build()
 
-        runCatching {
-            client.send(request, HttpResponse.BodyHandlers.discarding())
-        }.onSuccess { response ->
-            if (response.statusCode() >= 500) {
-                log.warn("Servlet startup warmup returned status {} for {}", response.statusCode(), target)
-                return@onSuccess
+        val elapsed = measureTimeMillis {
+            repeat(repeatCount) { i ->
+                val request = HttpRequest.newBuilder(target)
+                    .GET()
+                    .timeout(properties.servletTimeout)
+                    .build()
+
+                runCatching {
+                    client.send(request, HttpResponse.BodyHandlers.discarding())
+                }.onSuccess { response ->
+                    if (response.statusCode() >= 500) {
+                        log.warn(
+                            "Servlet startup warmup [{}/{}] returned status {} for {}",
+                            i + 1, repeatCount, response.statusCode(), target,
+                        )
+                    }
+                }.onFailure { exception ->
+                    log.warn(
+                        "Servlet startup warmup [{}/{}] failed for {}",
+                        i + 1, repeatCount, target, exception,
+                    )
+                }
             }
-
-            log.info("Servlet startup warmup completed with status {} for {}", response.statusCode(), target)
-        }.onFailure { exception ->
-            log.warn("Servlet startup warmup failed for {}", target, exception)
         }
+
+        log.info(
+            "Servlet startup warmup completed ({} rounds) in {} ms for {}",
+            repeatCount, elapsed, target,
+        )
     }
 
     companion object {

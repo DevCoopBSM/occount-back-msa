@@ -14,7 +14,7 @@ import org.springframework.boot.DefaultApplicationArguments
 
 class JpaStartupWarmupTest {
     @Test
-    fun `run warms every discovered entity once`() {
+    fun `run warms every discovered entity across multiple rounds`() {
         val entityManagerFactory = mock(EntityManagerFactory::class.java)
         val entityManager = mock(EntityManager::class.java)
         val metamodel = mock(Metamodel::class.java)
@@ -35,10 +35,11 @@ class JpaStartupWarmupTest {
 
         JpaStartupWarmup(entityManagerFactory).run(DefaultApplicationArguments())
 
-        verify(entityManager).createQuery("select e from FirstEntity e")
-        verify(entityManager).createQuery("select e from SecondEntity e")
-        verify(query, times(2)).setHint("org.hibernate.readOnly", true)
-        verify(query, times(2)).setMaxResults(1)
-        verify(entityManager).close()
+        verify(entityManagerFactory, times(3)).createEntityManager()
+        verify(entityManager, times(3)).createQuery("select e from FirstEntity e")
+        verify(entityManager, times(3)).createQuery("select e from SecondEntity e")
+        verify(query, times(6)).setHint("org.hibernate.readOnly", true)
+        verify(query, times(6)).setMaxResults(1)
+        verify(entityManager, times(3)).close()
     }
 }

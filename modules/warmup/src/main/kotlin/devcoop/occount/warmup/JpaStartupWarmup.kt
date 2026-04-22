@@ -11,8 +11,12 @@ import kotlin.system.measureTimeMillis
 
 @Component
 @ConditionalOnBean(EntityManagerFactory::class)
-@ConditionalOnProperty(prefix = "app.startup-warmup", name = ["enabled"], havingValue = "true", matchIfMissing = true)
-@ConditionalOnProperty(prefix = "app.startup-warmup", name = ["jpa-enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+    prefix = "app.startup-warmup",
+    name = ["enabled", "jpa-enabled"],
+    havingValue = "true",
+    matchIfMissing = true,
+)
 class JpaStartupWarmup(
     private val entityManagerFactory: EntityManagerFactory,
 ) : ApplicationRunner {
@@ -27,28 +31,34 @@ class JpaStartupWarmup(
 
         val elapsed = runCatching {
             measureTimeMillis {
-                val entityManager = entityManagerFactory.createEntityManager()
-                try {
-                    entityNames.forEach { entityName ->
-                        entityManager.createQuery("select e from $entityName e")
-                            .setHint("org.hibernate.readOnly", true)
-                            .setMaxResults(1)
-                            .resultList
+                repeat(POOL_WARMUP_COUNT) {
+                    val entityManager = entityManagerFactory.createEntityManager()
+                    try {
+                        entityNames.forEach { entityName ->
+                            entityManager.createQuery("select e from $entityName e")
+                                .setHint("org.hibernate.readOnly", true)
+                                .setMaxResults(1)
+                                .resultList
+                        }
+                    } finally {
+                        entityManager.close()
                     }
-                } finally {
-                    entityManager.close()
                 }
             }
         }
 
         elapsed.onSuccess { duration ->
-            log.info("JPA startup warmup completed for {} entities in {} ms", entityNames.size, duration)
+            log.info(
+                "JPA startup warmup completed for {} entities ({} rounds) in {} ms",
+                entityNames.size, POOL_WARMUP_COUNT, duration,
+            )
         }.onFailure { exception ->
             log.warn("JPA startup warmup failed", exception)
         }
     }
 
     companion object {
+        private const val POOL_WARMUP_COUNT = 3
         private val log = LoggerFactory.getLogger(JpaStartupWarmup::class.java)
     }
 }

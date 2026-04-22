@@ -9,5 +9,6 @@ class StartupWarmupProperties {
     var jpaEnabled: Boolean = true
     var servletEnabled: Boolean = true
     var servletPath: String? = null
-    var servletTimeout: Duration = Duration.ofSeconds(3)
+    var servletTimeout: Duration = Duration.ofSeconds(10)
+    var servletRepeat: Int = 3
 }
