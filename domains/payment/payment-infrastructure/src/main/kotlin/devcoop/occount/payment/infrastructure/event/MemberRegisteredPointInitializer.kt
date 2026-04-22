@@ -4,6 +4,7 @@ import devcoop.occount.core.common.event.DomainEventHeaders
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.db.outbox.ConsumedEventJpaEntity
 import devcoop.occount.db.outbox.ConsumedEventRepository
+import devcoop.occount.payment.application.exception.WalletAlreadyInitializedException
 import devcoop.occount.payment.application.usecase.wallet.initialize.InitializeWalletUseCase
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.messaging.handler.annotation.Header
@@ -34,7 +35,11 @@ class MemberRegisteredPointInitializer(
         }
 
         val event = objectMapper.readValue<MemberRegisteredEvent>(payload)
-        initializeWalletUseCase.initialize(event.userId)
+        try {
+            initializeWalletUseCase.initialize(event.userId)
+        } catch (_: WalletAlreadyInitializedException) {
+            // 지갑이 이미 존재하면 처리된 것으로 간주
+        }
 
         markProcessed(consumerName, eventId)
     }
