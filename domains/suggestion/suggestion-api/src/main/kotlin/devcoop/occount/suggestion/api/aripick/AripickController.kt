@@ -1,12 +1,18 @@
 package devcoop.occount.suggestion.api.aripick
 
 import devcoop.occount.core.common.auth.RequestAuthPrincipalResolver
+import devcoop.occount.suggestion.application.query.AripickFoodQueryService
+import devcoop.occount.suggestion.application.query.AripickFoodSearchResponse
 import devcoop.occount.suggestion.application.query.AripickListResponse
 import devcoop.occount.suggestion.application.query.AripickQueryService
 import devcoop.occount.suggestion.application.query.AripickStatsResponse
 import devcoop.occount.suggestion.application.shared.AripickResponse
+import devcoop.occount.suggestion.application.usecase.aripick.AripickBlockedKeywordListResponse
+import devcoop.occount.suggestion.application.usecase.aripick.AripickBlockedKeywordResponse
 import devcoop.occount.suggestion.application.usecase.aripick.AripickCommandUseCase
 import devcoop.occount.suggestion.application.usecase.aripick.AripickLikeToggleResponse
+import devcoop.occount.suggestion.application.usecase.aripick.AripickPolicyUseCase
+import devcoop.occount.suggestion.application.usecase.aripick.CreateAripickBlockedKeywordRequest
 import devcoop.occount.suggestion.application.usecase.aripick.CreateAripickRequest
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -17,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
@@ -24,7 +31,9 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class AripickController(
     private val aripickQueryService: AripickQueryService,
+    private val aripickFoodQueryService: AripickFoodQueryService,
     private val aripickCommandUseCase: AripickCommandUseCase,
+    private val aripickPolicyUseCase: AripickPolicyUseCase,
 ) {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
@@ -44,6 +53,36 @@ class AripickController(
     @ResponseStatus(HttpStatus.OK)
     fun getAripickStats(): AripickStatsResponse {
         return aripickQueryService.getStats()
+    }
+
+    @GetMapping("/foods")
+    @ResponseStatus(HttpStatus.OK)
+    fun searchFoods(
+        @RequestParam keyword: String,
+    ): AripickFoodSearchResponse {
+        return aripickFoodQueryService.search(keyword)
+    }
+
+    @GetMapping("/blocked-keywords")
+    @ResponseStatus(HttpStatus.OK)
+    fun getBlockedKeywords(): AripickBlockedKeywordListResponse {
+        return aripickPolicyUseCase.getBlockedKeywords()
+    }
+
+    @PostMapping("/blocked-keywords")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun blockKeyword(
+        @RequestBody request: CreateAripickBlockedKeywordRequest,
+    ): AripickBlockedKeywordResponse {
+        return aripickPolicyUseCase.blockKeyword(request)
+    }
+
+    @DeleteMapping("/blocked-keywords/{keywordId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun unblockKeyword(
+        @PathVariable keywordId: Long,
+    ) {
+        aripickPolicyUseCase.unblockKeyword(keywordId)
     }
 
     @PostMapping

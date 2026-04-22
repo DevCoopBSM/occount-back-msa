@@ -74,6 +74,11 @@ class AuthenticationPolicyTest {
     }
 
     @Test
+    fun `ari pick foods search requires authentication`() {
+        assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.GET, "/api/v3/ari-pick/foods"))
+    }
+
+    @Test
     fun `ari pick creation requires authentication`() {
         assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.POST, "/api/v3/ari-pick"))
     }
@@ -106,5 +111,29 @@ class AuthenticationPolicyTest {
     @Test
     fun `ari pick admin delete requires admin`() {
         assertEquals(AuthenticationRule.Access.ADMIN_ONLY, policy.resolveAccess(HttpMethod.DELETE, "/api/v3/ari-pick/1/admin"))
+    }
+
+    @Test
+    fun `ari pick blocked keywords list requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/ari-pick/blocked-keywords"),
+        )
+    }
+
+    @Test
+    fun `ari pick blocked keywords create requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.POST, "/api/v3/ari-pick/blocked-keywords"),
+        )
+    }
+
+    @Test
+    fun `ari pick blocked keywords delete requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.DELETE, "/api/v3/ari-pick/blocked-keywords/1"),
+        )
     }
 }

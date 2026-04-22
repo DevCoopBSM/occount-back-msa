@@ -1,6 +1,11 @@
 package devcoop.occount.suggestion.application.support
 
+import devcoop.occount.suggestion.application.output.AripickPolicyRepository
 import devcoop.occount.suggestion.application.output.AripickRepository
+import devcoop.occount.suggestion.application.output.FoodSafetyProductDetail
+import devcoop.occount.suggestion.application.output.FoodSafetyRepository
+import devcoop.occount.suggestion.application.output.FoodSafetySearchItem
+import devcoop.occount.suggestion.domain.aripick.AripickBlockedKeyword
 import devcoop.occount.suggestion.domain.aripick.AripickItem
 import devcoop.occount.suggestion.domain.aripick.AripickStatus
 import java.time.LocalDate
@@ -108,5 +113,47 @@ class FakeAripickRepository(
 
     override fun countByStatus(status: AripickStatus): Long {
         return itemsById.values.count { it.getStatus() == status }.toLong()
+    }
+}
+
+class FakeAripickPolicyRepository(
+    initialKeywords: List<AripickBlockedKeyword> = emptyList(),
+) : AripickPolicyRepository {
+    private val keywordsById = linkedMapOf<Long, AripickBlockedKeyword>().apply {
+        initialKeywords.forEach { put(it.getKeywordId(), it) }
+    }
+
+    override fun hasBlockedKeyword(name: String): Boolean {
+        return keywordsById.values.any { keyword ->
+            name.contains(keyword.getKeyword(), ignoreCase = true)
+        }
+    }
+
+    override fun findBlockedKeywords(): List<AripickBlockedKeyword> {
+        return keywordsById.values.toList()
+    }
+
+    override fun saveBlockedKeyword(keyword: String): AripickBlockedKeyword {
+        val nextId = (keywordsById.keys.maxOrNull() ?: 0L) + 1L
+        val saved = AripickBlockedKeyword(keywordId = nextId, keyword = keyword.trim())
+        keywordsById[nextId] = saved
+        return saved
+    }
+
+    override fun deleteBlockedKeyword(keywordId: Long) {
+        keywordsById.remove(keywordId)
+    }
+}
+
+class FakeFoodSafetyRepository(
+    private val searchItems: List<FoodSafetySearchItem> = emptyList(),
+    private val detailsByTypeNSeq: Map<Long, FoodSafetyProductDetail> = emptyMap(),
+) : FoodSafetyRepository {
+    override fun search(keyword: String): List<FoodSafetySearchItem> {
+        return searchItems.filter { it.name.contains(keyword, ignoreCase = true) }
+    }
+
+    override fun getDetail(typeNSeq: Long): FoodSafetyProductDetail? {
+        return detailsByTypeNSeq[typeNSeq]
     }
 }

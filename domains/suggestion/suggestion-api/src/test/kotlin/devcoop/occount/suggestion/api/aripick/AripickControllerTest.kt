@@ -1,12 +1,19 @@
 package devcoop.occount.suggestion.api.aripick
 
 import devcoop.occount.core.common.auth.AuthHeaders
+import devcoop.occount.suggestion.application.query.AripickFoodQueryService
+import devcoop.occount.suggestion.application.query.AripickFoodSearchItemResponse
+import devcoop.occount.suggestion.application.query.AripickFoodSearchResponse
 import devcoop.occount.suggestion.application.query.AripickListResponse
 import devcoop.occount.suggestion.application.query.AripickQueryService
 import devcoop.occount.suggestion.application.query.AripickStatsResponse
 import devcoop.occount.suggestion.application.shared.AripickResponse
+import devcoop.occount.suggestion.application.usecase.aripick.AripickBlockedKeywordListResponse
+import devcoop.occount.suggestion.application.usecase.aripick.AripickBlockedKeywordResponse
 import devcoop.occount.suggestion.application.usecase.aripick.AripickCommandUseCase
 import devcoop.occount.suggestion.application.usecase.aripick.AripickLikeToggleResponse
+import devcoop.occount.suggestion.application.usecase.aripick.AripickPolicyUseCase
+import devcoop.occount.suggestion.application.usecase.aripick.CreateAripickBlockedKeywordRequest
 import devcoop.occount.suggestion.application.usecase.aripick.CreateAripickRequest
 import devcoop.occount.suggestion.domain.aripick.AripickStatus
 import jakarta.servlet.http.HttpServletRequest
@@ -15,6 +22,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import java.time.LocalDate
 
 class AripickControllerTest {
     @Test
@@ -85,7 +93,7 @@ class AripickControllerTest {
     fun `create delegates to command use case with requester id`() {
         val commandUseCase = mock(AripickCommandUseCase::class.java)
         val controller = controller(aripickCommandUseCase = commandUseCase)
-        val request = CreateAripickRequest(name = "제로콜라", reason = "원함")
+        val request = CreateAripickRequest(typeNSeq = 14116L, reason = "원함")
         val httpRequest = authenticatedRequest(7L)
         val expected = AripickResponse(
             proposalId = 1L,
@@ -206,6 +214,77 @@ class AripickControllerTest {
         verify(commandUseCase).toggleLike(1L, 7L)
     }
 
+    @Test
+    fun `foods search delegates to food query service`() {
+        val foodQueryService = mock(AripickFoodQueryService::class.java)
+        val controller = controller(aripickFoodQueryService = foodQueryService)
+        val expected = AripickFoodSearchResponse(
+            items = listOf(
+                AripickFoodSearchItemResponse(
+                    typeNSeq = 14116L,
+                    name = "신라면 큰사발면",
+                    company = "㈜농심",
+                    kcalInfo = "347.37kcal / 114g",
+                ),
+            ),
+        )
+        `when`(foodQueryService.search("신라면")).thenReturn(expected)
+
+        val actual = controller.searchFoods("신라면")
+
+        assertSame(expected, actual)
+        verify(foodQueryService).search("신라면")
+    }
+
+    @Test
+    fun `blocked keyword list delegates to policy use case`() {
+        val policyUseCase = mock(AripickPolicyUseCase::class.java)
+        val controller = controller(aripickPolicyUseCase = policyUseCase)
+        val expected = AripickBlockedKeywordListResponse(
+            keywords = listOf(
+                AripickBlockedKeywordResponse(
+                    keywordId = 1L,
+                    keyword = "에너지",
+                    registeredDate = LocalDate.of(2026, 4, 22),
+                ),
+            ),
+        )
+        `when`(policyUseCase.getBlockedKeywords()).thenReturn(expected)
+
+        val actual = controller.getBlockedKeywords()
+
+        assertSame(expected, actual)
+        verify(policyUseCase).getBlockedKeywords()
+    }
+
+    @Test
+    fun `block keyword delegates to policy use case`() {
+        val policyUseCase = mock(AripickPolicyUseCase::class.java)
+        val controller = controller(aripickPolicyUseCase = policyUseCase)
+        val request = CreateAripickBlockedKeywordRequest(keyword = "에너지")
+        val expected = AripickBlockedKeywordResponse(
+            keywordId = 1L,
+            keyword = "에너지",
+            registeredDate = LocalDate.of(2026, 4, 22),
+        )
+        `when`(policyUseCase.blockKeyword(request)).thenReturn(expected)
+
+        val actual = controller.blockKeyword(request)
+
+        assertSame(expected, actual)
+        verify(policyUseCase).blockKeyword(request)
+    }
+
+    @Test
+    fun `unblock keyword delegates to policy use case`() {
+        val policyUseCase = mock(AripickPolicyUseCase::class.java)
+        val controller = controller(aripickPolicyUseCase = policyUseCase)
+
+        controller.unblockKeyword(1L)
+
+        verify(policyUseCase).unblockKeyword(1L)
+    }
+
     private fun authenticatedRequest(userId: Long): HttpServletRequest {
         val request = mock(HttpServletRequest::class.java)
         `when`(request.getHeader(AuthHeaders.AUTHENTICATED_USER_ID)).thenReturn(userId.toString())
@@ -214,11 +293,15 @@ class AripickControllerTest {
 
     private fun controller(
         aripickQueryService: AripickQueryService = mock(AripickQueryService::class.java),
+        aripickFoodQueryService: AripickFoodQueryService = mock(AripickFoodQueryService::class.java),
         aripickCommandUseCase: AripickCommandUseCase = mock(AripickCommandUseCase::class.java),
+        aripickPolicyUseCase: AripickPolicyUseCase = mock(AripickPolicyUseCase::class.java),
     ): AripickController {
         return AripickController(
             aripickQueryService = aripickQueryService,
+            aripickFoodQueryService = aripickFoodQueryService,
             aripickCommandUseCase = aripickCommandUseCase,
+            aripickPolicyUseCase = aripickPolicyUseCase,
         )
     }
 }

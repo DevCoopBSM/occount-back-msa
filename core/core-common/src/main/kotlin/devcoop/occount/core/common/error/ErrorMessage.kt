@@ -24,6 +24,7 @@ enum class ErrorMessage(
     ITEM_CONCURRENT_UPDATE("다른 요청에 의해 상품이 변경되었습니다. 잠시 후 다시 시도해주세요."),
     ARIPICK_NOT_FOUND("아리픽 제안을 찾을 수 없습니다."),
     ARIPICK_ACCESS_DENIED("해당 아리픽 제안에 접근할 수 없습니다."),
+    ARIPICK_POLICY_VIOLATION("매점 물품 수칙과 맞지 않습니다."),
 
 
     ORDER_NOT_FOUND("주문 정보를 찾을 수 없습니다."),

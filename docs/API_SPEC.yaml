@@ -390,7 +390,7 @@ paths:
       tags: [AriPick]
       operationId: createAripick
       summary: 아리픽 제안 등록
-      description: 로그인 사용자가 제안을 등록합니다. (AUTHENTICATED)
+      description: 로그인 사용자가 식약처 typeNSeq 기반으로 제안을 등록합니다. (AUTHENTICATED)
       security:
         - BearerAuth: []
       requestBody:
@@ -406,8 +406,96 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AripickResponse'
+        "400":
+          description: 매점 물품 수칙 위반
         "401":
           description: 인증 실패
+
+  /api/v3/ari-pick/foods:
+    get:
+      tags: [AriPick]
+      operationId: searchAripickFoods
+      summary: 아리픽 식품 검색
+      description: 키워드로 식약처 제품명을 검색합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: keyword
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 검색 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickFoodSearchResponse'
+        "401":
+          description: 인증 실패
+
+  /api/v3/ari-pick/blocked-keywords:
+    get:
+      tags: [AriPick]
+      operationId: getAripickBlockedKeywords
+      summary: 아리픽 금지 키워드 목록
+      description: 관리자가 등록된 금지 키워드를 조회합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickBlockedKeywordListResponse'
+        "403":
+          description: 관리자 권한 없음
+
+    post:
+      tags: [AriPick]
+      operationId: createAripickBlockedKeyword
+      summary: 아리픽 금지 키워드 등록
+      description: 관리자가 금지 키워드를 등록합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAripickBlockedKeywordRequest'
+      responses:
+        "201":
+          description: 등록 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickBlockedKeywordResponse'
+        "403":
+          description: 관리자 권한 없음
+
+  /api/v3/ari-pick/blocked-keywords/{keywordId}:
+    delete:
+      tags: [AriPick]
+      operationId: deleteAripickBlockedKeyword
+      summary: 아리픽 금지 키워드 삭제
+      description: 관리자가 금지 키워드를 삭제합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: keywordId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: 삭제 성공
+        "403":
+          description: 관리자 권한 없음
 
   /api/v3/ari-pick/{proposalId}:
     get:
@@ -1028,12 +1116,61 @@ components:
     # ── AriPick ───────────────────────────────────
     CreateAripickRequest:
       type: object
-      required: [name, reason]
+      required: [typeNSeq, reason]
       properties:
-        name:
-          type: string
+        typeNSeq:
+          type: integer
+          format: int64
         reason:
           type: string
+
+    AripickFoodSearchResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AripickFoodSearchItemResponse'
+
+    AripickFoodSearchItemResponse:
+      type: object
+      properties:
+        typeNSeq:
+          type: integer
+          format: int64
+        name:
+          type: string
+        company:
+          type: string
+        kcalInfo:
+          type: string
+
+    CreateAripickBlockedKeywordRequest:
+      type: object
+      required: [keyword]
+      properties:
+        keyword:
+          type: string
+
+    AripickBlockedKeywordResponse:
+      type: object
+      properties:
+        keywordId:
+          type: integer
+          format: int64
+        keyword:
+          type: string
+        registeredDate:
+          type: string
+          format: date
+
+    AripickBlockedKeywordListResponse:
+      type: object
+      properties:
+        keywords:
+          type: array
+          items:
+            $ref: '#/components/schemas/AripickBlockedKeywordResponse'
 
     AripickListResponse:
       type: object
