@@ -39,6 +39,7 @@ class ApiAdviceHandler {
 
             ErrorMessage.USER_NOT_FOUND,
             ErrorMessage.ITEM_NOT_FOUND,
+            ErrorMessage.ARIPICK_NOT_FOUND,
             ErrorMessage.ITEM_NOT_SYNCHRONIZED,
             ErrorMessage.PAYMENT_LOG_NOT_FOUND,
             -> HttpStatus.NOT_FOUND
@@ -54,6 +55,10 @@ class ApiAdviceHandler {
             ErrorMessage.PAYMENT_LOG_SAVE_FAILED,
             ErrorMessage.CHARGE_LOG_SAVE_FAILED,
             -> HttpStatus.INTERNAL_SERVER_ERROR
+
+            ErrorMessage.ACCESS_DENIED,
+            ErrorMessage.ARIPICK_ACCESS_DENIED,
+            -> HttpStatus.FORBIDDEN
 
             else -> HttpStatus.BAD_REQUEST
         }

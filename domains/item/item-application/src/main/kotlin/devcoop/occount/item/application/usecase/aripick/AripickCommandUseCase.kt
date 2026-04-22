@@ -1,0 +1,105 @@
+package devcoop.occount.item.application.usecase.aripick
+
+import devcoop.occount.item.application.output.AripickRepository
+import devcoop.occount.item.application.shared.AripickMapper
+import devcoop.occount.item.application.shared.AripickResponse
+import devcoop.occount.item.domain.aripick.AripickAccessDeniedException
+import devcoop.occount.item.domain.aripick.AripickItem
+import devcoop.occount.item.domain.aripick.AripickNotFoundException
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+
+@Service
+class AripickCommandUseCase(
+    private val aripickRepository: AripickRepository,
+    private val aripickMapper: AripickMapper,
+) {
+    fun create(
+        request: CreateAripickRequest,
+        proposerId: Long,
+    ): AripickResponse {
+        val created = aripickRepository.save(
+            AripickItem(
+                name = request.name,
+                reason = request.reason,
+                proposerId = proposerId,
+            ),
+        )
+        return aripickMapper.toResponse(created)
+    }
+
+    fun approve(proposalId: Long): AripickResponse {
+        val proposal = getProposal(proposalId)
+        aripickRepository.updateStatus(proposalId, proposal.approve().getStatus())
+        val approved = getProposal(proposalId)
+        return aripickMapper.toResponse(approved)
+    }
+
+    fun reject(proposalId: Long): AripickResponse {
+        val proposal = getProposal(proposalId)
+        aripickRepository.updateStatus(proposalId, proposal.reject().getStatus())
+        val rejected = getProposal(proposalId)
+        return aripickMapper.toResponse(rejected)
+    }
+
+    fun pending(proposalId: Long): AripickResponse {
+        val proposal = getProposal(proposalId)
+        aripickRepository.updateStatus(proposalId, proposal.pending().getStatus())
+        val pending = getProposal(proposalId)
+        return aripickMapper.toResponse(pending)
+    }
+
+    @Transactional
+    fun delete(
+        proposalId: Long,
+        requesterId: Long,
+    ) {
+        val proposal = getProposal(proposalId)
+        if (!proposal.canDeleteBy(requesterId)) {
+            throw AripickAccessDeniedException()
+        }
+
+        aripickRepository.deleteLikesByProposalId(proposalId)
+        aripickRepository.deleteById(proposalId)
+    }
+
+    @Transactional
+    fun deleteAsAdmin(proposalId: Long) {
+        getProposal(proposalId)
+        aripickRepository.deleteLikesByProposalId(proposalId)
+        aripickRepository.deleteById(proposalId)
+    }
+
+    @Transactional
+    fun toggleLike(
+        proposalId: Long,
+        userId: Long,
+    ): AripickLikeToggleResponse {
+        getProposal(proposalId)
+        val alreadyLiked = aripickRepository.existsLike(proposalId, userId)
+
+        if (alreadyLiked) {
+            if (aripickRepository.deleteLike(proposalId, userId)) {
+                aripickRepository.decreaseLikeCount(proposalId)
+            }
+        } else {
+            if (aripickRepository.saveLikeIfAbsent(proposalId, userId)) {
+                aripickRepository.increaseLikeCount(proposalId)
+            }
+        }
+
+        val updated = getProposal(proposalId)
+        val liked = aripickRepository.existsLike(proposalId, userId)
+
+        return AripickLikeToggleResponse(
+            proposalId = proposalId,
+            liked = liked,
+            likeCount = updated.getLike(),
+        )
+    }
+
+    private fun getProposal(proposalId: Long): AripickItem {
+        return aripickRepository.findById(proposalId)
+            ?: throw AripickNotFoundException()
+    }
+}
