@@ -94,7 +94,7 @@ internal object ServletWarmupTarget {
     private fun defaultPath(environment: Environment): String {
         val contextPath = normalizePath(environment.getProperty("server.servlet.context-path"))
         val actuatorBasePath = normalizePath(environment.getProperty("management.endpoints.web.base-path") ?: "/actuator")
-        return "$contextPath$actuatorBasePath/health"
+        return "$contextPath$actuatorBasePath/health/ping"
     }
 
     private fun normalizePath(path: String?): String {
