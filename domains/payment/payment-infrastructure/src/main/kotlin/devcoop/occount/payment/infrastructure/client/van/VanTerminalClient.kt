@@ -112,14 +112,14 @@ class VanTerminalClient(
         return try {
             socketConnection.logMessage("발신", requestMessage)
             socketConnection.send(requestMessage)
-            waitForResponse(actionName)
+            waitForResponse(actionName, requestMessage)
         } catch (e: IOException) {
             log.error("{} 요청 처리 중 소켓 오류 발생: {}", actionName, e.message, e)
             connectionFailedResult()
         }
     }
 
-    private fun waitForResponse(actionName: String): VanResult {
+    private fun waitForResponse(actionName: String, requestMessage: ByteArray): VanResult {
         val deadline = System.nanoTime() + protocolSpec.transactionTimeoutNanos
         var lastStxResponse: ByteArray? = null
         var approvalCandidate: VanResult? = null
@@ -140,6 +140,11 @@ class VanTerminalClient(
                 log.error("{} 응답 수신 중 오류 발생: {}", actionName, e.message, e)
                 if (!socketConnection.reconnect()) {
                     continue
+                }
+                if (approvalCandidate == null) {
+                    log.info("재연결 후 요청 재전송 - actionName={}", actionName)
+                    socketConnection.logMessage("발신", requestMessage)
+                    socketConnection.send(requestMessage)
                 }
                 continue
             }
@@ -191,6 +196,8 @@ class VanTerminalClient(
                         if (parsed != null) {
                             return parsed
                         }
+                        log.error("DLE 수신 후 응답 파싱 실패 - 비정상 응답")
+                        return abnormalResponseResult()
                     }
 
                     responseHex == protocolSpec.formFeedHex -> {
@@ -279,6 +286,18 @@ class VanTerminalClient(
             success = false,
             message = "연결 실패",
             errorCode = "CONNECTION_FAILED",
+            transaction = null,
+            card = null,
+            additional = null,
+            rawResponse = null,
+        )
+    }
+
+    private fun abnormalResponseResult(): VanResult {
+        return VanResult(
+            success = false,
+            message = "비정상적인 단말기 응답",
+            errorCode = "ABNORMAL_RESPONSE",
             transaction = null,
             card = null,
             additional = null,
