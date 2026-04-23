@@ -32,15 +32,12 @@ jwt:
   secret-key: ${JWT_SECRET_KEY}
 
 app:
-  default-pin: ${DEFAULT_PIN:0000}
+  default-pin: ${DEFAULT_PIN}
 
 management:
   tracing:
     sampling:
       probability: 1.0
-  otlp:
-    tracing:
-      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}
   metrics:
     distribution:
       percentiles-histogram:

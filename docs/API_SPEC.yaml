@@ -351,7 +351,7 @@ paths:
       description: |
         주문을 생성합니다. (OPTIONAL_AUTH)
 
-        - `X-Kiosk-Id` 헤더는 항상 필수입니다.
+        - `X-Kiosk-Id` 헤더가 없으면 기본값 `1`을 사용합니다.
         - 토큰이 있으면 회원 주문, 없으면 비회원 주문으로 처리합니다.
         - 요청 즉시 `PROCESSING` 상태로 응답하며, 실제 처리는 비동기로 수행됩니다.
         - 상품 검증, 가격 확정, 재고 차감은 비동기로 처리됩니다.
@@ -361,11 +361,12 @@ paths:
       parameters:
         - name: X-Kiosk-Id
           in: header
-          required: true
-          description: 키오스크 식별자
+          required: false
+          description: 키오스크 식별자. 없으면 `1`
           schema:
             type: string
-          example: "KIOSK-001"
+            default: "1"
+          example: "1"
       security:
         - {}
         - BearerAuth: []
@@ -443,6 +444,8 @@ paths:
         Server-Sent Events(SSE) 방식으로 주문 상태 변경을 실시간 수신합니다. (PERMIT_ALL)
 
         - 연결 즉시 현재 주문 상태를 전송합니다.
+        - 각 메시지는 `event: <EVENT_TYPE>` + `data: <OrderResponse JSON>` 형식으로 전달됩니다.
+        - 이벤트 타입은 `ORDER_ACCEPTED`, `STOCK_CONFIRMED`, `PAYMENT_REQUESTED`, `COMPLETED`, `FAILED`, `CANCEL_REQUESTED`, `COMPENSATING`, `CANCELLED`, `COMPENSATION_FAILED`, `TIMED_OUT` 중 하나입니다.
         - 주문이 최종 상태(`COMPLETED`, `FAILED`, `CANCELLED`, `COMPENSATION_FAILED`, `TIMED_OUT`)에 도달하면 서버가 연결을 종료합니다.
         - 주문 생성 직후 SSE 연결을 맺어 비동기 처리 결과를 수신하는 용도로 사용합니다.
       parameters:
@@ -461,11 +464,30 @@ paths:
           content:
             text/event-stream:
               schema:
-                $ref: '#/components/schemas/OrderResponse'
-              example:
-                orderId: "550e8400-e29b-41d4-a716-446655440000"
-                status: "COMPLETED"
-                failureReason: null
+                type: string
+                description: |
+                  SSE 메시지는 아래 형식으로 전달됩니다.
+
+                  - `event`: 이벤트 타입
+                  - `data`: `OrderResponse` JSON payload
+              examples:
+                accepted:
+                  summary: 주문 접수 직후
+                  value: |
+                    event: ORDER_ACCEPTED
+                    data: {"orderId":"550e8400-e29b-41d4-a716-446655440000","status":"PROCESSING","failureReason":null}
+
+                paymentRequested:
+                  summary: 결제 요청 단계
+                  value: |
+                    event: PAYMENT_REQUESTED
+                    data: {"orderId":"550e8400-e29b-41d4-a716-446655440000","status":"PROCESSING","failureReason":null}
+
+                completed:
+                  summary: 주문 완료
+                  value: |
+                    event: COMPLETED
+                    data: {"orderId":"550e8400-e29b-41d4-a716-446655440000","status":"COMPLETED","failureReason":null}
         "404":
           description: 주문을 찾을 수 없음
 
@@ -477,7 +499,7 @@ paths:
       description: |
         주문을 취소합니다. (OPTIONAL_AUTH)
 
-        - `X-Kiosk-Id` 헤더는 항상 필수입니다.
+        - `X-Kiosk-Id` 헤더가 없으면 기본값 `1`을 사용합니다.
         - 주문을 생성한 키오스크와 동일한 `X-Kiosk-Id` 여야 취소가 허용됩니다.
         - 회원/비회원 구분 없이 키오스크 ID만으로 소유권을 검증합니다.
       parameters:
@@ -490,11 +512,12 @@ paths:
           example: "550e8400-e29b-41d4-a716-446655440000"
         - name: X-Kiosk-Id
           in: header
-          required: true
-          description: 키오스크 식별자
+          required: false
+          description: 키오스크 식별자. 없으면 `1`
           schema:
             type: string
-          example: "KIOSK-001"
+            default: "1"
+          example: "1"
       security:
         - {}
         - BearerAuth: []

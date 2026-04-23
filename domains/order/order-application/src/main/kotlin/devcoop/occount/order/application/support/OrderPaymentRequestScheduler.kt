@@ -9,6 +9,7 @@ import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
 import devcoop.occount.order.application.exception.OrderConcurrencyException
 import devcoop.occount.order.application.exception.OrderNotFoundException
 import devcoop.occount.order.application.exception.OrderTransactionFailedException
+import devcoop.occount.order.application.port.OrderStatusNotifier
 import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.output.TransactionPort
 import devcoop.occount.order.domain.order.OrderAggregate
@@ -20,10 +21,13 @@ class OrderPaymentRequestScheduler(
     private val orderRepository: OrderRepository,
     private val eventPublisher: EventPublisher,
     private val transactionPort: TransactionPort,
+    private val orderStatusNotifier: OrderStatusNotifier,
+    private val orderStreamEventMapper: OrderStreamEventMapper,
 ) {
     fun schedulePaymentRequestIfEligible(orderId: String) {
         repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
             try {
+                var requestedOrder: OrderAggregate? = null
                 transactionPort.executeInNewTransaction {
                     val persistedOrder = orderRepository.findPersistedById(orderId)
                         ?: throw OrderNotFoundException()
@@ -37,8 +41,10 @@ class OrderPaymentRequestScheduler(
                         order.copy(paymentRequested = true),
                         persistedOrder.persistenceVersion,
                     )
+                    requestedOrder = updatedOrder
                     publishPaymentRequested(updatedOrder, attempt)
                 }
+                notifyPaymentRequested(requestedOrder)
                 return
             } catch (ex: OrderConcurrencyException) {
                 log.warn("결제 요청 스케줄링 중 낙관적 락 충돌 - 주문={} 시도={}", orderId, attempt)
@@ -47,6 +53,17 @@ class OrderPaymentRequestScheduler(
                 }
                 Thread.sleep(OrderRetryPolicy.BASE_BACKOFF_MILLIS * (1L shl attempt))
             }
+        }
+    }
+
+    private fun notifyPaymentRequested(order: OrderAggregate?) {
+        if (order == null) {
+            return
+        }
+        try {
+            orderStatusNotifier.notify(orderStreamEventMapper.toStreamEvent(order))
+        } catch (_: Exception) {
+            // SSE 알림 실패는 주문 처리에 영향을 주지 않음
         }
     }
 
