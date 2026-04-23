@@ -27,6 +27,7 @@ enum class ErrorMessage(
     ARIPICK_POLICY_VIOLATION("매점 물품 수칙과 맞지 않습니다."),
     ARIPICK_INVALID_BLOCKED_KEYWORD("금지 키워드는 비어 있을 수 없습니다."),
     ARIPICK_BLOCKED_KEYWORD_ALREADY_EXISTS("이미 등록된 금지 키워드입니다."),
+    ARIPICK_FOOD_SAFETY_UNAVAILABLE("식약처 연동에 실패했습니다. 잠시 후 다시 시도해주세요."),
 
 
     ORDER_NOT_FOUND("주문 정보를 찾을 수 없습니다."),

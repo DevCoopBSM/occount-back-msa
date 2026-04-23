@@ -156,12 +156,16 @@ class FakeAripickPolicyRepository(
 class FakeFoodSafetyRepository(
     private val searchItems: List<FoodSafetySearchItem> = emptyList(),
     private val detailsByTypeNSeq: Map<Long, FoodSafetyProductDetail> = emptyMap(),
+    private val throwOnSearch: RuntimeException? = null,
+    private val throwOnDetail: RuntimeException? = null,
 ) : FoodSafetyRepository {
     override fun search(keyword: String): List<FoodSafetySearchItem> {
+        throwOnSearch?.let { throw it }
         return searchItems.filter { it.name.contains(keyword, ignoreCase = true) }
     }
 
     override fun getDetail(typeNSeq: Long): FoodSafetyProductDetail? {
+        throwOnDetail?.let { throw it }
         return detailsByTypeNSeq[typeNSeq]
     }
 }

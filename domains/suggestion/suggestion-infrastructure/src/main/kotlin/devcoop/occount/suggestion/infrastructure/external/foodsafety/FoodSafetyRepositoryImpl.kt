@@ -3,8 +3,10 @@ package devcoop.occount.suggestion.infrastructure.external.foodsafety
 import devcoop.occount.suggestion.application.output.FoodSafetyProductDetail
 import devcoop.occount.suggestion.application.output.FoodSafetyRepository
 import devcoop.occount.suggestion.application.output.FoodSafetySearchItem
+import devcoop.occount.suggestion.domain.aripick.AripickFoodSafetyUnavailableException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Repository
+import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -17,6 +19,8 @@ import java.time.Duration
 class FoodSafetyRepositoryImpl(
     @param:Value("\${app.food-safety.base-url}") private val baseUrl: String,
 ) : FoodSafetyRepository {
+    private val log = LoggerFactory.getLogger(FoodSafetyRepositoryImpl::class.java)
+
     private val client = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(3))
         .build()
@@ -39,7 +43,7 @@ class FoodSafetyRepositoryImpl(
     }
 
     private fun requestHtml(url: String): String? {
-        return runCatching {
+        return try {
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(Duration.ofSeconds(5))
@@ -48,8 +52,18 @@ class FoodSafetyRepositoryImpl(
                 .build()
 
             val response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
-            if (response.statusCode() in 200..299) response.body() else null
-        }.getOrNull()
+            if (response.statusCode() in 200..299) {
+                response.body()
+            } else {
+                log.warn("FoodSafety request failed. status={}, url={}", response.statusCode(), url)
+                throw AripickFoodSafetyUnavailableException()
+            }
+        } catch (e: AripickFoodSafetyUnavailableException) {
+            throw e
+        } catch (e: Exception) {
+            log.warn("FoodSafety request exception. url={}, message={}", url, e.message, e)
+            throw AripickFoodSafetyUnavailableException()
+        }
     }
 
 }

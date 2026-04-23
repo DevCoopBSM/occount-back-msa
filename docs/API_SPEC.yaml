@@ -408,6 +408,8 @@ paths:
                 $ref: '#/components/schemas/AripickResponse'
         "400":
           description: 매점 물품 수칙 위반
+        "503":
+          description: 식약처 연동 실패
         "401":
           description: 인증 실패
 
@@ -432,6 +434,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AripickFoodSearchResponse'
+        "503":
+          description: 식약처 연동 실패
         "401":
           description: 인증 실패
 

@@ -7,6 +7,7 @@ import devcoop.occount.suggestion.application.support.FakeFoodSafetyRepository
 import devcoop.occount.suggestion.application.support.aripickFixture
 import devcoop.occount.suggestion.domain.aripick.AripickBlockedKeyword
 import devcoop.occount.suggestion.domain.aripick.AripickAccessDeniedException
+import devcoop.occount.suggestion.domain.aripick.AripickFoodSafetyUnavailableException
 import devcoop.occount.suggestion.domain.aripick.AripickNotFoundException
 import devcoop.occount.suggestion.domain.aripick.AripickPolicyViolationException
 import devcoop.occount.suggestion.domain.aripick.AripickStatus
@@ -94,6 +95,40 @@ class AripickCommandUseCaseTest {
         )
 
         assertThrows(AripickPolicyViolationException::class.java) {
+            useCase.create(
+                request = CreateAripickRequest(typeNSeq = 14116L, reason = "원함"),
+                proposerId = 7L,
+            )
+        }
+    }
+
+    @Test
+    fun `create throws when food safety service is unavailable`() {
+        val useCase = AripickCommandUseCase(
+            FakeAripickRepository(),
+            FakeAripickPolicyRepository(),
+            FakeFoodSafetyRepository(throwOnDetail = AripickFoodSafetyUnavailableException()),
+            AripickMapper(),
+        )
+
+        assertThrows(AripickFoodSafetyUnavailableException::class.java) {
+            useCase.create(
+                request = CreateAripickRequest(typeNSeq = 14116L, reason = "원함"),
+                proposerId = 7L,
+            )
+        }
+    }
+
+    @Test
+    fun `create throws when food safety detail is missing`() {
+        val useCase = AripickCommandUseCase(
+            FakeAripickRepository(),
+            FakeAripickPolicyRepository(),
+            FakeFoodSafetyRepository(detailsByTypeNSeq = emptyMap()),
+            AripickMapper(),
+        )
+
+        assertThrows(AripickFoodSafetyUnavailableException::class.java) {
             useCase.create(
                 request = CreateAripickRequest(typeNSeq = 14116L, reason = "원함"),
                 proposerId = 7L,
