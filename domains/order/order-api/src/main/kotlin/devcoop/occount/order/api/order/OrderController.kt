@@ -50,8 +50,9 @@ class OrderController(
     fun streamOrder(
         @PathVariable orderId: String,
     ): SseEmitter {
-        val current = getOrderUseCase.getOrderStreamEvent(orderId)
-        return orderSseRegistry.register(current)
+        return orderSseRegistry.register(orderId) {
+            getOrderUseCase.getOrderStreamEvent(orderId)
+        }
     }
 
     @PostMapping("/{orderId}/cancel")

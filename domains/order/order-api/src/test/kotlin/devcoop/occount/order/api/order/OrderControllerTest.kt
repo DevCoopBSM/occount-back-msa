@@ -18,6 +18,8 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.springframework.http.HttpStatus
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 
@@ -104,18 +106,13 @@ class OrderControllerTest {
 
     @Test
     fun `streamOrder delegates current response to sse registry`() {
-        val current = OrderStreamEvent(
-            type = OrderStreamEventType.ORDER_ACCEPTED,
-            payload = OrderResponse(orderId = "order-1", status = OrderStatus.PROCESSING),
-        )
         val emitter = SseEmitter()
-        `when`(getOrderUseCase.getOrderStreamEvent("order-1")).thenReturn(current)
-        `when`(orderSseRegistry.register(current)).thenReturn(emitter)
+        `when`(orderSseRegistry.register(eq("order-1"), any())).thenReturn(emitter)
 
         val response = controller.streamOrder("order-1")
 
         assertEquals(emitter, response)
-        verify(orderSseRegistry).register(current)
+        verify(orderSseRegistry).register(eq("order-1"), any())
     }
 
     @Test
@@ -128,4 +125,5 @@ class OrderControllerTest {
         assertEquals(HttpStatus.OK, response.statusCode)
         assertEquals(expected, response.body)
     }
+
 }

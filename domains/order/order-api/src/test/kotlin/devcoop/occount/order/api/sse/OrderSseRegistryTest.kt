@@ -19,7 +19,7 @@ class OrderSseRegistryTest {
             payload = OrderResponse(orderId = "order-1", status = OrderStatus.PROCESSING),
         )
 
-        val emitter = registry.register(initial) as TestSseEmitter
+        val emitter = registry.register("order-1") { initial } as TestSseEmitter
 
         registry.notify(initial)
         registry.notify(
@@ -51,9 +51,32 @@ class OrderSseRegistryTest {
             payload = OrderResponse(orderId = "order-1", status = OrderStatus.COMPLETED),
         )
 
-        val emitter = registry.register(completed) as TestSseEmitter
+        val emitter = registry.register("order-1") { completed } as TestSseEmitter
 
         assertEquals(listOf(completed), emitter.events)
+        assertTrue(emitter.completed)
+    }
+
+    @Test
+    fun `notify arriving between registration and initial emit is not lost`() {
+        val support = TestOrderSseEmitterSupport()
+        val registry = OrderSseRegistry(support)
+        val staleEvent = OrderStreamEvent(
+            type = OrderStreamEventType.ORDER_ACCEPTED,
+            payload = OrderResponse(orderId = "order-1", status = OrderStatus.PROCESSING),
+        )
+        val completedEvent = OrderStreamEvent(
+            type = OrderStreamEventType.COMPLETED,
+            payload = OrderResponse(orderId = "order-1", status = OrderStatus.COMPLETED),
+        )
+
+        // getCurrentEvent() 실행 중 notify()가 먼저 도착하는 race condition 시뮬레이션
+        val emitter = registry.register("order-1") {
+            registry.notify(completedEvent)
+            staleEvent  // 조회는 오래된 상태를 반환
+        } as TestSseEmitter
+
+        assertEquals(listOf(completedEvent), emitter.events)
         assertTrue(emitter.completed)
     }
 

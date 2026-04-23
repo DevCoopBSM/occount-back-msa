@@ -14,34 +14,44 @@ class OrderSseRegistry(
 ) : OrderStatusNotifier {
     private val sessions = ConcurrentHashMap<String, Session>()
 
-    fun register(current: OrderStreamEvent): SseEmitter {
+    fun register(orderId: String, getCurrentEvent: () -> OrderStreamEvent): SseEmitter {
         val emitter = emitterSupport.create()
+
+        // 1. 구독 먼저 등록 → notify() 유실 방지
+        val session = Session(emitter = emitter, lastEmitted = AtomicReference(null))
+        val previous = sessions.put(orderId, session)
+        attachLifecycle(orderId, session)
+        previous?.emitter?.complete()
+
+        // 2. 등록 후 현재 상태 조회
+        val current = try {
+            getCurrentEvent()
+        } catch (e: Exception) {
+            sessions.remove(orderId, session)
+            emitter.completeWithError(e)
+            return emitter
+        }
 
         if (current.payload.status.isFinalForClient()) {
             emitterSupport.emit(emitter, current)
             emitter.complete()
+            sessions.remove(orderId, session)
             return emitter
         }
 
-        val session = Session(
-            emitter = emitter,
-            lastEmitted = AtomicReference(current),
-        )
-        val previous = sessions.put(current.payload.orderId, session)
-        attachLifecycle(current.payload.orderId, session)
-        previous?.emitter?.complete()
-        emitterSupport.emit(emitter, current)
+        // 3. 구독과 조회 사이에 notify()가 먼저 도착했으면 초기 이벤트 전송 생략
+        if (session.lastEmitted.compareAndSet(null, current)) {
+            emitterSupport.emit(emitter, current)
+        }
 
         return emitter
     }
 
     override fun notify(event: OrderStreamEvent) {
         val session = sessions[event.payload.orderId] ?: return
-        if (session.lastEmitted.get() == event) {
-            return
-        }
+        val prev = session.lastEmitted.getAndSet(event)
+        if (prev == event) return
 
-        session.lastEmitted.set(event)
         emitterSupport.emit(session.emitter, event)
         if (event.payload.status.isFinalForClient()) {
             session.emitter.complete()
