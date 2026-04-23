@@ -80,6 +80,14 @@ class VanMessageParser(
         if (approvalNumber.isNullOrBlank()) {
             return null
         }
+        if (!approvalNumber.all { it.isDigit() }) {
+            log.error("비정상적인 응답: 승인번호가 숫자가 아닙니다 (approvalNumber={})", approvalNumber)
+            return failureResult(
+                message = "비정상적인 응답: 승인번호가 숫자가 아닙니다",
+                errorCode = "INVALID_APPROVAL_NUMBER",
+                rawResponse = rawResponse,
+            )
+        }
 
         val (cardBrand, cardName, _) = vanResponse.extractCardInfo()
         val isCancel = vanResponse.isCancelMessage()
