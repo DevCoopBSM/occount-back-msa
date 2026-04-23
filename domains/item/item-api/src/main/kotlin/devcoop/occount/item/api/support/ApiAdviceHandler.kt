@@ -55,9 +55,6 @@ class ApiAdviceHandler {
             ErrorMessage.CHARGE_LOG_SAVE_FAILED,
             -> HttpStatus.INTERNAL_SERVER_ERROR
 
-            ErrorMessage.ACCESS_DENIED,
-            -> HttpStatus.FORBIDDEN
-
             else -> HttpStatus.BAD_REQUEST
         }
     }
