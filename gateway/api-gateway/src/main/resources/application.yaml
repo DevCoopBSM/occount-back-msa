@@ -21,6 +21,13 @@ spring:
                 exposedHeaders:
                   - Authorization
                 allowCredentials: true
+          httpclient:
+            connect-timeout: 1000
+            response-timeout: 5s
+            pool:
+              type: fixed
+              max-connections: 100
+              acquire-timeout: 30000
           routes:
             - id: member-api
               uri: ${MEMBER_API_URL}
@@ -34,6 +41,8 @@ spring:
               uri: ${ORDER_API_URL}
               predicates:
                 - Path=/api/v3/orders/**
+              metadata:
+                response-timeout: 35000
             - id: wallet-api
               uri: ${PAYMENT_API_URL}
               predicates:
