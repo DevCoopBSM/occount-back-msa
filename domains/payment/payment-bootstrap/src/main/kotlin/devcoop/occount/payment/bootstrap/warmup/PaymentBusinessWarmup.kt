@@ -16,15 +16,16 @@ class PaymentBusinessWarmup(
 
     override fun run(args: ApplicationArguments) {
         val elapsed = measureTimeMillis {
-            repeat(3) {
+            repeat(JIT_WARMUP_COUNT) {
                 walletRepository.findByUserId(-1L)
                 paymentLogRepository.findByUserId(-1L)
             }
         }
-        log.info("Payment business warmup completed in {} ms", elapsed)
+        log.info("Payment business warmup completed ({} rounds) in {} ms", JIT_WARMUP_COUNT, elapsed)
     }
 
     companion object {
+        private const val JIT_WARMUP_COUNT = 200
         private val log = LoggerFactory.getLogger(PaymentBusinessWarmup::class.java)
     }
 }

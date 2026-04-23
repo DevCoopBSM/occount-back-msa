@@ -14,16 +14,17 @@ class MemberBusinessWarmup(
 
     override fun run(args: ApplicationArguments) {
         val elapsed = measureTimeMillis {
-            repeat(3) {
+            repeat(JIT_WARMUP_COUNT) {
                 userRepository.findByEmail("warmup@warmup.internal")
                 userRepository.findByUserBarcode("000000000000")
                 userRepository.findById(-1L)
             }
         }
-        log.info("Member business warmup completed in {} ms", elapsed)
+        log.info("Member business warmup completed ({} rounds) in {} ms", JIT_WARMUP_COUNT, elapsed)
     }
 
     companion object {
+        private const val JIT_WARMUP_COUNT = 200
         private val log = LoggerFactory.getLogger(MemberBusinessWarmup::class.java)
     }
 }
