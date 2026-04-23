@@ -8,6 +8,8 @@ bootJar {
 
 dependencies {
     implementation project(':domains:payment:payment-api')
+    implementation project(':domains:payment:payment-application')
+    implementation project(':domains:payment:payment-domain')
     implementation project(':domains:payment:payment-infrastructure')
     implementation project(':modules:kafka')
     implementation project(':modules:observability')
