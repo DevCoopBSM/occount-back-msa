@@ -15,12 +15,11 @@ import org.springframework.context.annotation.Configuration
 class ObservabilityTracingConfiguration {
     @Bean
     @ConditionalOnMissingBean(SpanExporter::class)
-    @ConditionalOnProperty(prefix = "management.otlp.tracing", name = ["endpoint"])
     fun otlpHttpSpanExporter(
         properties: LegacyOtlpTracingProperties,
     ): SpanExporter {
         val builder = OtlpHttpSpanExporter.builder()
-        properties.endpoint?.let(builder::setEndpoint)
+            .setEndpoint(properties.endpoint)
         properties.connectTimeout?.let(builder::setConnectTimeout)
         properties.timeout?.let(builder::setTimeout)
         properties.compression?.let(builder::setCompression)

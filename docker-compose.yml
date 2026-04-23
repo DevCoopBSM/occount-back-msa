@@ -18,6 +18,23 @@ services:
       timeout: 5s
       retries: 10
 
+  datadog-agent:
+    image: datadog/agent:7
+    restart: unless-stopped
+    environment:
+      DD_API_KEY: ${DD_API_KEY}
+      DD_SITE: ${DD_SITE:-datadoghq.com}
+      DD_APM_ENABLED: "true"
+      DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT: 0.0.0.0:4318
+      DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT: 0.0.0.0:4317
+      DD_LOG_LEVEL: warn
+      DD_APM_IGNORE_RESOURCES: "GET /api/v3/actuator/.*"
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     restart: unless-stopped
@@ -62,6 +79,7 @@ services:
       JWT_KIOSK_EXPIRATION_TIME: ${JWT_KIOSK_EXPIRATION_TIME:-86400000}
       JWT_PREFIX: ${JWT_PREFIX:-Bearer}
       JWT_HEADER: ${JWT_HEADER:-Authorization}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://datadog-agent:4318/v1/traces}
     depends_on:
       mysql:
         condition: service_healthy
@@ -96,6 +114,7 @@ services:
       JWT_PREFIX: ${JWT_PREFIX:-Bearer}
       JWT_HEADER: ${JWT_HEADER:-Authorization}
       OCCOUNT_TOSS_API_URL: ${OCCOUNT_TOSS_API_URL:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://datadog-agent:4318/v1/traces}
     depends_on:
       mysql:
         condition: service_healthy
@@ -130,6 +149,7 @@ services:
       JWT_PREFIX: ${JWT_PREFIX:-Bearer}
       JWT_HEADER: ${JWT_HEADER:-Authorization}
       ITEM_SERVICE_BASE_URL: http://item-api:8080/api/v3
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://datadog-agent:4318/v1/traces}
     depends_on:
       mysql:
         condition: service_healthy
@@ -166,6 +186,7 @@ services:
       JWT_PREFIX: ${JWT_PREFIX:-Bearer}
       JWT_HEADER: ${JWT_HEADER:-Authorization}
       MEMBER_API_URL: http://member-api:8080
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://datadog-agent:4318/v1/traces}
       VAN_API_HOST_1: ${VAN_API_HOST_1:-}
       VAN_API_PORT_1: ${VAN_API_PORT_1:-0}
       VAN_API_HOST_2: ${VAN_API_HOST_2:-}
@@ -223,6 +244,7 @@ services:
       ITEM_API_URL: http://item-api:8080
       ORDER_API_URL: http://order-api:8080
       PAYMENT_API_URL: http://payment-api:8080
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://datadog-agent:4318/v1/traces}
       JWT_ACCESS_EXPIRATION_TIME: ${JWT_ACCESS_EXPIRATION_TIME:-3600000}
       JWT_KIOSK_EXPIRATION_TIME: ${JWT_KIOSK_EXPIRATION_TIME:-86400000}
       JWT_PREFIX: ${JWT_PREFIX:-Bearer}
