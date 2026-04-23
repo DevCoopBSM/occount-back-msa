@@ -57,6 +57,8 @@ class ApiAdviceHandler {
             ErrorMessage.CHARGE_LOG_SAVE_FAILED,
             -> HttpStatus.INTERNAL_SERVER_ERROR
 
+            ErrorMessage.ARIPICK_FOOD_SAFETY_UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE
+
             ErrorMessage.ACCESS_DENIED,
             ErrorMessage.ARIPICK_ACCESS_DENIED,
             -> HttpStatus.FORBIDDEN

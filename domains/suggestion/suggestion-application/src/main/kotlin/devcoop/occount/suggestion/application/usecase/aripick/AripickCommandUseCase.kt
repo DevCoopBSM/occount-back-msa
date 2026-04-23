@@ -6,6 +6,7 @@ import devcoop.occount.suggestion.application.output.FoodSafetyRepository
 import devcoop.occount.suggestion.application.shared.AripickMapper
 import devcoop.occount.suggestion.application.shared.AripickResponse
 import devcoop.occount.suggestion.domain.aripick.AripickAccessDeniedException
+import devcoop.occount.suggestion.domain.aripick.AripickFoodSafetyUnavailableException
 import devcoop.occount.suggestion.domain.aripick.AripickItem
 import devcoop.occount.suggestion.domain.aripick.AripickNotFoundException
 import devcoop.occount.suggestion.domain.aripick.AripickPolicyViolationException
@@ -25,7 +26,7 @@ class AripickCommandUseCase(
         proposerId: Long,
     ): AripickResponse {
         val detail = foodSafetyRepository.getDetail(request.typeNSeq)
-            ?: throw AripickPolicyViolationException()
+            ?: throw AripickFoodSafetyUnavailableException()
 
         if (!detail.isAllowed) {
             throw AripickPolicyViolationException()
