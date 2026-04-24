@@ -388,7 +388,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrderResponse'
               example:
-                orderId: "550e8400-e29b-41d4-a716-446655440000"
+                orderId: 1001
                 status: "PROCESSING"
                 failureReason: null
         "400":
@@ -417,8 +417,9 @@ paths:
           required: true
           description: 주문 ID
           schema:
-            type: string
-          example: "550e8400-e29b-41d4-a716-446655440000"
+            type: integer
+            format: int64
+          example: 1001
       security:
         - {}
       responses:
@@ -429,7 +430,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrderResponse'
               example:
-                orderId: "550e8400-e29b-41d4-a716-446655440000"
+                orderId: 1001
                 status: "COMPLETED"
                 failureReason: null
         "404":
@@ -444,8 +445,8 @@ paths:
         Server-Sent Events(SSE) 방식으로 주문 상태 변경을 실시간 수신합니다. (PERMIT_ALL)
 
         - 연결 즉시 현재 주문 상태를 전송합니다.
-        - 각 메시지는 `event: <EVENT_TYPE>` + `data: <OrderResponse JSON>` 형식으로 전달됩니다.
-        - 이벤트 타입은 `ORDER_ACCEPTED`, `STOCK_CONFIRMED`, `PAYMENT_REQUESTED`, `COMPLETED`, `FAILED`, `CANCEL_REQUESTED`, `COMPENSATING`, `CANCELLED`, `COMPENSATION_FAILED`, `TIMED_OUT` 중 하나입니다.
+        - 각 메시지는 `event: <EVENT_TYPE>` 형식으로 전달됩니다.
+        - 이벤트 타입은 `ORDER_ACCEPTED`, `PAYMENT_REQUESTED`, `COMPLETED`, `FAILED`, `CANCEL_REQUESTED`, `CANCELLED`, `TIMED_OUT` 중 하나입니다.
         - 주문이 최종 상태(`COMPLETED`, `FAILED`, `CANCELLED`, `COMPENSATION_FAILED`, `TIMED_OUT`)에 도달하면 서버가 연결을 종료합니다.
         - 주문 생성 직후 SSE 연결을 맺어 비동기 처리 결과를 수신하는 용도로 사용합니다.
       parameters:
@@ -454,8 +455,9 @@ paths:
           required: true
           description: 주문 ID
           schema:
-            type: string
-          example: "550e8400-e29b-41d4-a716-446655440000"
+            type: integer
+            format: int64
+          example: 1001
       security:
         - {}
       responses:
@@ -469,25 +471,21 @@ paths:
                   SSE 메시지는 아래 형식으로 전달됩니다.
 
                   - `event`: 이벤트 타입
-                  - `data`: `OrderResponse` JSON payload
               examples:
                 accepted:
                   summary: 주문 접수 직후
                   value: |
                     event: ORDER_ACCEPTED
-                    data: {"orderId":"550e8400-e29b-41d4-a716-446655440000","status":"PROCESSING","failureReason":null}
 
                 paymentRequested:
                   summary: 결제 요청 단계
                   value: |
                     event: PAYMENT_REQUESTED
-                    data: {"orderId":"550e8400-e29b-41d4-a716-446655440000","status":"PROCESSING","failureReason":null}
 
                 completed:
                   summary: 주문 완료
                   value: |
                     event: COMPLETED
-                    data: {"orderId":"550e8400-e29b-41d4-a716-446655440000","status":"COMPLETED","failureReason":null}
         "404":
           description: 주문을 찾을 수 없음
 
@@ -508,8 +506,9 @@ paths:
           required: true
           description: 취소할 주문 ID
           schema:
-            type: string
-          example: "550e8400-e29b-41d4-a716-446655440000"
+            type: integer
+            format: int64
+          example: 1001
         - name: X-Kiosk-Id
           in: header
           required: false
@@ -529,7 +528,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrderResponse'
               example:
-                orderId: "550e8400-e29b-41d4-a716-446655440000"
+                orderId: 1001
                 status: "CANCEL_REQUESTED"
                 failureReason: "사용자에 의해 주문이 취소되었습니다"
         "401":
@@ -772,8 +771,9 @@ components:
       type: object
       properties:
         orderId:
-          type: string
-          description: 주문 UUID
+          type: integer
+          format: int64
+          description: 주문 ID
         status:
           $ref: '#/components/schemas/OrderStatus'
         failureReason:
