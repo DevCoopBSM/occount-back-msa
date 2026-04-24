@@ -3,8 +3,8 @@ package devcoop.occount.payment.application.usecase.payment
 import devcoop.occount.core.common.event.DomainEventTypes
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.core.common.event.OrderPaymentCompletedEvent
-import devcoop.occount.core.common.event.OrderPaymentFailedEvent
+import devcoop.occount.core.common.event.PaymentCompletedEvent
+import devcoop.occount.core.common.event.PaymentFailedEvent
 import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
 import devcoop.occount.payment.application.exception.PaymentCancelledException
 import devcoop.occount.payment.application.output.OrderPaymentExecutionRepository
@@ -80,10 +80,10 @@ class ExecuteVanPaymentUseCase(
             )
 
             eventPublisher.publish(
-                topic = DomainTopics.ORDER_PAYMENT_COMPLETED,
+                topic = DomainTopics.PAYMENT_COMPLETED,
                 key = event.orderId,
-                eventType = DomainEventTypes.ORDER_PAYMENT_COMPLETED,
-                payload = OrderPaymentCompletedEvent(
+                eventType = DomainEventTypes.PAYMENT_COMPLETED,
+                payload = PaymentCompletedEvent(
                     orderId = event.orderId,
                     userId = event.userId,
                     paymentLogId = result.paymentLogId ?: 0L,
@@ -107,10 +107,10 @@ class ExecuteVanPaymentUseCase(
 
     private fun publishFailed(event: OrderPaymentRequestedEvent, reason: String) {
         eventPublisher.publish(
-            topic = DomainTopics.ORDER_PAYMENT_FAILED,
+            topic = DomainTopics.PAYMENT_FAILED,
             key = event.orderId,
-            eventType = DomainEventTypes.ORDER_PAYMENT_FAILED,
-            payload = OrderPaymentFailedEvent(
+            eventType = DomainEventTypes.PAYMENT_FAILED,
+            payload = PaymentFailedEvent(
                 orderId = event.orderId,
                 userId = event.userId,
                 reason = reason,

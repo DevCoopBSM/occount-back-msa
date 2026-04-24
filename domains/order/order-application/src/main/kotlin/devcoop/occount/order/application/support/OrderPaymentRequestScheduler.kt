@@ -3,7 +3,7 @@ package devcoop.occount.order.application.support
 import devcoop.occount.core.common.event.DomainEventTypes
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.core.common.event.OrderItemPayload
+import devcoop.occount.core.common.event.ItemStockPayload
 import devcoop.occount.core.common.event.OrderPaymentPayload
 import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
 import devcoop.occount.order.application.exception.OrderConcurrencyException
@@ -81,7 +81,7 @@ class OrderPaymentRequestScheduler(
                     totalAmount = order.payment.totalAmount,
                 ),
                 items = order.lines.map { line ->
-                    OrderItemPayload(
+                    ItemStockPayload(
                         itemId = line.itemId,
                         itemName = line.itemNameSnapshot,
                         itemPrice = line.unitPrice,

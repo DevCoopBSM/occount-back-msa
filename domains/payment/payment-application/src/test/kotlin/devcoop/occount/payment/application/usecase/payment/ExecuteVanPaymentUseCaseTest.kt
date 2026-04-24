@@ -1,9 +1,9 @@
 package devcoop.occount.payment.application.usecase.payment
 
 import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.core.common.event.OrderItemPayload
-import devcoop.occount.core.common.event.OrderPaymentCompletedEvent
-import devcoop.occount.core.common.event.OrderPaymentFailedEvent
+import devcoop.occount.core.common.event.ItemStockPayload
+import devcoop.occount.core.common.event.PaymentCompletedEvent
+import devcoop.occount.core.common.event.PaymentFailedEvent
 import devcoop.occount.core.common.event.OrderPaymentPayload
 import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
 import devcoop.occount.payment.application.dto.request.ItemCommand
@@ -55,7 +55,7 @@ class ExecuteVanPaymentUseCaseTest {
 
         assertEquals("order-1", executionRepository.cancelledOrderId)
         assertEquals(0, cardPaymentPort.approvedAmounts.size)
-        assertIs<OrderPaymentFailedEvent>(eventPublisher.published.single())
+        assertIs<PaymentFailedEvent>(eventPublisher.published.single())
     }
 
     @Test
@@ -70,7 +70,7 @@ class ExecuteVanPaymentUseCaseTest {
 
         assertEquals("order-1", executionRepository.completedOrderId)
         assertEquals("order-1", cardPaymentPort.lastPaymentKey)
-        assertIs<OrderPaymentCompletedEvent>(eventPublisher.published.single())
+        assertIs<PaymentCompletedEvent>(eventPublisher.published.single())
     }
 
     @Test
@@ -84,7 +84,7 @@ class ExecuteVanPaymentUseCaseTest {
         useCase.execute(requestedEvent())
 
         assertEquals("order-1", executionRepository.cancelledOrderId)
-        assertIs<OrderPaymentFailedEvent>(eventPublisher.published.single())
+        assertIs<PaymentFailedEvent>(eventPublisher.published.single())
     }
 
     private fun requestedEvent(): OrderPaymentRequestedEvent {
@@ -94,7 +94,7 @@ class ExecuteVanPaymentUseCaseTest {
             userId = null,
             payment = OrderPaymentPayload(totalAmount = 2000),
             items = listOf(
-                OrderItemPayload(
+                ItemStockPayload(
                     itemId = 101L,
                     itemName = "Americano",
                     itemPrice = 2000,

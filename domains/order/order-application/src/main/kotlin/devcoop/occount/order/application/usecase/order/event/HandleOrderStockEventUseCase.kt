@@ -1,9 +1,9 @@
 package devcoop.occount.order.application.usecase.order.event
 
-import devcoop.occount.core.common.event.OrderStockCompensatedEvent
-import devcoop.occount.core.common.event.OrderStockCompensationFailedEvent
-import devcoop.occount.core.common.event.OrderStockCompletedEvent
-import devcoop.occount.core.common.event.OrderStockFailedEvent
+import devcoop.occount.core.common.event.ItemStockCompensatedEvent
+import devcoop.occount.core.common.event.ItemStockCompensationFailedEvent
+import devcoop.occount.core.common.event.ItemStockDecreasedEvent
+import devcoop.occount.core.common.event.ItemStockDecreaseFailedEvent
 import devcoop.occount.order.application.support.OrderFailureReasonSanitizer
 import devcoop.occount.order.application.support.OrderLifecycleProcessor
 import devcoop.occount.order.application.support.OrderMutationExecutor
@@ -19,7 +19,7 @@ class HandleOrderStockEventUseCase(
     private val orderLifecycleProcessor: OrderLifecycleProcessor,
     private val orderPaymentRequestScheduler: OrderPaymentRequestScheduler,
 ) {
-    fun applyCompletedStock(event: OrderStockCompletedEvent, recordConsumption: () -> Unit) {
+    fun applyCompletedStock(event: ItemStockDecreasedEvent, recordConsumption: () -> Unit) {
         val updated = orderMutationExecutor.updateOrderIdempotently(
             orderId = event.orderId,
             recordConsumption = recordConsumption,
@@ -44,7 +44,7 @@ class HandleOrderStockEventUseCase(
         orderPaymentRequestScheduler.schedulePaymentRequestIfEligible(updated.orderId)
     }
 
-    fun applyFailedStock(event: OrderStockFailedEvent, recordConsumption: () -> Unit) {
+    fun applyFailedStock(event: ItemStockDecreaseFailedEvent, recordConsumption: () -> Unit) {
         val updated = orderMutationExecutor.updateOrderIdempotently(
             orderId = event.orderId,
             recordConsumption = recordConsumption,
@@ -59,7 +59,7 @@ class HandleOrderStockEventUseCase(
         orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 
-    fun applyCompensatedStock(event: OrderStockCompensatedEvent, recordConsumption: () -> Unit) {
+    fun applyCompensatedStock(event: ItemStockCompensatedEvent, recordConsumption: () -> Unit) {
         val updated = orderMutationExecutor.updateOrderIdempotently(
             orderId = event.orderId,
             recordConsumption = recordConsumption,
@@ -71,7 +71,7 @@ class HandleOrderStockEventUseCase(
         orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 
-    fun applyStockCompensationFailure(event: OrderStockCompensationFailedEvent, recordConsumption: () -> Unit) {
+    fun applyStockCompensationFailure(event: ItemStockCompensationFailedEvent, recordConsumption: () -> Unit) {
         val updated = orderMutationExecutor.updateOrderIdempotently(
             orderId = event.orderId,
             recordConsumption = recordConsumption,

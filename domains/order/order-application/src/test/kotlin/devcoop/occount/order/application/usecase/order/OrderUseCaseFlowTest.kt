@@ -27,7 +27,7 @@ class OrderUseCaseFlowTest {
         val handleOrderStockEventUseCase = handleOrderStockEventUseCase(orderRepository, eventPublisher)
 
         handleOrderPaymentEventUseCase.applyFailedPayment(
-            OrderPaymentFailedEvent(
+            PaymentFailedEvent(
                 orderId = ORDER_ID,
                 userId = USER_ID,
                 reason = "payment failed",
@@ -71,7 +71,7 @@ class OrderUseCaseFlowTest {
         val handleOrderStockEventUseCase = handleOrderStockEventUseCase(orderRepository, eventPublisher)
 
         handleOrderStockEventUseCase.applyFailedStock(
-            OrderStockFailedEvent(
+            ItemStockDecreaseFailedEvent(
                 orderId = ORDER_ID,
                 reason = "out of stock",
             ),
@@ -175,7 +175,7 @@ class OrderUseCaseFlowTest {
         val handleOrderPaymentEventUseCase = handleOrderPaymentEventUseCase(orderRepository, eventPublisher)
 
         handleOrderPaymentEventUseCase.applyCompletedPayment(
-            OrderPaymentCompletedEvent(
+            PaymentCompletedEvent(
                 orderId = ORDER_ID,
                 userId = USER_ID,
                 paymentLogId = 10L,
@@ -201,7 +201,7 @@ class OrderUseCaseFlowTest {
         val handleOrderPaymentEventUseCase = handleOrderPaymentEventUseCase(orderRepository, eventPublisher)
 
         handleOrderPaymentEventUseCase.applyCompletedPayment(
-            OrderPaymentCompletedEvent(
+            PaymentCompletedEvent(
                 orderId = ORDER_ID,
                 userId = USER_ID,
                 paymentLogId = 10L,
@@ -228,7 +228,7 @@ class OrderUseCaseFlowTest {
         val handleOrderPaymentEventUseCase = handleOrderPaymentEventUseCase(orderRepository, eventPublisher)
 
         handleOrderPaymentEventUseCase.applyFailedPayment(
-            OrderPaymentFailedEvent(
+            PaymentFailedEvent(
                 orderId = ORDER_ID,
                 userId = USER_ID,
                 reason = "x".repeat(400),
@@ -285,11 +285,11 @@ class OrderUseCaseFlowTest {
         )
     }
 
-    private fun completedStockEvent(): OrderStockCompletedEvent {
-        return OrderStockCompletedEvent(
+    private fun completedStockEvent(): ItemStockDecreasedEvent {
+        return ItemStockDecreasedEvent(
             orderId = ORDER_ID,
             items = listOf(
-                OrderItemPayload(
+                ItemStockPayload(
                     itemId = ITEM_ID,
                     itemName = "Americano",
                     itemPrice = 2000,

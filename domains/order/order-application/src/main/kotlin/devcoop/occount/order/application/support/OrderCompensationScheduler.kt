@@ -4,7 +4,7 @@ import devcoop.occount.core.common.event.DomainEventTypes
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
-import devcoop.occount.core.common.event.OrderStockCompensationItemPayload
+import devcoop.occount.core.common.event.ItemStockCompensationPayload
 import devcoop.occount.core.common.event.OrderStockCompensationRequestedEvent
 import devcoop.occount.order.application.exception.OrderConcurrencyException
 import devcoop.occount.order.application.exception.OrderNotFoundException
@@ -96,13 +96,13 @@ class OrderCompensationScheduler(
     private fun publishStockCompensationRequested(order: OrderAggregate) {
         log.info("재고 보상 요청 이벤트 발행 - 주문={}", order.orderId)
         eventPublisher.publish(
-            topic = DomainTopics.ORDER_STOCK_COMPENSATION_REQUESTED,
+            topic = DomainTopics.ITEM_STOCK_COMPENSATION_REQUESTED,
             key = order.orderId,
-            eventType = DomainEventTypes.ORDER_STOCK_COMPENSATION_REQUESTED,
+            eventType = DomainEventTypes.ITEM_STOCK_COMPENSATION_REQUESTED,
             payload = OrderStockCompensationRequestedEvent(
                 orderId = order.orderId,
                 items = order.lines.map { line ->
-                    OrderStockCompensationItemPayload(
+                    ItemStockCompensationPayload(
                         itemId = line.itemId,
                         quantity = line.quantity,
                     )
