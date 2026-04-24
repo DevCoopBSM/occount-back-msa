@@ -1,7 +1,7 @@
 package devcoop.occount.core.common.event
 
 data class OrderRequestedEvent(
-    val orderId: String,
+    val orderId: Long,
     val userId: Long?,
     val kioskId: String,
     val items: List<OrderRequestedItemPayload>,
@@ -13,7 +13,7 @@ data class OrderRequestedItemPayload(
 )
 
 data class OrderPaymentRequestedEvent(
-    val orderId: String,
+    val orderId: Long,
     val kioskId: String,
     val userId: Long?,
     val payment: OrderPaymentPayload,
@@ -21,7 +21,7 @@ data class OrderPaymentRequestedEvent(
 )
 
 data class OrderPaymentCancellationRequestedEvent(
-    val orderId: String,
+    val orderId: Long,
     val kioskId: String,
     val userId: Long?,
 )
@@ -39,7 +39,7 @@ data class ItemStockPayload(
 )
 
 data class PaymentCompletedEvent(
-    val orderId: String,
+    val orderId: Long,
     val userId: Long?,
     val paymentLogId: Long,
     val pointsUsed: Int,
@@ -50,24 +50,24 @@ data class PaymentCompletedEvent(
 )
 
 data class PaymentFailedEvent(
-    val orderId: String,
+    val orderId: Long,
     val userId: Long?,
     val reason: String,
 )
 
 data class ItemStockDecreasedEvent(
-    val orderId: String,
+    val orderId: Long,
     val items: List<ItemStockPayload>,
     val totalAmount: Int,
 )
 
 data class ItemStockDecreaseFailedEvent(
-    val orderId: String,
+    val orderId: Long,
     val reason: String,
 )
 
 data class OrderPaymentCompensationRequestedEvent(
-    val orderId: String,
+    val orderId: Long,
     val kioskId: String,
     val userId: Long?,
     val paymentLogId: Long?,
@@ -76,18 +76,18 @@ data class OrderPaymentCompensationRequestedEvent(
 )
 
 data class PaymentCompensatedEvent(
-    val orderId: String,
+    val orderId: Long,
     val userId: Long?,
 )
 
 data class PaymentCompensationFailedEvent(
-    val orderId: String,
+    val orderId: Long,
     val userId: Long?,
     val reason: String,
 )
 
 data class OrderStockCompensationRequestedEvent(
-    val orderId: String,
+    val orderId: Long,
     val items: List<ItemStockCompensationPayload>,
 )
 
@@ -97,10 +97,10 @@ data class ItemStockCompensationPayload(
 )
 
 data class ItemStockCompensatedEvent(
-    val orderId: String,
+    val orderId: Long,
 )
 
 data class ItemStockCompensationFailedEvent(
-    val orderId: String,
+    val orderId: Long,
     val reason: String,
 )

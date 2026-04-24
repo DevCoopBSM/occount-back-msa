@@ -3,7 +3,7 @@ package devcoop.occount.order.domain.order
 import java.time.Instant
 
 data class OrderAggregate(
-    val orderId: String,
+    val orderId: Long,
     val userId: Long?,
     val requestedLines: List<RequestedOrderLine> = emptyList(),
     val lines: List<OrderLine> = emptyList(),

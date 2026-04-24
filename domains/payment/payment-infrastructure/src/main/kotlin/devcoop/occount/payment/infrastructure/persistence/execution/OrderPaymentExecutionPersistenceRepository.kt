@@ -8,8 +8,8 @@ import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
 @Repository
-interface OrderPaymentExecutionPersistenceRepository : JpaRepository<OrderPaymentExecutionJpaEntity, String> {
+interface OrderPaymentExecutionPersistenceRepository : JpaRepository<OrderPaymentExecutionJpaEntity, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select e from OrderPaymentExecutionJpaEntity e where e.orderId = :orderId")
-    fun findByOrderIdForUpdate(@Param("orderId") orderId: String): OrderPaymentExecutionJpaEntity?
+    fun findByOrderIdForUpdate(@Param("orderId") orderId: Long): OrderPaymentExecutionJpaEntity?
 }

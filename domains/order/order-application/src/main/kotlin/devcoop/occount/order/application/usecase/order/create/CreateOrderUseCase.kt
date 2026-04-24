@@ -17,7 +17,6 @@ import devcoop.occount.order.domain.order.RequestedOrderLine
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.Instant
-import java.util.UUID
 
 @Service
 class CreateOrderUseCase(
@@ -27,13 +26,12 @@ class CreateOrderUseCase(
     private val orderTimeoutConfig: OrderTimeoutConfig,
 ) {
     fun placeOrder(request: OrderRequest, userId: Long?, kioskId: String): OrderResponse {
-        val orderId = UUID.randomUUID().toString()
         val requestedLines = request.items.map { RequestedOrderLine(itemId = it.itemId, quantity = it.quantity) }
 
         val createdOrder = orderMutationExecutor.executeInNewTransaction {
             val createdOrder = orderRepository.save(
                 OrderAggregate(
-                    orderId = orderId,
+                    orderId = 0L,
                     userId = userId,
                     requestedLines = requestedLines,
                     payment = OrderPayment(
@@ -55,7 +53,7 @@ class CreateOrderUseCase(
     private fun publishOrderRequested(createdOrder: OrderAggregate, userId: Long?) {
         eventPublisher.publish(
             topic = DomainTopics.ORDER_REQUESTED,
-            key = createdOrder.orderId,
+            key = createdOrder.orderId.toString(),
             eventType = DomainEventTypes.ORDER_REQUESTED,
             payload = OrderRequestedEvent(
                 orderId = createdOrder.orderId,

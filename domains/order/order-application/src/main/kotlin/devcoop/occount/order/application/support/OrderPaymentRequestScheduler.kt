@@ -24,7 +24,7 @@ class OrderPaymentRequestScheduler(
     private val orderStatusNotifier: OrderStatusNotifier,
     private val orderStreamEventMapper: OrderStreamEventMapper,
 ) {
-    fun schedulePaymentRequestIfEligible(orderId: String) {
+    fun schedulePaymentRequestIfEligible(orderId: Long) {
         repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
             try {
                 var requestedOrder: OrderAggregate? = null
@@ -71,7 +71,7 @@ class OrderPaymentRequestScheduler(
         log.info("결제 요청 이벤트 발행 - 주문={} 시도={}", order.orderId, attempt)
         eventPublisher.publish(
             topic = DomainTopics.ORDER_PAYMENT_REQUESTED,
-            key = order.orderId,
+            key = order.orderId.toString(),
             eventType = DomainEventTypes.ORDER_PAYMENT_REQUESTED,
             payload = OrderPaymentRequestedEvent(
                 orderId = order.orderId,

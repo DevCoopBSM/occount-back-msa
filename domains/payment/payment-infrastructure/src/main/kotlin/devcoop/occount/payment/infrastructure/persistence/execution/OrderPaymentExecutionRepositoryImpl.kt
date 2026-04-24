@@ -12,7 +12,7 @@ class OrderPaymentExecutionRepositoryImpl(
     private val persistenceRepository: OrderPaymentExecutionPersistenceRepository,
 ) : OrderPaymentExecutionRepository {
     @Transactional
-    override fun startProcessing(orderId: String): OrderPaymentExecutionStartResult {
+    override fun startProcessing(orderId: Long): OrderPaymentExecutionStartResult {
         val execution = persistenceRepository.findByOrderIdForUpdate(orderId)
         if (execution == null) {
             persistenceRepository.save(
@@ -36,7 +36,7 @@ class OrderPaymentExecutionRepositoryImpl(
     }
 
     @Transactional
-    override fun requestCancellation(orderId: String): OrderPaymentCancellationRequestResult {
+    override fun requestCancellation(orderId: Long): OrderPaymentCancellationRequestResult {
         val execution = persistenceRepository.findByOrderIdForUpdate(orderId)
         if (execution == null) {
             persistenceRepository.save(
@@ -64,29 +64,29 @@ class OrderPaymentExecutionRepositoryImpl(
     }
 
     @Transactional(readOnly = true)
-    override fun isCancellationRequested(orderId: String): Boolean {
+    override fun isCancellationRequested(orderId: Long): Boolean {
         return persistenceRepository.findById(orderId)
             .map(OrderPaymentExecutionJpaEntity::isCancellationRequested)
             .orElse(false)
     }
 
     @Transactional
-    override fun markCompleted(orderId: String) {
+    override fun markCompleted(orderId: Long) {
         upsertState(orderId, OrderPaymentExecutionState.COMPLETED, false)
     }
 
     @Transactional
-    override fun markFailed(orderId: String) {
+    override fun markFailed(orderId: Long) {
         upsertState(orderId, OrderPaymentExecutionState.FAILED, false)
     }
 
     @Transactional
-    override fun markCancelled(orderId: String) {
+    override fun markCancelled(orderId: Long) {
         upsertState(orderId, OrderPaymentExecutionState.CANCELLED, true)
     }
 
     private fun upsertState(
-        orderId: String,
+        orderId: Long,
         state: OrderPaymentExecutionState,
         cancellationRequested: Boolean,
     ) {

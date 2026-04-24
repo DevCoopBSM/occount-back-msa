@@ -16,7 +16,7 @@ class CancelPendingOrderPaymentUseCase(
         log.info("결제 대기 취소 요청 처리 - 주문={}", event.orderId)
         if (orderPaymentExecutionRepository.requestCancellation(event.orderId) ==
             OrderPaymentCancellationRequestResult.TERMINAL_CANCELLATION_REQUIRED) {
-            cardPaymentPort.requestPendingApprovalCancellation(event.orderId, event.kioskId)
+            cardPaymentPort.requestPendingApprovalCancellation(event.orderId.toString(), event.kioskId)
         }
     }
 

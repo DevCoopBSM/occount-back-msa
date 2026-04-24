@@ -6,8 +6,6 @@ import devcoop.occount.order.application.exception.OrderTransactionFailedExcepti
 import devcoop.occount.order.application.shared.OrderItemRequest
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
-import devcoop.occount.order.application.shared.OrderStreamEvent
-import devcoop.occount.order.application.shared.OrderStreamEventType
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
 import devcoop.occount.order.application.usecase.order.get.GetOrderUseCase
@@ -40,7 +38,7 @@ class OrderControllerTest {
         val request = OrderRequest(
             items = listOf(OrderItemRequest(itemId = 1L, quantity = 1)),
         )
-        val expected = OrderResponse(orderId = "order-1", status = OrderStatus.PROCESSING)
+        val expected = OrderResponse(orderId = 1L, status = OrderStatus.PROCESSING)
 
         `when`(createOrderUseCase.placeOrder(request, 7L, "kiosk-1")).thenReturn(expected)
 
@@ -55,7 +53,7 @@ class OrderControllerTest {
         val request = OrderRequest(
             items = listOf(OrderItemRequest(itemId = 1L, quantity = 1)),
         )
-        val expected = OrderResponse(orderId = "order-2", status = OrderStatus.PROCESSING)
+        val expected = OrderResponse(orderId = 2L, status = OrderStatus.PROCESSING)
 
         `when`(createOrderUseCase.placeOrder(request, null, "kiosk-1")).thenReturn(expected)
 
@@ -70,7 +68,7 @@ class OrderControllerTest {
         val request = OrderRequest(
             items = listOf(OrderItemRequest(itemId = 1L, quantity = 1)),
         )
-        val expected = OrderResponse(orderId = "order-3", status = OrderStatus.PROCESSING)
+        val expected = OrderResponse(orderId = 3L, status = OrderStatus.PROCESSING)
 
         `when`(createOrderUseCase.placeOrder(request, null, "1")).thenReturn(expected)
 
@@ -95,10 +93,10 @@ class OrderControllerTest {
 
     @Test
     fun `getOrder returns 200 with response body`() {
-        val expected = OrderResponse(orderId = "order-1", status = OrderStatus.COMPLETED)
-        `when`(getOrderUseCase.getOrder("order-1")).thenReturn(expected)
+        val expected = OrderResponse(orderId = 1L, status = OrderStatus.COMPLETED)
+        `when`(getOrderUseCase.getOrder(1L)).thenReturn(expected)
 
-        val response = controller.getOrder("order-1")
+        val response = controller.getOrder(1L)
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertEquals(expected, response.body)
@@ -107,20 +105,20 @@ class OrderControllerTest {
     @Test
     fun `streamOrder delegates current response to sse registry`() {
         val emitter = SseEmitter()
-        `when`(orderSseRegistry.register(eq("order-1"), any())).thenReturn(emitter)
+        `when`(orderSseRegistry.register(eq(1L), any())).thenReturn(emitter)
 
-        val response = controller.streamOrder("order-1")
+        val response = controller.streamOrder(1L)
 
         assertEquals(emitter, response)
-        verify(orderSseRegistry).register(eq("order-1"), any())
+        verify(orderSseRegistry).register(eq(1L), any())
     }
 
     @Test
     fun `cancelOrder uses default kiosk id when header is omitted`() {
-        val expected = OrderResponse(orderId = "order-1", status = OrderStatus.CANCEL_REQUESTED)
-        `when`(cancelOrderUseCase.cancel("order-1", "1")).thenReturn(expected)
+        val expected = OrderResponse(orderId = 1L, status = OrderStatus.CANCEL_REQUESTED)
+        `when`(cancelOrderUseCase.cancel(1L, "1")).thenReturn(expected)
 
-        val response = controller.cancelOrder("order-1", kioskId = "1")
+        val response = controller.cancelOrder(1L, kioskId = "1")
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertEquals(expected, response.body)

@@ -1,17 +1,17 @@
 package devcoop.occount.payment.application.output
 
 interface OrderPaymentExecutionRepository {
-    fun startProcessing(orderId: String): OrderPaymentExecutionStartResult
+    fun startProcessing(orderId: Long): OrderPaymentExecutionStartResult
 
-    fun requestCancellation(orderId: String): OrderPaymentCancellationRequestResult
+    fun requestCancellation(orderId: Long): OrderPaymentCancellationRequestResult
 
-    fun isCancellationRequested(orderId: String): Boolean
+    fun isCancellationRequested(orderId: Long): Boolean
 
-    fun markCompleted(orderId: String)
+    fun markCompleted(orderId: Long)
 
-    fun markFailed(orderId: String)
+    fun markFailed(orderId: Long)
 
-    fun markCancelled(orderId: String)
+    fun markCancelled(orderId: Long)
 }
 
 enum class OrderPaymentExecutionState {

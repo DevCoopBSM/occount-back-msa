@@ -68,7 +68,7 @@ class ExecuteVanPaymentUseCase(
                     },
                     totalAmount = event.payment.totalAmount,
                 ),
-                paymentKey = event.orderId,
+                paymentKey = event.orderId.toString(),
             )
             orderPaymentExecutionRepository.markCompleted(event.orderId)
             log.info(
@@ -81,7 +81,7 @@ class ExecuteVanPaymentUseCase(
 
             eventPublisher.publish(
                 topic = DomainTopics.PAYMENT_COMPLETED,
-                key = event.orderId,
+                key = event.orderId.toString(),
                 eventType = DomainEventTypes.PAYMENT_COMPLETED,
                 payload = PaymentCompletedEvent(
                     orderId = event.orderId,
@@ -108,7 +108,7 @@ class ExecuteVanPaymentUseCase(
     private fun publishFailed(event: OrderPaymentRequestedEvent, reason: String) {
         eventPublisher.publish(
             topic = DomainTopics.PAYMENT_FAILED,
-            key = event.orderId,
+            key = event.orderId.toString(),
             eventType = DomainEventTypes.PAYMENT_FAILED,
             payload = PaymentFailedEvent(
                 orderId = event.orderId,

@@ -92,7 +92,7 @@ class DecreaseItemStockUseCaseTest {
 
         val publishedEvent =
             Assertions.assertInstanceOf(ItemStockDecreaseFailedEvent::class.java, eventPublisher.published.single())
-        Assertions.assertEquals("order-1", publishedEvent.orderId)
+        Assertions.assertEquals(1L, publishedEvent.orderId)
     }
 
     @Test
@@ -123,7 +123,7 @@ class DecreaseItemStockUseCaseTest {
         ),
     ): OrderRequestedEvent {
         return OrderRequestedEvent(
-            orderId = "order-1",
+            orderId = 1L,
             userId = 7L,
             kioskId = "kiosk-1",
             items = items,

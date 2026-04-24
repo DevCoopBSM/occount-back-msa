@@ -41,7 +41,7 @@ class CompensateOrderPaymentUseCase(
                 return
             }
 
-            paymentLog.requestRefund(event.orderId)
+            paymentLog.requestRefund(event.orderId.toString())
             if (requiresCardRefund) {
                 paymentLog.requestCardRefund()
             }
@@ -97,7 +97,7 @@ class CompensateOrderPaymentUseCase(
     private fun publishCompensated(event: OrderPaymentCompensationRequestedEvent) {
         eventPublisher.publish(
             topic = DomainTopics.PAYMENT_COMPENSATED,
-            key = event.orderId,
+            key = event.orderId.toString(),
             eventType = DomainEventTypes.PAYMENT_COMPENSATED,
             payload = PaymentCompensatedEvent(
                 orderId = event.orderId,
@@ -109,7 +109,7 @@ class CompensateOrderPaymentUseCase(
     private fun publishFailed(event: OrderPaymentCompensationRequestedEvent, reason: String) {
         eventPublisher.publish(
             topic = DomainTopics.PAYMENT_COMPENSATION_FAILED,
-            key = event.orderId,
+            key = event.orderId.toString(),
             eventType = DomainEventTypes.PAYMENT_COMPENSATION_FAILED,
             payload = PaymentCompensationFailedEvent(
                 orderId = event.orderId,

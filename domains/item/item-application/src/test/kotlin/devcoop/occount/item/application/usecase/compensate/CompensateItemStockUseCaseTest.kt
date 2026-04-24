@@ -75,7 +75,7 @@ class CompensateItemStockUseCaseTest {
             ItemStockCompensationFailedEvent::class.java,
             eventPublisher.published.single()
         )
-        Assertions.assertEquals("order-1", publishedEvent.orderId)
+        Assertions.assertEquals(1L, publishedEvent.orderId)
     }
 
     private fun requestedEvent(
@@ -84,7 +84,7 @@ class CompensateItemStockUseCaseTest {
         ),
     ): OrderStockCompensationRequestedEvent {
         return OrderStockCompensationRequestedEvent(
-            orderId = "order-1",
+            orderId = 1L,
             items = items,
         )
     }

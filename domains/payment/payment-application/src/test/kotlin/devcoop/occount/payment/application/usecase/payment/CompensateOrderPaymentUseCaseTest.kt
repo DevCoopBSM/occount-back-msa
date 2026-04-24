@@ -50,7 +50,7 @@ class CompensateOrderPaymentUseCaseTest {
 
         useCase.compensate(
             OrderPaymentCompensationRequestedEvent(
-                orderId = "order-1",
+                orderId = 1L,
                 kioskId = "kiosk-1",
                 userId = 1L,
                 paymentLogId = 10L,
@@ -87,7 +87,7 @@ class CompensateOrderPaymentUseCaseTest {
 
         useCase.compensate(
             OrderPaymentCompensationRequestedEvent(
-                orderId = "order-1",
+                orderId = 1L,
                 kioskId = "kiosk-1",
                 userId = null,
                 paymentLogId = 10L,
@@ -119,7 +119,7 @@ class CompensateOrderPaymentUseCaseTest {
         assertFailsWith<PaymentFailedException> {
             useCase.compensate(
                 OrderPaymentCompensationRequestedEvent(
-                    orderId = "order-1",
+                    orderId = 1L,
                     kioskId = "kiosk-1",
                     userId = null,
                     paymentLogId = 10L,

@@ -74,7 +74,7 @@ class DecreaseItemStockUseCase(
             itemRepository.saveStocks(updatedItems)
             eventPublisher.publish(
                 topic = DomainTopics.ITEM_STOCK_DECREASED,
-                key = event.orderId,
+                key = event.orderId.toString(),
                 eventType = DomainEventTypes.ITEM_STOCK_DECREASED,
                 payload = ItemStockDecreasedEvent(
                     orderId = event.orderId,
@@ -106,10 +106,10 @@ class DecreaseItemStockUseCase(
         }
     }
 
-    private fun publishFailed(orderId: String, reason: String) {
+    private fun publishFailed(orderId: Long, reason: String) {
         eventPublisher.publish(
             topic = DomainTopics.ITEM_STOCK_DECREASE_FAILED,
-            key = orderId,
+            key = orderId.toString(),
             eventType = DomainEventTypes.ITEM_STOCK_DECREASE_FAILED,
             payload = ItemStockDecreaseFailedEvent(
                 orderId = orderId,

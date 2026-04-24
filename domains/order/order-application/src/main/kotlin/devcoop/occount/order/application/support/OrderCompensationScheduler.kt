@@ -22,7 +22,7 @@ class OrderCompensationScheduler(
     private val eventPublisher: EventPublisher,
     private val transactionPort: TransactionPort,
 ) {
-    fun scheduleRequiredCompensations(orderId: String) {
+    fun scheduleRequiredCompensations(orderId: Long) {
         runCatching {
             scheduleCompensationIfNeeded(
                 orderId = orderId,
@@ -44,7 +44,7 @@ class OrderCompensationScheduler(
     }
 
     private fun scheduleCompensationIfNeeded(
-        orderId: String,
+        orderId: Long,
         logContext: String,
         shouldMark: (OrderAggregate) -> Boolean,
         mark: (OrderAggregate) -> OrderAggregate,
@@ -71,7 +71,7 @@ class OrderCompensationScheduler(
         Thread.sleep(OrderRetryPolicy.BASE_BACKOFF_MILLIS * (1L shl attempt))
     }
 
-    private fun loadPersistedOrder(orderId: String): PersistedOrder {
+    private fun loadPersistedOrder(orderId: Long): PersistedOrder {
         return orderRepository.findPersistedById(orderId)
             ?: throw OrderNotFoundException()
     }
@@ -80,7 +80,7 @@ class OrderCompensationScheduler(
         log.info("결제 보상 요청 이벤트 발행 - 주문={}", order.orderId)
         eventPublisher.publish(
             topic = DomainTopics.ORDER_PAYMENT_COMPENSATION_REQUESTED,
-            key = order.orderId,
+            key = order.orderId.toString(),
             eventType = DomainEventTypes.ORDER_PAYMENT_COMPENSATION_REQUESTED,
             payload = OrderPaymentCompensationRequestedEvent(
                 orderId = order.orderId,
@@ -97,7 +97,7 @@ class OrderCompensationScheduler(
         log.info("재고 보상 요청 이벤트 발행 - 주문={}", order.orderId)
         eventPublisher.publish(
             topic = DomainTopics.ITEM_STOCK_COMPENSATION_REQUESTED,
-            key = order.orderId,
+            key = order.orderId.toString(),
             eventType = DomainEventTypes.ITEM_STOCK_COMPENSATION_REQUESTED,
             payload = OrderStockCompensationRequestedEvent(
                 orderId = order.orderId,
