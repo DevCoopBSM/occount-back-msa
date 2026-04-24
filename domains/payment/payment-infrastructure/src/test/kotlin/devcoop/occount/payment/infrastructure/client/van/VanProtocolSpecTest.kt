@@ -2,56 +2,48 @@ package devcoop.occount.payment.infrastructure.client.van
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class VanProtocolSpecTest {
-    private val message = VanProperties.Message(
-        paymentServiceType = env("VAN_API_MESSAGE_PAYMENT_SERVICE_TYPE"),
-        refundServiceType = env("VAN_API_MESSAGE_REFUND_SERVICE_TYPE"),
-        terminalCloseServiceType = env("VAN_API_MESSAGE_TERMINAL_CLOSE_SERVICE_TYPE"),
-        terminalCloseFiller = env("VAN_API_MESSAGE_TERMINAL_CLOSE_FILLER"),
-        transactionType = env("VAN_API_MESSAGE_TRANSACTION_TYPE"),
-        installmentMonths = env("VAN_API_MESSAGE_INSTALLMENT_MONTHS"),
-    )
-    private val protocolSpec = VanProtocolSpec(
-        VanProperties(
-            terminals = mapOf(1 to VanProperties.Terminal(host = "localhost", port = 5555)),
-            protocol = VanProperties.Protocol(
-                stx = env("VAN_API_PROTOCOL_STX"),
-                etx = env("VAN_API_PROTOCOL_ETX"),
-                separator = env("VAN_API_PROTOCOL_SEPARATOR"),
-                recordSeparator = env("VAN_API_PROTOCOL_RECORD_SEPARATOR"),
-                blank = env("VAN_API_PROTOCOL_BLANK"),
-                ack = env("VAN_API_PROTOCOL_ACK"),
-                dle = env("VAN_API_PROTOCOL_DLE"),
-                formFeed = env("VAN_API_PROTOCOL_FORM_FEED"),
-                nak = env("VAN_API_PROTOCOL_NAK"),
-                transactionTimeoutSeconds = env("VAN_API_PROTOCOL_TRANSACTION_TIMEOUT_SECONDS").toLongOrNull() ?: 30L,
-            ),
-            message = message,
-        ),
-    )
+    private val protocolSpec = VanTestFixtures.protocolSpec
 
     @Test
     fun `splitFrames separates concatenated STX messages and control signals`() {
         val bytes = byteArrayOf(
-            0x02, 0x30, 0x30, 0x33, 0x03, 0x31,
-            0x02, 0x30, 0x30, 0x34, 0x03, 0x32,
-            0x06, 0x06, 0x06,
-            0x0c, 0x0c, 0x0c,
-            0x10,
+            protocolSpec.stxByte, 0x30, 0x30, 0x33, protocolSpec.etxByte, 0x31,
+            protocolSpec.stxByte, 0x30, 0x30, 0x34, protocolSpec.etxByte, 0x32,
+            protocolSpec.ackByte, protocolSpec.ackByte, protocolSpec.ackByte,
+            protocolSpec.formFeedByte, protocolSpec.formFeedByte, protocolSpec.formFeedByte,
+            protocolSpec.dleByte,
         )
 
         val frames = protocolSpec.splitFrames(bytes)
 
         assertEquals(5, frames.size)
-        assertEquals("023030330331", protocolSpec.toHex(frames[0]))
-        assertEquals("023030340332", protocolSpec.toHex(frames[1]))
-        assertEquals("060606", protocolSpec.toHex(frames[2]))
-        assertEquals("0c0c0c", protocolSpec.toHex(frames[3]))
-        assertEquals("10", protocolSpec.toHex(frames[4]))
+        assertFrameEquals(
+            byteArrayOf(protocolSpec.stxByte, 0x30, 0x30, 0x33, protocolSpec.etxByte, 0x31),
+            frames[0],
+            "first STX frame should match",
+        )
+        assertFrameEquals(
+            byteArrayOf(protocolSpec.stxByte, 0x30, 0x30, 0x34, protocolSpec.etxByte, 0x32),
+            frames[1],
+            "second STX frame should match",
+        )
+        assertFrameEquals(protocolSpec.ackBytes, frames[2], "ACK signal frame should match")
+        assertFrameEquals(repeated(protocolSpec.formFeedByte), frames[3], "form feed signal frame should match")
+        assertFrameEquals(byteArrayOf(protocolSpec.dleByte), frames[4], "DLE signal frame should match")
     }
 
-    private fun env(name: String): String {
-        return System.getenv(name).orEmpty()
+    private fun assertFrameEquals(expected: ByteArray, actual: ByteArray, message: String) {
+        assertTrue(actual.contentEquals(expected), message)
+    }
+
+    private fun repeated(value: Byte): ByteArray {
+        return ByteArray(SIGNAL_BYTE_COUNT) { value }
+    }
+
+    companion object {
+        private const val SIGNAL_BYTE_COUNT = 3
     }
 }
