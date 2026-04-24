@@ -12,3 +12,9 @@ enum class OrderStreamEventType {
     COMPENSATION_FAILED,
     TIMED_OUT,
 }
+
+fun OrderStreamEventType.isTerminal(): Boolean =
+    this == OrderStreamEventType.COMPLETED ||
+        this == OrderStreamEventType.FAILED ||
+        this == OrderStreamEventType.CANCELLED ||
+        this == OrderStreamEventType.TIMED_OUT

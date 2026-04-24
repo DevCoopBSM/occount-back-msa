@@ -2,7 +2,7 @@ package devcoop.occount.order.api.sse
 
 import devcoop.occount.order.application.port.OrderStatusNotifier
 import devcoop.occount.order.application.shared.OrderStreamEvent
-import devcoop.occount.order.domain.order.isFinalForClient
+import devcoop.occount.order.application.shared.isTerminal
 import org.springframework.stereotype.Component
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import java.util.concurrent.ConcurrentHashMap
@@ -12,9 +12,9 @@ import java.util.concurrent.atomic.AtomicReference
 class OrderSseRegistry(
     private val emitterSupport: OrderSseEmitterSupport,
 ) : OrderStatusNotifier {
-    private val sessions = ConcurrentHashMap<String, Session>()
+    private val sessions = ConcurrentHashMap<Long, Session>()
 
-    fun register(orderId: String, getCurrentEvent: () -> OrderStreamEvent): SseEmitter {
+    fun register(orderId: Long, getCurrentEvent: () -> OrderStreamEvent): SseEmitter {
         val emitter = emitterSupport.create()
 
         // 1. 구독 먼저 등록 → notify() 유실 방지
@@ -32,7 +32,7 @@ class OrderSseRegistry(
             return emitter
         }
 
-        if (current.payload.status.isFinalForClient()) {
+        if (current.type.isTerminal()) {
             emitterSupport.emit(emitter, current)
             emitter.complete()
             sessions.remove(orderId, session)
@@ -48,18 +48,18 @@ class OrderSseRegistry(
     }
 
     override fun notify(event: OrderStreamEvent) {
-        val session = sessions[event.payload.orderId] ?: return
+        val session = sessions[event.orderId] ?: return
         val prev = session.lastEmitted.getAndSet(event)
-        if (prev == event) return
+        if (prev?.type == event.type) return
 
         emitterSupport.emit(session.emitter, event)
-        if (event.payload.status.isFinalForClient()) {
+        if (event.type.isTerminal()) {
             session.emitter.complete()
-            sessions.remove(event.payload.orderId, session)
+            sessions.remove(event.orderId, session)
         }
     }
 
-    private fun attachLifecycle(orderId: String, session: Session) {
+    private fun attachLifecycle(orderId: Long, session: Session) {
         session.emitter.onCompletion {
             sessions.remove(orderId, session)
         }
