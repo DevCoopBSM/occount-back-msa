@@ -21,8 +21,7 @@ JAVA_OPTS_VARIANTS="${JAVA_OPTS_VARIANTS:-default||기본}"
 
 CASES='
 before|97057405fee9886240b8f388f19c4e70e670f70b|warmbench-before|warmup 이전
-common_warmup|53d56051ad1dc9bb3c7ff79940437f1f1ba7497b|warmbench-after|공통 warmup
-jit_warmup|0d215b16515e190450ae27b5943a601183a5270b|warmbench-jitfix|비즈니스 warmup + JIT trigger
+current_warmup|7299aa6a592885d353c5dc1fd6f5f4817eec1965|warmbench-current|현재 warmup
 '
 
 require_command() {
@@ -185,12 +184,12 @@ trap cleanup EXIT INT TERM HUP
 
 printf 'case\tvariant\tservice\trun\tlabel\tcommit\tstartup_seconds\tfirst_request_seconds\tsecond_request_seconds\tthird_request_seconds\tbusiness_warmup_ms\tservlet_warmup_ms\tjpa_warmup_ms\tjava_opts\n' > "$RESULTS_FILE"
 
-while IFS='|' read -r case_name commit project_name label; do
+while IFS='|' read -r case_name commit project_name label <&4; do
     [ -n "$case_name" ] || continue
 
     checkout_dir=$(ensure_worktree "$case_name" "$commit")
 
-    while IFS='|' read -r variant_name variant_java_opts variant_label; do
+    while IFS='|' read -r variant_name variant_java_opts variant_label <&3; do
         [ -n "$variant_name" ] || continue
 
         variant_project_name="${project_name}-${variant_name}"
@@ -200,14 +199,14 @@ while IFS='|' read -r case_name commit project_name label; do
         fi
 
         echo "== $full_label ($commit) =="
-        compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" down -v --remove-orphans >/dev/null 2>&1 || true
-        compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" up -d mysql kafka >/dev/null
-        compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" build $TARGET_SERVICES >/dev/null
+        compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" down -v --remove-orphans >/dev/null 2>&1 </dev/null || true
+        compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" build $TARGET_SERVICES >/dev/null </dev/null
 
         run_index=1
         while [ "$run_index" -le "$RUNS" ]; do
-            compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" rm -sf $TARGET_SERVICES >/dev/null 2>&1 || true
-            compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" up -d $TARGET_SERVICES >/dev/null
+            compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" down -v --remove-orphans >/dev/null 2>&1 </dev/null || true
+            compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" up -d mysql kafka >/dev/null </dev/null
+            compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" up -d $TARGET_SERVICES >/dev/null </dev/null
 
             for service_name in $TARGET_SERVICES; do
                 startup_line=$(wait_for_startup_line "$checkout_dir" "$variant_project_name" "$variant_java_opts" "$service_name")
@@ -215,7 +214,7 @@ while IFS='|' read -r case_name commit project_name label; do
 
                 sleep "$SETTLE_SECONDS"
 
-                logs=$(compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" logs "$service_name" 2>/dev/null || true)
+                logs=$(compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" logs "$service_name" 2>/dev/null </dev/null || true)
                 business_warmup_ms=$(extract_value "$logs" '.*business warmup completed .* in \([0-9][0-9]*\) ms.*')
                 servlet_warmup_ms=$(extract_value "$logs" '.*Servlet startup warmup completed .* in \([0-9][0-9]*\) ms.*')
                 jpa_warmup_ms=$(extract_value "$logs" '.*JPA startup warmup completed .* in \([0-9][0-9]*\) ms.*')
@@ -256,22 +255,22 @@ while IFS='|' read -r case_name commit project_name label; do
             run_index=$((run_index + 1))
         done
 
-        compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" down -v --remove-orphans >/dev/null
+        compose "$checkout_dir" "$variant_project_name" "$variant_java_opts" down -v --remove-orphans >/dev/null </dev/null
         echo
-    done < "$VARIANTS_FILE"
-done < "$CASES_FILE"
+    done 3< "$VARIANTS_FILE"
+done 4< "$CASES_FILE"
 
 echo "== Summary (services: $TARGET_SERVICES) =="
 echo "case	variant	service	startup_avg_s	first_avg_ms	second_avg_ms	third_avg_ms"
-while IFS='|' read -r case_name _ _ _; do
+while IFS='|' read -r case_name _ _ _ <&4; do
     [ -n "$case_name" ] || continue
-    while IFS='|' read -r variant_name _ _; do
+    while IFS='|' read -r variant_name _ _ <&3; do
         [ -n "$variant_name" ] || continue
         for service_name in $TARGET_SERVICES; do
             print_case_summary "$case_name" "$variant_name" "$service_name"
         done
-    done < "$VARIANTS_FILE"
-done < "$CASES_FILE"
+    done 3< "$VARIANTS_FILE"
+done 4< "$CASES_FILE"
 
 echo
 echo "raw results: $RESULTS_FILE"
