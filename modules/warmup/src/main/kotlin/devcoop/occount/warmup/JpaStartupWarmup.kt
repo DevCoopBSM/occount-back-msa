@@ -58,7 +58,7 @@ class JpaStartupWarmup(
     }
 
     companion object {
-        private const val POOL_WARMUP_COUNT = 3
+        private const val POOL_WARMUP_COUNT = 10
         private val log = LoggerFactory.getLogger(JpaStartupWarmup::class.java)
     }
 }

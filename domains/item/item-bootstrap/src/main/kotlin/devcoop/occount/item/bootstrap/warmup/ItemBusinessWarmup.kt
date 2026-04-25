@@ -32,8 +32,8 @@ class ItemBusinessWarmup(
     }
 
     companion object {
-        private const val DATA_WARMUP_COUNT = 3
-        private const val JIT_WARMUP_COUNT = 200
+        private const val DATA_WARMUP_COUNT = 10
+        private const val JIT_WARMUP_COUNT = 10
         private val log = LoggerFactory.getLogger(ItemBusinessWarmup::class.java)
     }
 }
