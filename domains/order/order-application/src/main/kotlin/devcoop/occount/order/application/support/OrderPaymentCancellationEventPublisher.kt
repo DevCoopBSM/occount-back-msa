@@ -14,7 +14,7 @@ class OrderPaymentCancellationEventPublisher(
     fun publish(order: OrderAggregate) {
         eventPublisher.publish(
             topic = DomainTopics.ORDER_PAYMENT_CANCELLATION_REQUESTED,
-            key = order.orderId,
+            key = order.orderId.toString(),
             eventType = DomainEventTypes.ORDER_PAYMENT_CANCELLATION_REQUESTED,
             payload = OrderPaymentCancellationRequestedEvent(
                 orderId = order.orderId,

@@ -8,4 +8,9 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    testImplementation project(':domains:member:member-domain')
+    testImplementation 'org.springframework.security:spring-security-crypto'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    testImplementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
 }

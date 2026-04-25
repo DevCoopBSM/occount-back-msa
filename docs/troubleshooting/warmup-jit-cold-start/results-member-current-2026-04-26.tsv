@@ -1,0 +1,5 @@
+run	startup_seconds	first_request_seconds	second_request_seconds	third_request_seconds	business_warmup_ms	servlet_warmup_ms
+1	5.74	0.233171	0.011086	0.006598	1334	669
+2	6.142	0.139011	0.005981	0.004797	956	172
+3	5.942	0.128285	0.006005	0.005282	1013	156
+avg	5.941	0.166822	0.007691	0.005559	1101.0	332.3

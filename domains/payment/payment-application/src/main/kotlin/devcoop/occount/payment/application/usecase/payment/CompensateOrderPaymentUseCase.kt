@@ -3,8 +3,8 @@ package devcoop.occount.payment.application.usecase.payment
 import devcoop.occount.core.common.event.DomainEventTypes
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.core.common.event.OrderPaymentCompensatedEvent
-import devcoop.occount.core.common.event.OrderPaymentCompensationFailedEvent
+import devcoop.occount.core.common.event.PaymentCompensatedEvent
+import devcoop.occount.core.common.event.PaymentCompensationFailedEvent
 import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
 import devcoop.occount.core.common.exception.BusinessBaseException
 import devcoop.occount.payment.application.exception.InvalidPaymentRequestException
@@ -41,7 +41,7 @@ class CompensateOrderPaymentUseCase(
                 return
             }
 
-            paymentLog.requestRefund(event.orderId)
+            paymentLog.requestRefund(event.orderId.toString())
             if (requiresCardRefund) {
                 paymentLog.requestCardRefund()
             }
@@ -96,10 +96,10 @@ class CompensateOrderPaymentUseCase(
 
     private fun publishCompensated(event: OrderPaymentCompensationRequestedEvent) {
         eventPublisher.publish(
-            topic = DomainTopics.ORDER_PAYMENT_COMPENSATED,
-            key = event.orderId,
-            eventType = DomainEventTypes.ORDER_PAYMENT_COMPENSATED,
-            payload = OrderPaymentCompensatedEvent(
+            topic = DomainTopics.PAYMENT_COMPENSATED,
+            key = event.orderId.toString(),
+            eventType = DomainEventTypes.PAYMENT_COMPENSATED,
+            payload = PaymentCompensatedEvent(
                 orderId = event.orderId,
                 userId = event.userId,
             ),
@@ -108,10 +108,10 @@ class CompensateOrderPaymentUseCase(
 
     private fun publishFailed(event: OrderPaymentCompensationRequestedEvent, reason: String) {
         eventPublisher.publish(
-            topic = DomainTopics.ORDER_PAYMENT_COMPENSATION_FAILED,
-            key = event.orderId,
-            eventType = DomainEventTypes.ORDER_PAYMENT_COMPENSATION_FAILED,
-            payload = OrderPaymentCompensationFailedEvent(
+            topic = DomainTopics.PAYMENT_COMPENSATION_FAILED,
+            key = event.orderId.toString(),
+            eventType = DomainEventTypes.PAYMENT_COMPENSATION_FAILED,
+            payload = PaymentCompensationFailedEvent(
                 orderId = event.orderId,
                 userId = event.userId,
                 reason = reason,

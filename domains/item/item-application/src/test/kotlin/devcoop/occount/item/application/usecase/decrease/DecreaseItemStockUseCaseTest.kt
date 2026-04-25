@@ -1,16 +1,15 @@
-package devcoop.occount.item.application.usecase.order
+package devcoop.occount.item.application.usecase.decrease
 
-import devcoop.occount.core.common.event.OrderItemPayload
+import devcoop.occount.core.common.event.ItemStockPayload
 import devcoop.occount.core.common.event.OrderRequestedEvent
 import devcoop.occount.core.common.event.OrderRequestedItemPayload
-import devcoop.occount.core.common.event.OrderStockCompletedEvent
-import devcoop.occount.core.common.event.OrderStockFailedEvent
+import devcoop.occount.core.common.event.ItemStockDecreasedEvent
+import devcoop.occount.core.common.event.ItemStockDecreaseFailedEvent
 import devcoop.occount.item.application.support.FakeEventPublisher
 import devcoop.occount.item.application.support.FakeItemRepository
 import devcoop.occount.item.application.support.TestTransactionManager
 import devcoop.occount.item.application.support.itemFixture
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class DecreaseItemStockUseCaseTest {
@@ -30,12 +29,13 @@ class DecreaseItemStockUseCaseTest {
 
         useCase.decrease(requestedEvent()) {}
 
-        assertEquals(8, itemRepository.findById(1L)!!.getQuantity())
-        val publishedEvent = assertInstanceOf(OrderStockCompletedEvent::class.java, eventPublisher.published.single())
-        assertEquals(4000, publishedEvent.totalAmount)
-        assertEquals(
+        Assertions.assertEquals(8, itemRepository.findById(1L)!!.getQuantity())
+        val publishedEvent =
+            Assertions.assertInstanceOf(ItemStockDecreasedEvent::class.java, eventPublisher.published.single())
+        Assertions.assertEquals(4000, publishedEvent.totalAmount)
+        Assertions.assertEquals(
             listOf(
-                OrderItemPayload(
+                ItemStockPayload(
                     itemId = 1L,
                     itemName = "Americano",
                     itemPrice = 2000,
@@ -70,11 +70,12 @@ class DecreaseItemStockUseCaseTest {
             ),
         ) {}
 
-        assertEquals(7, itemRepository.findById(1L)!!.getQuantity())
-        val publishedEvent = assertInstanceOf(OrderStockCompletedEvent::class.java, eventPublisher.published.single())
-        assertEquals(6000, publishedEvent.totalAmount)
-        assertEquals(1, publishedEvent.items.size)
-        assertEquals(3, publishedEvent.items.single().quantity)
+        Assertions.assertEquals(7, itemRepository.findById(1L)!!.getQuantity())
+        val publishedEvent =
+            Assertions.assertInstanceOf(ItemStockDecreasedEvent::class.java, eventPublisher.published.single())
+        Assertions.assertEquals(6000, publishedEvent.totalAmount)
+        Assertions.assertEquals(1, publishedEvent.items.size)
+        Assertions.assertEquals(3, publishedEvent.items.single().quantity)
     }
 
     @Test
@@ -89,8 +90,9 @@ class DecreaseItemStockUseCaseTest {
 
         useCase.decrease(requestedEvent()) {}
 
-        val publishedEvent = assertInstanceOf(OrderStockFailedEvent::class.java, eventPublisher.published.single())
-        assertEquals("order-1", publishedEvent.orderId)
+        val publishedEvent =
+            Assertions.assertInstanceOf(ItemStockDecreaseFailedEvent::class.java, eventPublisher.published.single())
+        Assertions.assertEquals(1L, publishedEvent.orderId)
     }
 
     @Test
@@ -111,8 +113,8 @@ class DecreaseItemStockUseCaseTest {
 
         useCase.decrease(requestedEvent()) {}
 
-        assertEquals(2, itemRepository.saveStocksCount)
-        assertInstanceOf(OrderStockCompletedEvent::class.java, eventPublisher.published.single())
+        Assertions.assertEquals(2, itemRepository.saveStocksCount)
+        Assertions.assertInstanceOf(ItemStockDecreasedEvent::class.java, eventPublisher.published.single())
     }
 
     private fun requestedEvent(
@@ -121,7 +123,7 @@ class DecreaseItemStockUseCaseTest {
         ),
     ): OrderRequestedEvent {
         return OrderRequestedEvent(
-            orderId = "order-1",
+            orderId = 1L,
             userId = 7L,
             kioskId = "kiosk-1",
             items = items,

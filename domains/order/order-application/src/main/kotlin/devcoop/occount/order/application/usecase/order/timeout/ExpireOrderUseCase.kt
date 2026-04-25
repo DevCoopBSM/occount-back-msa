@@ -16,7 +16,7 @@ class ExpireOrderUseCase(
     private val orderPaymentCancellationEventPublisher: OrderPaymentCancellationEventPublisher,
     private val orderResponseMapper: OrderResponseMapper,
 ) {
-    fun expire(orderId: String): OrderResponse {
+    fun expire(orderId: Long): OrderResponse {
         val updated = orderMutationExecutor.updateOrder(
             orderId = orderId,
             update = { current ->

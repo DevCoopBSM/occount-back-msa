@@ -16,7 +16,7 @@ class OrderBusinessWarmup(
     override fun run(args: ApplicationArguments) {
         val elapsed = measureTimeMillis {
             repeat(JIT_WARMUP_COUNT) {
-                orderRepository.findById("00000000-0000-0000-0000-000000000000")
+                orderRepository.findById(0L)
                 orderRepository.findExpiredNonFinalOrderIds(Instant.now())
             }
         }
@@ -24,7 +24,7 @@ class OrderBusinessWarmup(
     }
 
     companion object {
-        private const val JIT_WARMUP_COUNT = 200
+        private const val JIT_WARMUP_COUNT = 10
         private val log = LoggerFactory.getLogger(OrderBusinessWarmup::class.java)
     }
 }

@@ -16,7 +16,7 @@ import java.time.LocalDateTime
 class OrderPaymentExecutionJpaEntity(
     @Id
     @field:Column(name = "order_id", nullable = false, updatable = false)
-    private var orderId: String = "",
+    private var orderId: Long = 0L,
     @Enumerated(EnumType.STRING)
     @field:Column(name = "state", nullable = false)
     private var state: OrderPaymentExecutionState = OrderPaymentExecutionState.PROCESSING,
@@ -29,7 +29,7 @@ class OrderPaymentExecutionJpaEntity(
     @field:Column(name = "updated_at", nullable = false)
     private var updatedAt: LocalDateTime = LocalDateTime.now(),
 ) {
-    fun getOrderId(): String = orderId
+    fun getOrderId(): Long = orderId
 
     fun getState(): OrderPaymentExecutionState = state
 

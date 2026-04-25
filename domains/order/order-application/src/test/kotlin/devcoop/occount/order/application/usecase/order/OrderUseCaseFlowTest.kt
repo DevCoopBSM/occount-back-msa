@@ -27,7 +27,7 @@ class OrderUseCaseFlowTest {
         val handleOrderStockEventUseCase = handleOrderStockEventUseCase(orderRepository, eventPublisher)
 
         handleOrderPaymentEventUseCase.applyFailedPayment(
-            OrderPaymentFailedEvent(
+            PaymentFailedEvent(
                 orderId = ORDER_ID,
                 userId = USER_ID,
                 reason = "payment failed",
@@ -71,7 +71,7 @@ class OrderUseCaseFlowTest {
         val handleOrderStockEventUseCase = handleOrderStockEventUseCase(orderRepository, eventPublisher)
 
         handleOrderStockEventUseCase.applyFailedStock(
-            OrderStockFailedEvent(
+            ItemStockDecreaseFailedEvent(
                 orderId = ORDER_ID,
                 reason = "out of stock",
             ),
@@ -175,7 +175,7 @@ class OrderUseCaseFlowTest {
         val handleOrderPaymentEventUseCase = handleOrderPaymentEventUseCase(orderRepository, eventPublisher)
 
         handleOrderPaymentEventUseCase.applyCompletedPayment(
-            OrderPaymentCompletedEvent(
+            PaymentCompletedEvent(
                 orderId = ORDER_ID,
                 userId = USER_ID,
                 paymentLogId = 10L,
@@ -201,7 +201,7 @@ class OrderUseCaseFlowTest {
         val handleOrderPaymentEventUseCase = handleOrderPaymentEventUseCase(orderRepository, eventPublisher)
 
         handleOrderPaymentEventUseCase.applyCompletedPayment(
-            OrderPaymentCompletedEvent(
+            PaymentCompletedEvent(
                 orderId = ORDER_ID,
                 userId = USER_ID,
                 paymentLogId = 10L,
@@ -228,7 +228,7 @@ class OrderUseCaseFlowTest {
         val handleOrderPaymentEventUseCase = handleOrderPaymentEventUseCase(orderRepository, eventPublisher)
 
         handleOrderPaymentEventUseCase.applyFailedPayment(
-            OrderPaymentFailedEvent(
+            PaymentFailedEvent(
                 orderId = ORDER_ID,
                 userId = USER_ID,
                 reason = "x".repeat(400),
@@ -285,11 +285,11 @@ class OrderUseCaseFlowTest {
         )
     }
 
-    private fun completedStockEvent(): OrderStockCompletedEvent {
-        return OrderStockCompletedEvent(
+    private fun completedStockEvent(): ItemStockDecreasedEvent {
+        return ItemStockDecreasedEvent(
             orderId = ORDER_ID,
             items = listOf(
-                OrderItemPayload(
+                ItemStockPayload(
                     itemId = ITEM_ID,
                     itemName = "Americano",
                     itemPrice = 2000,
@@ -335,7 +335,7 @@ class OrderUseCaseFlowTest {
                 eventPublisher,
                 TestTransactionPort(),
                 NoOpOrderStatusNotifier(),
-                OrderStreamEventMapper(OrderResponseMapper()),
+                OrderStreamEventMapper(),
             ),
         )
     }
@@ -362,7 +362,7 @@ class OrderUseCaseFlowTest {
         return OrderLifecycleProcessor(
             orderCompensationScheduler = OrderCompensationScheduler(orderRepository, eventPublisher, TestTransactionPort()),
             orderStatusNotifier = NoOpOrderStatusNotifier(),
-            orderStreamEventMapper = OrderStreamEventMapper(OrderResponseMapper()),
+            orderStreamEventMapper = OrderStreamEventMapper(),
         )
     }
 
@@ -375,9 +375,9 @@ class OrderUseCaseFlowTest {
         var versionedSaveCount = 0
             private set
 
-        override fun findById(orderId: String): OrderAggregate? = orders[orderId]
+        override fun findById(orderId: Long): OrderAggregate? = orders[orderId]
 
-        override fun findPersistedById(orderId: String): PersistedOrder? {
+        override fun findPersistedById(orderId: Long): PersistedOrder? {
             persistedLookupCount += 1
             return orders[orderId]?.let { order ->
                 PersistedOrder(
@@ -398,7 +398,7 @@ class OrderUseCaseFlowTest {
             return order
         }
 
-        override fun findExpiredNonFinalOrderIds(now: Instant): List<String> {
+        override fun findExpiredNonFinalOrderIds(now: Instant): List<Long> {
             return orders.values
                 .filter { it.expiresAt <= now && !it.status.isFinalForClient() }
                 .map { it.orderId }
@@ -429,7 +429,7 @@ class OrderUseCaseFlowTest {
     }
 
     private companion object {
-        const val ORDER_ID = "order-1"
+        const val ORDER_ID = 1L
         const val USER_ID = 1L
         const val ITEM_ID = 101L
         const val KIOSK_ID = "kiosk-1"

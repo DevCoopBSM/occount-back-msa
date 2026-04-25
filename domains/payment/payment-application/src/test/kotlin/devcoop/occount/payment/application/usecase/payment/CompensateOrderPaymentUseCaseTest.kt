@@ -1,8 +1,8 @@
 package devcoop.occount.payment.application.usecase.payment
 
 import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.core.common.event.OrderPaymentCompensatedEvent
-import devcoop.occount.core.common.event.OrderPaymentCompensationFailedEvent
+import devcoop.occount.core.common.event.PaymentCompensatedEvent
+import devcoop.occount.core.common.event.PaymentCompensationFailedEvent
 import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
 import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.dto.response.VanResult
@@ -50,7 +50,7 @@ class CompensateOrderPaymentUseCaseTest {
 
         useCase.compensate(
             OrderPaymentCompensationRequestedEvent(
-                orderId = "order-1",
+                orderId = 1L,
                 kioskId = "kiosk-1",
                 userId = 1L,
                 paymentLogId = 10L,
@@ -62,7 +62,7 @@ class CompensateOrderPaymentUseCaseTest {
         assertEquals(1, cardPaymentPort.refundRequests.size)
         assertEquals(1, chargeLogRepository.saved.size)
         assertEquals(1000, walletRepository.findByUserId(1L)?.point)
-        assertIs<OrderPaymentCompensatedEvent>(eventPublisher.published.single())
+        assertIs<PaymentCompensatedEvent>(eventPublisher.published.single())
         assertEquals(RefundState.COMPLETED, paymentLogRepository.require(10L).getRefundState())
         assertEquals(RefundState.COMPLETED, paymentLogRepository.require(10L).getCardRefundState())
         assertEquals(RefundState.COMPLETED, paymentLogRepository.require(10L).getPointRefundState())
@@ -87,7 +87,7 @@ class CompensateOrderPaymentUseCaseTest {
 
         useCase.compensate(
             OrderPaymentCompensationRequestedEvent(
-                orderId = "order-1",
+                orderId = 1L,
                 kioskId = "kiosk-1",
                 userId = null,
                 paymentLogId = 10L,
@@ -96,7 +96,7 @@ class CompensateOrderPaymentUseCaseTest {
             ),
         )
 
-        assertIs<OrderPaymentCompensationFailedEvent>(eventPublisher.published.single())
+        assertIs<PaymentCompensationFailedEvent>(eventPublisher.published.single())
         assertEquals(RefundState.REQUESTED, paymentLogRepository.require(10L).getRefundState())
     }
 
@@ -119,7 +119,7 @@ class CompensateOrderPaymentUseCaseTest {
         assertFailsWith<PaymentFailedException> {
             useCase.compensate(
                 OrderPaymentCompensationRequestedEvent(
-                    orderId = "order-1",
+                    orderId = 1L,
                     kioskId = "kiosk-1",
                     userId = null,
                     paymentLogId = 10L,

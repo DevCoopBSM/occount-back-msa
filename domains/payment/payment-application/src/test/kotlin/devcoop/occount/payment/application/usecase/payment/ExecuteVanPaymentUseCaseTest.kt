@@ -1,9 +1,9 @@
 package devcoop.occount.payment.application.usecase.payment
 
 import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.core.common.event.OrderItemPayload
-import devcoop.occount.core.common.event.OrderPaymentCompletedEvent
-import devcoop.occount.core.common.event.OrderPaymentFailedEvent
+import devcoop.occount.core.common.event.ItemStockPayload
+import devcoop.occount.core.common.event.PaymentCompletedEvent
+import devcoop.occount.core.common.event.PaymentFailedEvent
 import devcoop.occount.core.common.event.OrderPaymentPayload
 import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
 import devcoop.occount.payment.application.dto.request.ItemCommand
@@ -53,9 +53,9 @@ class ExecuteVanPaymentUseCaseTest {
 
         useCase.execute(requestedEvent())
 
-        assertEquals("order-1", executionRepository.cancelledOrderId)
+        assertEquals(1L, executionRepository.cancelledOrderId)
         assertEquals(0, cardPaymentPort.approvedAmounts.size)
-        assertIs<OrderPaymentFailedEvent>(eventPublisher.published.single())
+        assertIs<PaymentFailedEvent>(eventPublisher.published.single())
     }
 
     @Test
@@ -68,9 +68,9 @@ class ExecuteVanPaymentUseCaseTest {
 
         useCase.execute(requestedEvent())
 
-        assertEquals("order-1", executionRepository.completedOrderId)
-        assertEquals("order-1", cardPaymentPort.lastPaymentKey)
-        assertIs<OrderPaymentCompletedEvent>(eventPublisher.published.single())
+        assertEquals(1L, executionRepository.completedOrderId)
+        assertEquals("1", cardPaymentPort.lastPaymentKey)
+        assertIs<PaymentCompletedEvent>(eventPublisher.published.single())
     }
 
     @Test
@@ -83,18 +83,18 @@ class ExecuteVanPaymentUseCaseTest {
 
         useCase.execute(requestedEvent())
 
-        assertEquals("order-1", executionRepository.cancelledOrderId)
-        assertIs<OrderPaymentFailedEvent>(eventPublisher.published.single())
+        assertEquals(1L, executionRepository.cancelledOrderId)
+        assertIs<PaymentFailedEvent>(eventPublisher.published.single())
     }
 
     private fun requestedEvent(): OrderPaymentRequestedEvent {
         return OrderPaymentRequestedEvent(
-            orderId = "order-1",
+            orderId = 1L,
             kioskId = "kiosk-1",
             userId = null,
             payment = OrderPaymentPayload(totalAmount = 2000),
             items = listOf(
-                OrderItemPayload(
+                ItemStockPayload(
                     itemId = 101L,
                     itemName = "Americano",
                     itemPrice = 2000,
@@ -128,15 +128,15 @@ class ExecuteVanPaymentUseCaseTest {
     private class FakeOrderPaymentExecutionRepository(
         private val startResult: OrderPaymentExecutionStartResult = OrderPaymentExecutionStartResult.STARTED,
     ) : OrderPaymentExecutionRepository {
-        var completedOrderId: String? = null
-        var cancelledOrderId: String? = null
+        var completedOrderId: Long? = null
+        var cancelledOrderId: Long? = null
 
-        override fun startProcessing(orderId: String): OrderPaymentExecutionStartResult = startResult
-        override fun requestCancellation(orderId: String): OrderPaymentCancellationRequestResult = OrderPaymentCancellationRequestResult.NO_ACTIVE_PAYMENT
-        override fun isCancellationRequested(orderId: String): Boolean = false
-        override fun markCompleted(orderId: String) { completedOrderId = orderId }
-        override fun markFailed(orderId: String) = Unit
-        override fun markCancelled(orderId: String) { cancelledOrderId = orderId }
+        override fun startProcessing(orderId: Long): OrderPaymentExecutionStartResult = startResult
+        override fun requestCancellation(orderId: Long): OrderPaymentCancellationRequestResult = OrderPaymentCancellationRequestResult.NO_ACTIVE_PAYMENT
+        override fun isCancellationRequested(orderId: Long): Boolean = false
+        override fun markCompleted(orderId: Long) { completedOrderId = orderId }
+        override fun markFailed(orderId: Long) = Unit
+        override fun markCancelled(orderId: Long) { cancelledOrderId = orderId }
     }
 
     private class FakeEventPublisher : EventPublisher {

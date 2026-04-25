@@ -3,7 +3,7 @@ package devcoop.occount.order.domain.order
 import java.time.Instant
 
 data class OrderAggregate(
-    val orderId: String,
+    val orderId: Long,
     val userId: Long?,
     val requestedLines: List<RequestedOrderLine> = emptyList(),
     val lines: List<OrderLine> = emptyList(),
@@ -143,5 +143,21 @@ data class OrderAggregate(
     private fun isCompensationResolved(): Boolean {
         return paymentStatus.isCompensationResolved() &&
             stockStatus.isCompensationResolved()
+    }
+
+    companion object {
+        fun create(
+            userId: Long?,
+            requestedLines: List<RequestedOrderLine>,
+            kioskId: String,
+            expiresAt: Instant,
+        ): OrderAggregate = OrderAggregate(
+            orderId = 0L,
+            userId = userId,
+            requestedLines = requestedLines,
+            payment = OrderPayment(totalAmount = 0),
+            kioskId = kioskId,
+            expiresAt = expiresAt,
+        )
     }
 }

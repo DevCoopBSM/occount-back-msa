@@ -19,7 +19,7 @@ class CancelPendingOrderPaymentUseCaseTest {
         )
         val useCase = CancelPendingOrderPaymentUseCase(cardPaymentPort, executionRepository)
 
-        useCase.cancel(OrderPaymentCancellationRequestedEvent(orderId = "order-1", kioskId = "kiosk-1", userId = 1L))
+        useCase.cancel(OrderPaymentCancellationRequestedEvent(orderId = 1L, kioskId = "kiosk-1", userId = 1L))
 
         assertEquals("order-1", cardPaymentPort.cancelRequestedPaymentKey)
     }
@@ -32,10 +32,10 @@ class CancelPendingOrderPaymentUseCaseTest {
         )
         val useCase = CancelPendingOrderPaymentUseCase(cardPaymentPort, executionRepository)
 
-        useCase.cancel(OrderPaymentCancellationRequestedEvent(orderId = "order-1", kioskId = "kiosk-1", userId = 1L))
+        useCase.cancel(OrderPaymentCancellationRequestedEvent(orderId = 1L, kioskId = "kiosk-1", userId = 1L))
 
         assertEquals(null, cardPaymentPort.cancelRequestedPaymentKey)
-        assertEquals("order-1", executionRepository.lastCancellationOrderId)
+        assertEquals(1L, executionRepository.lastCancellationOrderId)
     }
 
     private class FakeCardPaymentPort : CardPaymentPort {
@@ -57,18 +57,18 @@ class CancelPendingOrderPaymentUseCaseTest {
     private class FakeOrderPaymentExecutionRepository(
         private val cancellationRequestResult: OrderPaymentCancellationRequestResult,
     ) : OrderPaymentExecutionRepository {
-        var lastCancellationOrderId: String? = null
+        var lastCancellationOrderId: Long? = null
 
-        override fun startProcessing(orderId: String): OrderPaymentExecutionStartResult = OrderPaymentExecutionStartResult.STARTED
+        override fun startProcessing(orderId: Long): OrderPaymentExecutionStartResult = OrderPaymentExecutionStartResult.STARTED
 
-        override fun requestCancellation(orderId: String): OrderPaymentCancellationRequestResult {
+        override fun requestCancellation(orderId: Long): OrderPaymentCancellationRequestResult {
             lastCancellationOrderId = orderId
             return cancellationRequestResult
         }
 
-        override fun isCancellationRequested(orderId: String): Boolean = false
-        override fun markCompleted(orderId: String) = Unit
-        override fun markFailed(orderId: String) = Unit
-        override fun markCancelled(orderId: String) = Unit
+        override fun isCancellationRequested(orderId: Long): Boolean = false
+        override fun markCompleted(orderId: Long) = Unit
+        override fun markFailed(orderId: Long) = Unit
+        override fun markCancelled(orderId: Long) = Unit
     }
 }

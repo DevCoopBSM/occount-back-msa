@@ -1,12 +1,13 @@
-package devcoop.occount.item.application.usecase.order
+package devcoop.occount.item.application.usecase.decrease
 
 import devcoop.occount.core.common.error.ErrorMessage
 import devcoop.occount.core.common.event.DomainEventTypes
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.core.common.event.OrderStockCompensatedEvent
-import devcoop.occount.core.common.event.OrderStockCompensationFailedEvent
-import devcoop.occount.core.common.event.OrderStockCompensationRequestedEvent
+import devcoop.occount.core.common.event.ItemStockPayload
+import devcoop.occount.core.common.event.OrderRequestedEvent
+import devcoop.occount.core.common.event.ItemStockDecreasedEvent
+import devcoop.occount.core.common.event.ItemStockDecreaseFailedEvent
 import devcoop.occount.core.common.exception.BusinessBaseException
 import devcoop.occount.item.application.exception.DuplicateEventException
 import devcoop.occount.item.application.output.ItemRepository
@@ -19,7 +20,7 @@ import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.support.TransactionTemplate
 
 @Service
-class CompensateOrderStockUseCase(
+class DecreaseItemStockUseCase(
     private val itemRepository: ItemRepository,
     private val eventPublisher: EventPublisher,
     transactionManager: PlatformTransactionManager,
@@ -28,12 +29,12 @@ class CompensateOrderStockUseCase(
         propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW
     }
 
-    fun compensate(event: OrderStockCompensationRequestedEvent, recordConsumption: () -> Unit) {
+    fun decrease(event: OrderRequestedEvent, recordConsumption: () -> Unit) {
         repeat(MAX_RETRY_COUNT) { attempt ->
             try {
                 transactionTemplate.executeWithoutResult {
                     recordConsumption()
-                    compensateOnce(event)
+                    processOnce(event)
                 }
                 return
             } catch (_: DuplicateEventException) {
@@ -47,30 +48,46 @@ class CompensateOrderStockUseCase(
         }
     }
 
-    private fun compensateOnce(event: OrderStockCompensationRequestedEvent) {
+    private fun processOnce(event: OrderRequestedEvent) {
         val requestedItems = aggregateRequestedItems(event)
         try {
             val itemsById = itemRepository.findAllByItemIds(requestedItems.keys.toList())
                 .associateBy(Item::getItemId)
 
-            val restoredItems = requestedItems.map { (itemId, quantity) ->
+            val updatedItems = mutableListOf<Item>()
+            val confirmedItems = requestedItems.map { (itemId, quantity) ->
                 val item = itemsById[itemId] ?: throw ItemNotFoundException()
-                item.increaseQuantity(quantity)
+                if (!item.isActive()) throw ItemNotFoundException()
+
+                val updatedItem = item.decreaseQuantity(quantity)
+                updatedItems += updatedItem
+
+                ItemStockPayload(
+                    itemId = itemId,
+                    itemName = item.getName(),
+                    itemPrice = item.getPrice(),
+                    quantity = quantity,
+                    totalPrice = item.getPrice() * quantity,
+                )
             }
 
-            itemRepository.saveStocks(restoredItems)
+            itemRepository.saveStocks(updatedItems)
             eventPublisher.publish(
-                topic = DomainTopics.ORDER_STOCK_COMPENSATED,
-                key = event.orderId,
-                eventType = DomainEventTypes.ORDER_STOCK_COMPENSATED,
-                payload = OrderStockCompensatedEvent(orderId = event.orderId),
+                topic = DomainTopics.ITEM_STOCK_DECREASED,
+                key = event.orderId.toString(),
+                eventType = DomainEventTypes.ITEM_STOCK_DECREASED,
+                payload = ItemStockDecreasedEvent(
+                    orderId = event.orderId,
+                    items = confirmedItems,
+                    totalAmount = confirmedItems.sumOf(ItemStockPayload::totalPrice),
+                ),
             )
         } catch (ex: BusinessBaseException) {
             publishFailed(event.orderId, ex.message ?: ErrorMessage.INTERNAL_SERVER_ERROR.message)
         }
     }
 
-    private fun aggregateRequestedItems(event: OrderStockCompensationRequestedEvent): LinkedHashMap<Long, Int> {
+    private fun aggregateRequestedItems(event: OrderRequestedEvent): LinkedHashMap<Long, Int> {
         val quantitiesByItemId = linkedMapOf<Long, Int>()
         event.items.forEach { item ->
             quantitiesByItemId[item.itemId] = (quantitiesByItemId[item.itemId] ?: 0) + item.quantity
@@ -78,11 +95,7 @@ class CompensateOrderStockUseCase(
         return quantitiesByItemId
     }
 
-    private fun markFailed(
-        event: OrderStockCompensationRequestedEvent,
-        reason: String,
-        recordConsumption: () -> Unit,
-    ) {
+    private fun markFailed(event: OrderRequestedEvent, reason: String, recordConsumption: () -> Unit) {
         transactionTemplate.executeWithoutResult {
             try {
                 recordConsumption()
@@ -93,12 +106,12 @@ class CompensateOrderStockUseCase(
         }
     }
 
-    private fun publishFailed(orderId: String, reason: String) {
+    private fun publishFailed(orderId: Long, reason: String) {
         eventPublisher.publish(
-            topic = DomainTopics.ORDER_STOCK_COMPENSATION_FAILED,
-            key = orderId,
-            eventType = DomainEventTypes.ORDER_STOCK_COMPENSATION_FAILED,
-            payload = OrderStockCompensationFailedEvent(
+            topic = DomainTopics.ITEM_STOCK_DECREASE_FAILED,
+            key = orderId.toString(),
+            eventType = DomainEventTypes.ITEM_STOCK_DECREASE_FAILED,
+            payload = ItemStockDecreaseFailedEvent(
                 orderId = orderId,
                 reason = reason,
             ),

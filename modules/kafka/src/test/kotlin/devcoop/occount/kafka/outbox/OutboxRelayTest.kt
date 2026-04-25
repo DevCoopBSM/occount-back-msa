@@ -7,6 +7,7 @@ import org.apache.kafka.clients.producer.RecordMetadata
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import io.micrometer.tracing.Tracer
 import org.mockito.Mockito.mock
 import org.springframework.kafka.support.SendResult
 import org.springframework.kafka.core.KafkaTemplate
@@ -30,7 +31,7 @@ class OutboxRelayTest {
         )
         val kafkaTemplate = TestKafkaTemplate(future)
 
-        OutboxRelay(outboxEventRepository.repository, kafkaTemplate).relay()
+        OutboxRelay(outboxEventRepository.repository, kafkaTemplate, mock(Tracer::class.java)).relay()
 
         assertEquals(1, outboxEventRepository.findCalls)
         assertEquals(1, outboxEventRepository.publishedMarks.size)
@@ -47,7 +48,7 @@ class OutboxRelayTest {
         future.completeExceptionally(IllegalStateException("send failed"))
 
         assertThrows<ExecutionException> {
-            OutboxRelay(outboxEventRepository.repository, kafkaTemplate).relay()
+            OutboxRelay(outboxEventRepository.repository, kafkaTemplate, mock(Tracer::class.java)).relay()
         }
         assertEquals(1, outboxEventRepository.findCalls)
         assertEquals(0, outboxEventRepository.publishedMarks.size)

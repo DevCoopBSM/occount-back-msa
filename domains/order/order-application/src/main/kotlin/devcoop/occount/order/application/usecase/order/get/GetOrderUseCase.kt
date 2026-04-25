@@ -14,12 +14,12 @@ class GetOrderUseCase(
     private val orderResponseMapper: OrderResponseMapper,
     private val orderStreamEventMapper: OrderStreamEventMapper,
 ) {
-    fun getOrder(orderId: String): OrderResponse {
+    fun getOrder(orderId: Long): OrderResponse {
         val order = orderRepository.findById(orderId) ?: throw OrderNotFoundException()
         return orderResponseMapper.toResponse(order)
     }
 
-    fun getOrderStreamEvent(orderId: String): OrderStreamEvent {
+    fun getOrderStreamEvent(orderId: Long): OrderStreamEvent {
         val order = orderRepository.findById(orderId) ?: throw OrderNotFoundException()
         return orderStreamEventMapper.toStreamEvent(order)
     }

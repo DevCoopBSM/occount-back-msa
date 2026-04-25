@@ -10,22 +10,23 @@ import org.junit.jupiter.api.Test
 import java.time.Instant
 
 class OrderStreamEventMapperTest {
-    private val mapper = OrderStreamEventMapper(OrderResponseMapper())
+    private val mapper = OrderStreamEventMapper()
 
     @Test
     fun `pending processing order maps to ORDER_ACCEPTED`() {
         val event = mapper.toStreamEvent(baseOrder())
 
         assertEquals(OrderStreamEventType.ORDER_ACCEPTED, event.type)
+        assertEquals(1L, event.orderId)
     }
 
     @Test
-    fun `stock succeeded order maps to STOCK_CONFIRMED`() {
+    fun `stock succeeded order keeps ORDER_ACCEPTED`() {
         val event = mapper.toStreamEvent(
             baseOrder(stockStatus = OrderStepStatus.SUCCEEDED),
         )
 
-        assertEquals(OrderStreamEventType.STOCK_CONFIRMED, event.type)
+        assertEquals(OrderStreamEventType.ORDER_ACCEPTED, event.type)
     }
 
     @Test
@@ -41,12 +42,33 @@ class OrderStreamEventMapperTest {
     }
 
     @Test
-    fun `final status maps directly to matching event type`() {
+    fun `compensation failed order maps to FAILED`() {
         val event = mapper.toStreamEvent(
             baseOrder(status = OrderStatus.COMPENSATION_FAILED),
         )
 
-        assertEquals(OrderStreamEventType.COMPENSATION_FAILED, event.type)
+        assertEquals(OrderStreamEventType.FAILED, event.type)
+    }
+
+    @Test
+    fun `compensating cancellation order maps to CANCEL_REQUESTED`() {
+        val event = mapper.toStreamEvent(
+            baseOrder(
+                status = OrderStatus.COMPENSATING,
+                cancelRequested = true,
+            ),
+        )
+
+        assertEquals(OrderStreamEventType.CANCEL_REQUESTED, event.type)
+    }
+
+    @Test
+    fun `compensating failure order maps to FAILED`() {
+        val event = mapper.toStreamEvent(
+            baseOrder(status = OrderStatus.COMPENSATING),
+        )
+
+        assertEquals(OrderStreamEventType.FAILED, event.type)
     }
 
     private fun baseOrder(
@@ -54,9 +76,10 @@ class OrderStreamEventMapperTest {
         stockStatus: OrderStepStatus = OrderStepStatus.PENDING,
         paymentStatus: OrderStepStatus = OrderStepStatus.PENDING,
         paymentRequested: Boolean = false,
+        cancelRequested: Boolean = false,
     ): OrderAggregate {
         return OrderAggregate(
-            orderId = "order-1",
+            orderId = 1L,
             userId = 1L,
             payment = OrderPayment(totalAmount = 0),
             status = status,
@@ -65,6 +88,7 @@ class OrderStreamEventMapperTest {
             kioskId = "kiosk-1",
             expiresAt = Instant.now().plusSeconds(30),
             paymentRequested = paymentRequested,
+            cancelRequested = cancelRequested,
         )
     }
 }

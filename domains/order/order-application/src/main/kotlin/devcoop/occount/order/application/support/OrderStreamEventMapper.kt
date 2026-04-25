@@ -8,13 +8,11 @@ import devcoop.occount.order.domain.order.OrderStepStatus
 import org.springframework.stereotype.Component
 
 @Component
-class OrderStreamEventMapper(
-    private val orderResponseMapper: OrderResponseMapper,
-) {
+class OrderStreamEventMapper {
     fun toStreamEvent(order: OrderAggregate): OrderStreamEvent {
         return OrderStreamEvent(
             type = resolveType(order),
-            payload = orderResponseMapper.toResponse(order),
+            orderId = order.orderId,
         )
     }
 
@@ -24,9 +22,15 @@ class OrderStreamEventMapper(
             OrderStatus.COMPLETED -> OrderStreamEventType.COMPLETED
             OrderStatus.FAILED -> OrderStreamEventType.FAILED
             OrderStatus.CANCEL_REQUESTED -> OrderStreamEventType.CANCEL_REQUESTED
-            OrderStatus.COMPENSATING -> OrderStreamEventType.COMPENSATING
+            OrderStatus.COMPENSATING -> {
+                if (order.cancelRequested) {
+                    OrderStreamEventType.CANCEL_REQUESTED
+                } else {
+                    OrderStreamEventType.FAILED
+                }
+            }
             OrderStatus.CANCELLED -> OrderStreamEventType.CANCELLED
-            OrderStatus.COMPENSATION_FAILED -> OrderStreamEventType.COMPENSATION_FAILED
+            OrderStatus.COMPENSATION_FAILED -> OrderStreamEventType.FAILED
             OrderStatus.TIMED_OUT -> OrderStreamEventType.TIMED_OUT
         }
     }
@@ -35,8 +39,6 @@ class OrderStreamEventMapper(
         return when {
             order.paymentRequested && order.paymentStatus == OrderStepStatus.PENDING ->
                 OrderStreamEventType.PAYMENT_REQUESTED
-            order.stockStatus == OrderStepStatus.SUCCEEDED ->
-                OrderStreamEventType.STOCK_CONFIRMED
             else -> OrderStreamEventType.ORDER_ACCEPTED
         }
     }

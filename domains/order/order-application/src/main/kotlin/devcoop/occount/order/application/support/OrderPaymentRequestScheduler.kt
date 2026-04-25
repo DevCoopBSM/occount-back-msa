@@ -3,7 +3,7 @@ package devcoop.occount.order.application.support
 import devcoop.occount.core.common.event.DomainEventTypes
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.core.common.event.OrderItemPayload
+import devcoop.occount.core.common.event.ItemStockPayload
 import devcoop.occount.core.common.event.OrderPaymentPayload
 import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
 import devcoop.occount.order.application.exception.OrderConcurrencyException
@@ -24,7 +24,7 @@ class OrderPaymentRequestScheduler(
     private val orderStatusNotifier: OrderStatusNotifier,
     private val orderStreamEventMapper: OrderStreamEventMapper,
 ) {
-    fun schedulePaymentRequestIfEligible(orderId: String) {
+    fun schedulePaymentRequestIfEligible(orderId: Long) {
         repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
             try {
                 var requestedOrder: OrderAggregate? = null
@@ -71,7 +71,7 @@ class OrderPaymentRequestScheduler(
         log.info("결제 요청 이벤트 발행 - 주문={} 시도={}", order.orderId, attempt)
         eventPublisher.publish(
             topic = DomainTopics.ORDER_PAYMENT_REQUESTED,
-            key = order.orderId,
+            key = order.orderId.toString(),
             eventType = DomainEventTypes.ORDER_PAYMENT_REQUESTED,
             payload = OrderPaymentRequestedEvent(
                 orderId = order.orderId,
@@ -81,7 +81,7 @@ class OrderPaymentRequestScheduler(
                     totalAmount = order.payment.totalAmount,
                 ),
                 items = order.lines.map { line ->
-                    OrderItemPayload(
+                    ItemStockPayload(
                         itemId = line.itemId,
                         itemName = line.itemNameSnapshot,
                         itemPrice = line.unitPrice,

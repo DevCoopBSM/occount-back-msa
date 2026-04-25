@@ -1,10 +1,9 @@
 package devcoop.occount.order.api.sse
 
-import devcoop.occount.order.application.shared.OrderResponse
 import devcoop.occount.order.application.shared.OrderStreamEvent
 import devcoop.occount.order.application.shared.OrderStreamEventType
-import devcoop.occount.order.domain.order.OrderStatus
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
@@ -16,16 +15,16 @@ class OrderSseRegistryTest {
         val registry = OrderSseRegistry(support)
         val initial = OrderStreamEvent(
             type = OrderStreamEventType.ORDER_ACCEPTED,
-            payload = OrderResponse(orderId = "order-1", status = OrderStatus.PROCESSING),
+            orderId = 1L,
         )
 
-        val emitter = registry.register("order-1") { initial } as TestSseEmitter
+        val emitter = registry.register(1L) { initial } as TestSseEmitter
 
         registry.notify(initial)
         registry.notify(
             OrderStreamEvent(
                 type = OrderStreamEventType.COMPLETED,
-                payload = OrderResponse(orderId = "order-1", status = OrderStatus.COMPLETED),
+                orderId = 1L,
             ),
         )
 
@@ -34,7 +33,7 @@ class OrderSseRegistryTest {
                 initial,
                 OrderStreamEvent(
                     type = OrderStreamEventType.COMPLETED,
-                    payload = OrderResponse(orderId = "order-1", status = OrderStatus.COMPLETED),
+                    orderId = 1L,
                 ),
             ),
             emitter.events,
@@ -48,10 +47,10 @@ class OrderSseRegistryTest {
         val registry = OrderSseRegistry(support)
         val completed = OrderStreamEvent(
             type = OrderStreamEventType.COMPLETED,
-            payload = OrderResponse(orderId = "order-1", status = OrderStatus.COMPLETED),
+            orderId = 1L,
         )
 
-        val emitter = registry.register("order-1") { completed } as TestSseEmitter
+        val emitter = registry.register(1L) { completed } as TestSseEmitter
 
         assertEquals(listOf(completed), emitter.events)
         assertTrue(emitter.completed)
@@ -63,21 +62,42 @@ class OrderSseRegistryTest {
         val registry = OrderSseRegistry(support)
         val staleEvent = OrderStreamEvent(
             type = OrderStreamEventType.ORDER_ACCEPTED,
-            payload = OrderResponse(orderId = "order-1", status = OrderStatus.PROCESSING),
+            orderId = 1L,
         )
         val completedEvent = OrderStreamEvent(
             type = OrderStreamEventType.COMPLETED,
-            payload = OrderResponse(orderId = "order-1", status = OrderStatus.COMPLETED),
+            orderId = 1L,
         )
 
         // getCurrentEvent() 실행 중 notify()가 먼저 도착하는 race condition 시뮬레이션
-        val emitter = registry.register("order-1") {
+        val emitter = registry.register(1L) {
             registry.notify(completedEvent)
             staleEvent  // 조회는 오래된 상태를 반환
         } as TestSseEmitter
 
         assertEquals(listOf(completedEvent), emitter.events)
         assertTrue(emitter.completed)
+    }
+
+    @Test
+    fun `notify with same frontend event type is skipped`() {
+        val support = TestOrderSseEmitterSupport()
+        val registry = OrderSseRegistry(support)
+        val initial = OrderStreamEvent(
+            type = OrderStreamEventType.CANCEL_REQUESTED,
+            orderId = 1L,
+        )
+        val compensating = OrderStreamEvent(
+            type = OrderStreamEventType.CANCEL_REQUESTED,
+            orderId = 1L,
+        )
+
+        val emitter = registry.register(1L) { initial } as TestSseEmitter
+
+        registry.notify(compensating)
+
+        assertEquals(listOf(initial), emitter.events)
+        assertFalse(emitter.completed)
     }
 
     private class TestOrderSseEmitterSupport : OrderSseEmitterSupport {

@@ -1,0 +1,25 @@
+case	variant	service	run	label	commit	startup_seconds	first_request_seconds	second_request_seconds	third_request_seconds	business_warmup_ms	servlet_warmup_ms	jpa_warmup_ms	java_opts
+before	default	item-api	1	warmup 이전 / 기본	97057405fee9886240b8f388f19c4e70e670f70b	10.534	0.238650	0.004178	0.003293				
+before	default	member-api	1	warmup 이전 / 기본	97057405fee9886240b8f388f19c4e70e670f70b	10.363	0.315631	0.009137	0.006023				
+before	default	item-api	2	warmup 이전 / 기본	97057405fee9886240b8f388f19c4e70e670f70b	11.448	0.248353	0.006383	0.004515				
+before	default	member-api	2	warmup 이전 / 기본	97057405fee9886240b8f388f19c4e70e670f70b	11.754	0.253574	0.006333	0.005156				
+before	default	item-api	3	warmup 이전 / 기본	97057405fee9886240b8f388f19c4e70e670f70b	9.258	0.218838	0.004258	0.003630				
+before	default	member-api	3	warmup 이전 / 기본	97057405fee9886240b8f388f19c4e70e670f70b	9.457	0.494570	0.026806	0.005883				
+before	threshold_on	item-api	1	warmup 이전 / JIT 임계치 하향	97057405fee9886240b8f388f19c4e70e670f70b	23.13	0.220518	0.005387	0.030206				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	member-api	1	warmup 이전 / JIT 임계치 하향	97057405fee9886240b8f388f19c4e70e670f70b	23.479	0.378129	0.017105	0.020496				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	item-api	2	warmup 이전 / JIT 임계치 하향	97057405fee9886240b8f388f19c4e70e670f70b	16.816	0.517828	0.030137	0.022108				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	member-api	2	warmup 이전 / JIT 임계치 하향	97057405fee9886240b8f388f19c4e70e670f70b	16.801	0.443454	0.014487	0.262574				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	item-api	3	warmup 이전 / JIT 임계치 하향	97057405fee9886240b8f388f19c4e70e670f70b	26.812	0.292284	0.007751	0.004583				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	member-api	3	warmup 이전 / JIT 임계치 하향	97057405fee9886240b8f388f19c4e70e670f70b	27.307	0.509982	0.007156	0.004613				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+current_warmup	default	item-api	1	현재 warmup / 기본	7299aa6a592885d353c5dc1fd6f5f4817eec1965	18.108	0.181739	0.005167	0.003148	1274	708		
+current_warmup	default	member-api	1	현재 warmup / 기본	7299aa6a592885d353c5dc1fd6f5f4817eec1965	18.872	0.693147	0.048558	0.031893	638	726		
+current_warmup	default	item-api	2	현재 warmup / 기본	7299aa6a592885d353c5dc1fd6f5f4817eec1965	11.866	0.169632	0.004325	0.006362	1396	3119		
+current_warmup	default	member-api	2	현재 warmup / 기본	7299aa6a592885d353c5dc1fd6f5f4817eec1965	11.816	1.434553	0.012254	0.008871	986	2406		
+current_warmup	default	item-api	3	현재 warmup / 기본	7299aa6a592885d353c5dc1fd6f5f4817eec1965	13.063	0.197830	0.003667	0.003522	906	438		
+current_warmup	default	member-api	3	현재 warmup / 기본	7299aa6a592885d353c5dc1fd6f5f4817eec1965	12.838	0.228810	0.006004	0.005003	510	855		
+current_warmup	threshold_on	item-api	1	현재 warmup / JIT 임계치 하향	7299aa6a592885d353c5dc1fd6f5f4817eec1965	21.053	0.242378	0.004945	0.003453	642	552		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+current_warmup	threshold_on	member-api	1	현재 warmup / JIT 임계치 하향	7299aa6a592885d353c5dc1fd6f5f4817eec1965	21.613	0.300175	0.019336	0.006123	493	327		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+current_warmup	threshold_on	item-api	2	현재 warmup / JIT 임계치 하향	7299aa6a592885d353c5dc1fd6f5f4817eec1965	16.117	0.217319	0.004277	0.003116	558	578		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+current_warmup	threshold_on	member-api	2	현재 warmup / JIT 임계치 하향	7299aa6a592885d353c5dc1fd6f5f4817eec1965	16.316	0.783281	0.016659	0.005583	354	450		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+current_warmup	threshold_on	item-api	3	현재 warmup / JIT 임계치 하향	7299aa6a592885d353c5dc1fd6f5f4817eec1965	15.26	0.166387	0.004250	0.003186	771	604		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+current_warmup	threshold_on	member-api	3	현재 warmup / JIT 임계치 하향	7299aa6a592885d353c5dc1fd6f5f4817eec1965	15.41	0.227724	0.008083	0.004488	447	522		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150

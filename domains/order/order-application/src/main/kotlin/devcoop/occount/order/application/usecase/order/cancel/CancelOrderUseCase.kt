@@ -18,7 +18,7 @@ class CancelOrderUseCase(
     private val orderPaymentCancellationEventPublisher: OrderPaymentCancellationEventPublisher,
     private val orderResponseMapper: OrderResponseMapper,
 ) {
-    fun cancel(orderId: String, kioskId: String): OrderResponse {
+    fun cancel(orderId: Long, kioskId: String): OrderResponse {
         val updated = orderMutationExecutor.updateOrder(
             orderId = orderId,
             update = { order ->

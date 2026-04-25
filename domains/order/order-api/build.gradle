@@ -9,5 +9,6 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
-    testImplementation 'org.mockito.kotlin:mockito-kotlin:5.4.0'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    testImplementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
 }

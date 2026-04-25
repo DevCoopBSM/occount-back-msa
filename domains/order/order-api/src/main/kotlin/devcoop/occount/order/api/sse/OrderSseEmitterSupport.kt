@@ -1,7 +1,6 @@
 package devcoop.occount.order.api.sse
 
 import devcoop.occount.order.application.shared.OrderStreamEvent
-import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import java.io.IOException
@@ -20,8 +19,7 @@ class DefaultOrderSseEmitterSupport : OrderSseEmitterSupport {
         try {
             emitter.send(
                 SseEmitter.event()
-                    .name(event.type.name)
-                    .data(event.payload, MediaType.APPLICATION_JSON),
+                    .name(event.type.name),
             )
         } catch (e: IOException) {
             emitter.completeWithError(e)

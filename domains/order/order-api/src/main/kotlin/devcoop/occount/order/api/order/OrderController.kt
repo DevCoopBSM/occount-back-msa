@@ -40,7 +40,7 @@ class OrderController(
 
     @GetMapping("/{orderId}")
     fun getOrder(
-        @PathVariable orderId: String,
+        @PathVariable orderId: Long,
     ): ResponseEntity<OrderResponse> {
         val response = getOrderUseCase.getOrder(orderId)
         return ResponseEntity.ok(response)
@@ -48,7 +48,7 @@ class OrderController(
 
     @GetMapping("/{orderId}/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun streamOrder(
-        @PathVariable orderId: String,
+        @PathVariable orderId: Long,
     ): SseEmitter {
         return orderSseRegistry.register(orderId) {
             getOrderUseCase.getOrderStreamEvent(orderId)
@@ -57,7 +57,7 @@ class OrderController(
 
     @PostMapping("/{orderId}/cancel")
     fun cancelOrder(
-        @PathVariable orderId: String,
+        @PathVariable orderId: Long,
         @RequestHeader(value = AuthHeaders.KIOSK_ID, defaultValue = "1") kioskId: String,
     ): ResponseEntity<OrderResponse> {
         val response = cancelOrderUseCase.cancel(orderId, kioskId)

@@ -9,4 +9,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
     testImplementation project(':domains:item:item-domain')
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    testImplementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    testImplementation 'org.springframework:spring-tx'
 }
