@@ -1,0 +1,37 @@
+case	variant	service	run	label	commit	startup_seconds	first_request_seconds	second_request_seconds	third_request_seconds	business_warmup_ms	servlet_warmup_ms	jpa_warmup_ms	java_opts
+before	default	item-api	1	warmup 이전 / threshold off	97057405fee9886240b8f388f19c4e70e670f70b	10.895	0.215587	0.004689	0.003350				
+before	default	member-api	1	warmup 이전 / threshold off	97057405fee9886240b8f388f19c4e70e670f70b	10.422	0.244582	0.006420	0.003798				
+before	default	item-api	2	warmup 이전 / threshold off	97057405fee9886240b8f388f19c4e70e670f70b	10.622	0.176501	0.003939	0.004173				
+before	default	member-api	2	warmup 이전 / threshold off	97057405fee9886240b8f388f19c4e70e670f70b	10.766	0.211241	0.008677	0.008507				
+before	default	item-api	3	warmup 이전 / threshold off	97057405fee9886240b8f388f19c4e70e670f70b	9.811	0.183310	0.005961	0.007146				
+before	default	member-api	3	warmup 이전 / threshold off	97057405fee9886240b8f388f19c4e70e670f70b	9.644	0.196329	0.005322	0.004895				
+common_warmup	default	item-api	1	공통 warmup / threshold off	53d56051ad1dc9bb3c7ff79940437f1f1ba7497b	11.928	0.250502	0.008493	0.003762				
+common_warmup	default	member-api	1	공통 warmup / threshold off	53d56051ad1dc9bb3c7ff79940437f1f1ba7497b	10.851	0.240421	0.005835	0.004828				
+common_warmup	default	item-api	2	공통 warmup / threshold off	53d56051ad1dc9bb3c7ff79940437f1f1ba7497b	10.351	0.407741	0.006093	0.003252				
+common_warmup	default	member-api	2	공통 warmup / threshold off	53d56051ad1dc9bb3c7ff79940437f1f1ba7497b	10.576	0.459150	0.008120	0.006610				
+common_warmup	default	item-api	3	공통 warmup / threshold off	53d56051ad1dc9bb3c7ff79940437f1f1ba7497b	10.056	0.204540	0.005173	0.003533				
+common_warmup	default	member-api	3	공통 warmup / threshold off	53d56051ad1dc9bb3c7ff79940437f1f1ba7497b	9.969	0.331854	0.007679	0.012146				
+jit_warmup	default	item-api	1	비즈니스 warmup + JIT trigger / threshold off	0d215b16515e190450ae27b5943a601183a5270b	14.274	0.144174	0.003809	0.002917	2348	83		
+jit_warmup	default	member-api	1	비즈니스 warmup + JIT trigger / threshold off	0d215b16515e190450ae27b5943a601183a5270b	11.749	0.189246	0.005824	0.005364	2729	200		
+jit_warmup	default	item-api	2	비즈니스 warmup + JIT trigger / threshold off	0d215b16515e190450ae27b5943a601183a5270b	10.537	0.134852	0.003995	0.007097	2068	261		
+jit_warmup	default	member-api	2	비즈니스 warmup + JIT trigger / threshold off	0d215b16515e190450ae27b5943a601183a5270b	10.756	0.361121	0.013346	0.005607	1700	262		
+jit_warmup	default	item-api	3	비즈니스 warmup + JIT trigger / threshold off	0d215b16515e190450ae27b5943a601183a5270b	11.424	0.161776	0.004450	0.004826	1384	191		
+jit_warmup	default	member-api	3	비즈니스 warmup + JIT trigger / threshold off	0d215b16515e190450ae27b5943a601183a5270b	11.592	0.460826	0.018215	0.005512	1345	186		
+before	threshold_on	item-api	1	warmup 이전 / threshold on	97057405fee9886240b8f388f19c4e70e670f70b	18.878	0.192126	0.005066	0.003559				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	member-api	1	warmup 이전 / threshold on	97057405fee9886240b8f388f19c4e70e670f70b	19.224	0.272748	0.005679	0.006563				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	item-api	2	warmup 이전 / threshold on	97057405fee9886240b8f388f19c4e70e670f70b	13.907	0.195130	0.006716	0.003554				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	member-api	2	warmup 이전 / threshold on	97057405fee9886240b8f388f19c4e70e670f70b	13.892	0.285763	0.005733	0.007444				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	item-api	3	warmup 이전 / threshold on	97057405fee9886240b8f388f19c4e70e670f70b	19.01	0.462882	0.011837	0.008130				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	member-api	3	warmup 이전 / threshold on	97057405fee9886240b8f388f19c4e70e670f70b	18.921	0.487863	0.015776	0.007648				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+common_warmup	threshold_on	item-api	1	공통 warmup / threshold on	53d56051ad1dc9bb3c7ff79940437f1f1ba7497b	20.663	0.537065	0.014741	0.005606				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+common_warmup	threshold_on	member-api	1	공통 warmup / threshold on	53d56051ad1dc9bb3c7ff79940437f1f1ba7497b	19.44	0.344113	0.009088	0.008847				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+common_warmup	threshold_on	item-api	2	공통 warmup / threshold on	53d56051ad1dc9bb3c7ff79940437f1f1ba7497b	17.462	0.315738	0.004895	0.004827				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+common_warmup	threshold_on	member-api	2	공통 warmup / threshold on	53d56051ad1dc9bb3c7ff79940437f1f1ba7497b	17.844	0.239440	0.005262	0.008689				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+common_warmup	threshold_on	item-api	3	공통 warmup / threshold on	53d56051ad1dc9bb3c7ff79940437f1f1ba7497b	16.66	0.198455	0.005747	0.003805				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+common_warmup	threshold_on	member-api	3	공통 warmup / threshold on	53d56051ad1dc9bb3c7ff79940437f1f1ba7497b	16.789	0.192295	0.005990	0.004767				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+jit_warmup	threshold_on	item-api	1	비즈니스 warmup + JIT trigger / threshold on	0d215b16515e190450ae27b5943a601183a5270b	18.015	0.189394	0.005484	0.003450	2514	169		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+jit_warmup	threshold_on	member-api	1	비즈니스 warmup + JIT trigger / threshold on	0d215b16515e190450ae27b5943a601183a5270b	18.411	0.230535	0.004673	0.006287	2678	274		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+jit_warmup	threshold_on	item-api	2	비즈니스 warmup + JIT trigger / threshold on	0d215b16515e190450ae27b5943a601183a5270b	17.245	0.216589	0.007126	0.003164	1967	424		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+jit_warmup	threshold_on	member-api	2	비즈니스 warmup + JIT trigger / threshold on	0d215b16515e190450ae27b5943a601183a5270b	17.15	0.248678	0.004372	0.004091	1883	103		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+jit_warmup	threshold_on	item-api	3	비즈니스 warmup + JIT trigger / threshold on	0d215b16515e190450ae27b5943a601183a5270b	16.886	0.464564	0.009950	0.005862	4232			-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+jit_warmup	threshold_on	member-api	3	비즈니스 warmup + JIT trigger / threshold on	0d215b16515e190450ae27b5943a601183a5270b	17.388	0.375306	0.005386	0.010237	4888	181		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
