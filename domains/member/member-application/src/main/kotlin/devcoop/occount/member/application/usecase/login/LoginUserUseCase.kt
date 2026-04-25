@@ -1,6 +1,7 @@
 package devcoop.occount.member.application.usecase.login
 
 import devcoop.occount.member.application.exception.InvalidPasswordException
+import devcoop.occount.member.application.exception.InvalidPinException
 import devcoop.occount.member.application.exception.UserNotFoundException
 import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
@@ -17,7 +18,9 @@ class LoginUserUseCase(
         val user = userRepository.findByEmail(request.email)
             ?: throw UserNotFoundException()
 
-        passwordValidate(request.password, user.getPassword())
+        if (!user.matchesPassword(request.password) { raw, encoded -> passwordEncoder.matches(raw, encoded) }) {
+            throw InvalidPasswordException()
+        }
 
         return tokenGenerator.createAccessToken(user.getId(), user.getRole().name)
     }
@@ -26,14 +29,10 @@ class LoginUserUseCase(
         val user = userRepository.findByUserBarcode(request.userBarcode)
             ?: throw UserNotFoundException()
 
-        passwordValidate(request.userPin, user.getUserPin())
+        if (!user.matchesPin(request.userPin) { raw, encoded -> passwordEncoder.matches(raw, encoded) }) {
+            throw InvalidPinException()
+        }
 
         return tokenGenerator.createKioskToken(user.getId(), user.getRole().name)
-    }
-
-    fun passwordValidate(requestPassword: String, expectedPassword: String) {
-        if(!passwordEncoder.matches(requestPassword, expectedPassword)) {
-            throw InvalidPasswordException()
-        }
     }
 }

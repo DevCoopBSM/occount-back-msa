@@ -25,7 +25,7 @@ class RegisterUserUseCase(
     fun register(request: MemberRegisterRequest) {
         val user = try {
             userRepository.save(
-                User(
+                User.register(
                     userCiNumber = request.userCiNumber,
                     username = request.userName,
                     phone = request.userPhone,
