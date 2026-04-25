@@ -144,4 +144,20 @@ data class OrderAggregate(
         return paymentStatus.isCompensationResolved() &&
             stockStatus.isCompensationResolved()
     }
+
+    companion object {
+        fun create(
+            userId: Long?,
+            requestedLines: List<RequestedOrderLine>,
+            kioskId: String,
+            expiresAt: Instant,
+        ): OrderAggregate = OrderAggregate(
+            orderId = 0L,
+            userId = userId,
+            requestedLines = requestedLines,
+            payment = OrderPayment(totalAmount = 0),
+            kioskId = kioskId,
+            expiresAt = expiresAt,
+        )
+    }
 }
