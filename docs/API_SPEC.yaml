@@ -471,21 +471,37 @@ paths:
                   SSE 메시지는 아래 형식으로 전달됩니다.
 
                   - `event`: 이벤트 타입
+                  - `data`: 이벤트 데이터 (JSON). 정상 이벤트는 `{}`, 실패 이벤트는 `{"failureReason": "..."}` 포함
               examples:
                 accepted:
                   summary: 주문 접수 직후
                   value: |
                     event: ORDER_ACCEPTED
+                    data: {}
 
                 paymentRequested:
                   summary: 결제 요청 단계
                   value: |
                     event: PAYMENT_REQUESTED
+                    data: {}
 
                 completed:
                   summary: 주문 완료
                   value: |
                     event: COMPLETED
+                    data: {}
+
+                failed:
+                  summary: 주문 실패
+                  value: |
+                    event: FAILED
+                    data: {"failureReason": "재고 부족"}
+
+                cancelled:
+                  summary: 주문 취소 완료
+                  value: |
+                    event: CANCELLED
+                    data: {}
         "404":
           description: 주문을 찾을 수 없음
 
