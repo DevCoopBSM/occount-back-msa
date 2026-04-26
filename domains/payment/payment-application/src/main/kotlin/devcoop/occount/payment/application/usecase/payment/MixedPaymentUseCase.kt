@@ -22,7 +22,7 @@ class MixedPaymentUseCase(
     private val paymentLogRepository: PaymentLogRepository,
 ) {
     @Transactional
-    fun execute(userId: Long, kioskId: String, details: PaymentDetails, paymentKey: String? = null): PaymentResponse {
+    fun execute(userId: Long, kioskId: String, details: PaymentDetails, paymentKey: Long? = null): PaymentResponse {
         val beforePoint = getWalletPointQueryService.getPoint(userId)
         val pointsUsed = min(beforePoint, details.totalAmount)
         val cardAmount = details.totalAmount - pointsUsed

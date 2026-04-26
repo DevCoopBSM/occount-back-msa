@@ -16,7 +16,7 @@ class CardOnlyPaymentUseCase(
     private val paymentLogRepository: PaymentLogRepository,
 ) {
     @Transactional
-    fun execute(userId: Long?, kioskId: String, details: PaymentDetails, paymentKey: String? = null): PaymentResponse {
+    fun execute(userId: Long?, kioskId: String, details: PaymentDetails, paymentKey: Long? = null): PaymentResponse {
         val approved = cardPaymentPort.approve(
             amount = details.totalAmount,
             items = details.items.map(ItemCommand.Companion::from),

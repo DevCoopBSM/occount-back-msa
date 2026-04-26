@@ -17,9 +17,15 @@ class DefaultOrderSseEmitterSupport : OrderSseEmitterSupport {
 
     override fun emit(emitter: SseEmitter, event: OrderStreamEvent) {
         try {
+            val data = if (event.failureReason != null) {
+                mapOf("failureReason" to event.failureReason)
+            } else {
+                emptyMap<String, Any>()
+            }
             emitter.send(
                 SseEmitter.event()
-                    .name(event.type.name),
+                    .name(event.type.name.lowercase())
+                    .data(data),
             )
         } catch (e: IOException) {
             emitter.completeWithError(e)

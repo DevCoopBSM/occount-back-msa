@@ -10,9 +10,15 @@ import org.springframework.stereotype.Component
 @Component
 class OrderStreamEventMapper {
     fun toStreamEvent(order: OrderAggregate): OrderStreamEvent {
+        val type = resolveType(order)
         return OrderStreamEvent(
-            type = resolveType(order),
+            type = type,
             orderId = order.orderId,
+            failureReason = if (type == OrderStreamEventType.FAILED || type == OrderStreamEventType.TIMED_OUT) {
+                order.failureReason
+            } else {
+                null
+            },
         )
     }
 

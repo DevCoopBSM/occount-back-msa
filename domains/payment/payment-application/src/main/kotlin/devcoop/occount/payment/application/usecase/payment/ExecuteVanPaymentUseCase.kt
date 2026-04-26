@@ -68,7 +68,7 @@ class ExecuteVanPaymentUseCase(
                     },
                     totalAmount = event.payment.totalAmount,
                 ),
-                paymentKey = event.orderId.toString(),
+                paymentKey = event.orderId,
             )
             orderPaymentExecutionRepository.markCompleted(event.orderId)
             log.info(

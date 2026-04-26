@@ -69,7 +69,7 @@ class ExecuteVanPaymentUseCaseTest {
         useCase.execute(requestedEvent())
 
         assertEquals(1L, executionRepository.completedOrderId)
-        assertEquals("1", cardPaymentPort.lastPaymentKey)
+        assertEquals(1L, cardPaymentPort.lastPaymentKey)
         assertIs<PaymentCompletedEvent>(eventPublisher.published.single())
     }
 
@@ -151,9 +151,9 @@ class ExecuteVanPaymentUseCaseTest {
         private val error: Exception? = null,
     ) : CardPaymentPort {
         val approvedAmounts = mutableListOf<Int>()
-        var lastPaymentKey: String? = null
+        var lastPaymentKey: Long? = null
 
-        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: String?): VanResult {
+        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: Long?): VanResult {
             error?.let { throw it }
             approvedAmounts += amount
             lastPaymentKey = paymentKey
@@ -196,7 +196,7 @@ class ExecuteVanPaymentUseCaseTest {
             error("not used in this test")
         }
 
-        override fun requestPendingApprovalCancellation(paymentKey: String, kioskId: String) = Unit
+        override fun requestPendingApprovalCancellation(paymentKey: Long, kioskId: String) = Unit
     }
 
     private class FakePaymentLogRepository : PaymentLogRepository {

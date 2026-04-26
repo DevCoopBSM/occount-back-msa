@@ -18,10 +18,10 @@ class VanTerminalClient(
     private val transactionInProgress = AtomicBoolean(false)
     private val cancellationRequested = AtomicBoolean(false)
     private val currentTransactionType = AtomicReference(TransactionType.NONE)
-    private val currentPaymentKey = AtomicReference<String?>(null)
+    private val currentPaymentKey = AtomicReference<Long?>(null)
     private val approvalPhase = AtomicReference(ApprovalPhase.IDLE)
 
-    fun approve(amount: Int, items: List<ItemCommand>, paymentKey: String? = null): VanResult {
+    fun approve(amount: Int, items: List<ItemCommand>, paymentKey: Long? = null): VanResult {
         return executeTransaction(
             actionName = "카드결제",
             transactionType = TransactionType.APPROVE,
@@ -38,7 +38,7 @@ class VanTerminalClient(
         )
     }
 
-    fun requestPendingApprovalCancellation(paymentKey: String) {
+    fun requestPendingApprovalCancellation(paymentKey: Long) {
         if (!transactionInProgress.get() || currentTransactionType.get() != TransactionType.APPROVE) {
             log.info("결제 대기 취소 요청 무시 - 진행 중인 승인 거래 없음 orderId={}", paymentKey)
             return
@@ -68,7 +68,7 @@ class VanTerminalClient(
         actionName: String,
         transactionType: TransactionType,
         requestMessage: ByteArray,
-        paymentKey: String? = null,
+        paymentKey: Long? = null,
     ): VanResult {
         if (!transactionInProgress.compareAndSet(false, true)) {
             return VanResult(
@@ -236,7 +236,7 @@ class VanTerminalClient(
         return result
     }
 
-    private fun sendTerminalCloseRequest(paymentKey: String): Boolean {
+    private fun sendTerminalCloseRequest(paymentKey: Long): Boolean {
         return runCatching {
             val closeMessage = messageBuilder.buildTerminalCloseMessage()
             socketConnection.logMessage("발신", closeMessage)
