@@ -25,7 +25,6 @@ class AuthenticationPolicy {
         rule("/api/v3/wallet/**").authenticated()
 
         rule(HttpMethod.POST, "/api/v3/items").adminOnly()
-        rule(HttpMethod.POST, "/api/v3/items/sync").adminOnly()
         rule(HttpMethod.PUT, "/api/v3/items/{id}").adminOnly()
         rule(HttpMethod.DELETE, "/api/v3/items/{id}").adminOnly()
     }
