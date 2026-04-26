@@ -151,7 +151,7 @@ def call(Map cfg) {
                                             --dockerfile=${env.WORKSPACE}/${svc.dir}/Dockerfile \\
                                             --destination=${env.IMAGE_PREFIX}/${svc.name}:${imageTag} \\
                                             --build-arg BASE_IMAGE=${env.HARBOR_URL}/base/eclipse-temurin:21-jre-alpine \\
-                                            --snapshot-mode=redo \\
+                                            --snapshot-mode=full \\
                                             --skip-tls-verify \\
                                             --skip-tls-verify-pull
                                     """
