@@ -21,7 +21,7 @@ class CancelPendingOrderPaymentUseCaseTest {
 
         useCase.cancel(OrderPaymentCancellationRequestedEvent(orderId = 1L, kioskId = "kiosk-1", userId = 1L))
 
-        assertEquals("order-1", cardPaymentPort.cancelRequestedPaymentKey)
+        assertEquals(1L, cardPaymentPort.cancelRequestedPaymentKey)
     }
 
     @Test
@@ -39,9 +39,9 @@ class CancelPendingOrderPaymentUseCaseTest {
     }
 
     private class FakeCardPaymentPort : CardPaymentPort {
-        var cancelRequestedPaymentKey: String? = null
+        var cancelRequestedPaymentKey: Long? = null
 
-        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: String?): VanResult {
+        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: Long?): VanResult {
             error("not used in this test")
         }
 
@@ -49,7 +49,7 @@ class CancelPendingOrderPaymentUseCaseTest {
             error("not used in this test")
         }
 
-        override fun requestPendingApprovalCancellation(paymentKey: String, kioskId: String) {
+        override fun requestPendingApprovalCancellation(paymentKey: Long, kioskId: String) {
             cancelRequestedPaymentKey = paymentKey
         }
     }

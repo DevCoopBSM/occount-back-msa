@@ -18,7 +18,7 @@ class VanCardPaymentClient(
 ) : CardPaymentPort {
     private val log = LoggerFactory.getLogger(VanCardPaymentClient::class.java)
 
-    override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: String?): VanResult {
+    override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: Long?): VanResult {
         log.info("카드결제 요청 - 키오스크: {}, 금액: {}원, 상품 수: {}개", kioskId, amount, items.size)
         return execute("카드결제") {
             vanTerminalRegistry.get(kioskId).approve(amount = amount, items = items, paymentKey = paymentKey)
@@ -43,7 +43,7 @@ class VanCardPaymentClient(
         }
     }
 
-    override fun requestPendingApprovalCancellation(paymentKey: String, kioskId: String) {
+    override fun requestPendingApprovalCancellation(paymentKey: Long, kioskId: String) {
         vanTerminalRegistry.get(kioskId).requestPendingApprovalCancellation(paymentKey)
     }
 

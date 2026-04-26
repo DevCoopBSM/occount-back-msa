@@ -196,7 +196,7 @@ class CompensateOrderPaymentUseCaseTest {
     ) : CardPaymentPort {
         val refundRequests = mutableListOf<Pair<Int, String>>()
 
-        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: String?): VanResult {
+        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: Long?): VanResult {
             error("not used in this test")
         }
 
@@ -214,7 +214,7 @@ class CompensateOrderPaymentUseCaseTest {
             )
         }
 
-        override fun requestPendingApprovalCancellation(paymentKey: String, kioskId: String) {
+        override fun requestPendingApprovalCancellation(paymentKey: Long, kioskId: String) {
             error("not used in this test")
         }
     }
