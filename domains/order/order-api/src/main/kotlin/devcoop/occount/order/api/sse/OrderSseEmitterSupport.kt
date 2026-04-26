@@ -24,7 +24,7 @@ class DefaultOrderSseEmitterSupport : OrderSseEmitterSupport {
             }
             emitter.send(
                 SseEmitter.event()
-                    .name(event.type.name)
+                    .name(event.type.name.lowercase())
                     .data(data),
             )
         } catch (e: IOException) {

@@ -53,10 +53,10 @@ paths:
             schema:
               $ref: '#/components/schemas/MemberRegisterRequest'
             example:
-              userCiNumber: "CI1234567890"
-              userName: "홍길동"
-              userPhone: "010-1234-5678"
-              userEmail: "hong@example.com"
+              user_ci_number: "CI1234567890"
+              user_name: "홍길동"
+              user_phone: "010-1234-5678"
+              user_email: "hong@example.com"
               password: "pass1234"
       responses:
         "201":
@@ -118,8 +118,8 @@ paths:
             schema:
               $ref: '#/components/schemas/KioskLoginRequest'
             example:
-              userBarcode: "20240001"
-              userPin: "1234"
+              user_barcode: "20240001"
+              user_pin: "1234"
       responses:
         "201":
           description: 로그인 성공
@@ -158,7 +158,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserPreOrderInfoResponse'
               example:
-                username: "홍길동"
+                user_name: "홍길동"
                 point: 3500
         "401":
           description: 인증 실패
@@ -378,7 +378,7 @@ paths:
               $ref: '#/components/schemas/OrderRequest'
             example:
               items:
-                - itemId: 1
+                - item_id: 1
                   quantity: 2
       responses:
         "202":
@@ -388,9 +388,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrderResponse'
               example:
-                orderId: 1001
+                order_id: 1001
                 status: "PROCESSING"
-                failureReason: null
+                failure_reason: null
         "400":
           description: 요청 형식 오류
           content:
@@ -430,9 +430,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrderResponse'
               example:
-                orderId: 1001
+                order_id: 1001
                 status: "COMPLETED"
-                failureReason: null
+                failure_reason: null
         "404":
           description: 주문을 찾을 수 없음
 
@@ -445,9 +445,9 @@ paths:
         Server-Sent Events(SSE) 방식으로 주문 상태 변경을 실시간 수신합니다. (PERMIT_ALL)
 
         - 연결 즉시 현재 주문 상태를 전송합니다.
-        - 각 메시지는 `event: <EVENT_TYPE>` 형식으로 전달됩니다.
-        - 이벤트 타입은 `ORDER_ACCEPTED`, `PAYMENT_REQUESTED`, `COMPLETED`, `FAILED`, `CANCEL_REQUESTED`, `CANCELLED`, `TIMED_OUT` 중 하나입니다.
-        - 주문이 최종 상태(`COMPLETED`, `FAILED`, `CANCELLED`, `COMPENSATION_FAILED`, `TIMED_OUT`)에 도달하면 서버가 연결을 종료합니다.
+        - 각 메시지는 `event: <event_type>` 형식으로 전달됩니다.
+        - 이벤트 타입은 `order_accepted`, `payment_requested`, `completed`, `failed`, `cancel_requested`, `cancelled`, `timed_out` 중 하나입니다.
+        - 주문이 최종 상태(`completed`, `failed`, `cancelled`, `compensation_failed`, `timed_out`)에 도달하면 서버가 연결을 종료합니다.
         - 주문 생성 직후 SSE 연결을 맺어 비동기 처리 결과를 수신하는 용도로 사용합니다.
       parameters:
         - name: orderId
@@ -471,36 +471,36 @@ paths:
                   SSE 메시지는 아래 형식으로 전달됩니다.
 
                   - `event`: 이벤트 타입
-                  - `data`: 이벤트 데이터 (JSON). 정상 이벤트는 `{}`, 실패 이벤트는 `{"failureReason": "..."}` 포함
+                  - `data`: 이벤트 데이터 (JSON). 정상 이벤트는 `{}`, 실패 이벤트는 `{"failure_reason": "..."}` 포함
               examples:
                 accepted:
                   summary: 주문 접수 직후
                   value: |
-                    event: ORDER_ACCEPTED
+                    event: order_accepted
                     data: {}
 
                 paymentRequested:
                   summary: 결제 요청 단계
                   value: |
-                    event: PAYMENT_REQUESTED
+                    event: payment_requested
                     data: {}
 
                 completed:
                   summary: 주문 완료
                   value: |
-                    event: COMPLETED
+                    event: completed
                     data: {}
 
                 failed:
                   summary: 주문 실패
                   value: |
-                    event: FAILED
-                    data: {"failureReason": "재고 부족"}
+                    event: failed
+                    data: {"failure_reason": "재고 부족"}
 
                 cancelled:
                   summary: 주문 취소 완료
                   value: |
-                    event: CANCELLED
+                    event: cancelled
                     data: {}
         "404":
           description: 주문을 찾을 수 없음
@@ -544,9 +544,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrderResponse'
               example:
-                orderId: 1001
+                order_id: 1001
                 status: "CANCEL_REQUESTED"
-                failureReason: "사용자에 의해 주문이 취소되었습니다"
+                failure_reason: "사용자에 의해 주문이 취소되었습니다"
         "401":
           description: 잘못된 토큰
         "403":
@@ -614,20 +614,20 @@ components:
     # ── Auth ──────────────────────────────────────
     MemberRegisterRequest:
       type: object
-      required: [userCiNumber, userName, userEmail, password]
+      required: [user_ci_number, user_name, user_email, password]
       properties:
-        userCiNumber:
+        user_ci_number:
           type: string
           description: 학생 CI 번호
-        userName:
+        user_name:
           type: string
           maxLength: 55
           description: 이름
-        userPhone:
+        user_phone:
           type: string
           nullable: true
           description: 전화번호
-        userEmail:
+        user_email:
           type: string
           format: email
           description: 이메일
@@ -649,12 +649,12 @@ components:
 
     KioskLoginRequest:
       type: object
-      required: [userBarcode, userPin]
+      required: [user_barcode, user_pin]
       properties:
-        userBarcode:
+        user_barcode:
           type: string
           description: 학생증 바코드
-        userPin:
+        user_pin:
           type: string
           description: PIN 번호
 
@@ -662,7 +662,7 @@ components:
     UserPreOrderInfoResponse:
       type: object
       properties:
-        username:
+        user_name:
           type: string
           description: 회원 이름
         point:
@@ -681,7 +681,7 @@ components:
     ItemResponse:
       type: object
       properties:
-        itemId:
+        item_id:
           type: integer
           format: int64
         name:
@@ -706,7 +706,7 @@ components:
     ItemLookupResponse:
       type: object
       properties:
-        itemId:
+        item_id:
           type: integer
           format: int64
         name:
@@ -716,7 +716,7 @@ components:
           nullable: true
         price:
           type: integer
-        isActive:
+        is_active:
           type: boolean
           description: 판매 활성 여부
 
@@ -774,9 +774,9 @@ components:
 
     OrderItemRequest:
       type: object
-      required: [itemId, quantity]
+      required: [item_id, quantity]
       properties:
-        itemId:
+        item_id:
           type: integer
           format: int64
         quantity:
@@ -786,13 +786,13 @@ components:
     OrderResponse:
       type: object
       properties:
-        orderId:
+        order_id:
           type: integer
           format: int64
           description: 주문 ID
         status:
           $ref: '#/components/schemas/OrderStatus'
-        failureReason:
+        failure_reason:
           type: string
           nullable: true
           description: 실패/취소 사유
@@ -836,25 +836,25 @@ components:
     ChargeLogResult:
       type: object
       properties:
-        chargeId:
+        charge_id:
           type: integer
           format: int64
-        userId:
+        user_id:
           type: integer
           format: int64
-        chargeDate:
+        charge_date:
           type: string
           format: date-time
-        chargeAmount:
+        charge_amount:
           type: integer
           description: 변동 포인트량 (음수면 차감)
-        paymentId:
+        payment_id:
           type: integer
           format: int64
           nullable: true
-        beforePoint:
+        before_point:
           type: integer
-        afterPoint:
+        after_point:
           type: integer
         reason:
           type: string
