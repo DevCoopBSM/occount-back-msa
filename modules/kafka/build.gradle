@@ -11,5 +11,6 @@ dependencies {
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'io.micrometer:micrometer-tracing'
     runtimeOnly 'io.micrometer:micrometer-tracing-bridge-otel'
+    implementation 'io.opentelemetry.instrumentation:opentelemetry-kafka-clients-2.6:2.13.3-alpha'
     implementation 'tools.jackson.module:jackson-module-kotlin'
 }
