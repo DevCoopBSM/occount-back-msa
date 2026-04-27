@@ -81,10 +81,6 @@ app:
         method: GET
         headers:
           X-Authenticated-User-Id: "0"
-      - path: /api/v3/wallet/charges
-        method: GET
-        headers:
-          X-Authenticated-User-Id: "0"
 
 management:
   tracing:

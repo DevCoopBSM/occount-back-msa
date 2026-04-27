@@ -178,7 +178,6 @@ class CompensateOrderPaymentUseCaseTest {
     private class FakeChargeLogRepository : ChargeLogRepository {
         val saved = mutableListOf<ChargeLog>()
 
-        override fun findByUserId(userId: Long): List<ChargeLog> = saved.filter { it.userId == userId }
         override fun findByPaymentId(paymentId: Long): ChargeLog? = saved.firstOrNull { it.paymentId == paymentId }
         override fun save(chargeLog: ChargeLog): ChargeLog {
             saved += chargeLog

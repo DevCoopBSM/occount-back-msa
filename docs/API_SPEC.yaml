@@ -606,26 +606,6 @@ paths:
         "401":
           description: 인증 실패
 
-  /api/v3/wallet/charges:
-    get:
-      tags: [Wallet]
-      operationId: getChargeHistory
-      summary: 포인트 충전 내역 조회
-      description: 로그인한 회원의 전체 포인트 충전/차감 내역을 반환합니다. (AUTHENTICATED)
-      security:
-        - BearerAuth: []
-      responses:
-        "200":
-          description: 조회 성공
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ChargeLogResult'
-        "401":
-          description: 인증 실패
-
 security:
   - BearerAuth: []
 
@@ -862,33 +842,6 @@ components:
         point:
           type: integer
           description: 현재 포인트 잔액
-
-    ChargeLogResult:
-      type: object
-      properties:
-        charge_id:
-          type: integer
-          format: int64
-        user_id:
-          type: integer
-          format: int64
-        charge_date:
-          type: string
-          format: date-time
-        charge_amount:
-          type: integer
-          description: 변동 포인트량 (음수면 차감)
-        payment_id:
-          type: integer
-          format: int64
-          nullable: true
-        before_point:
-          type: integer
-        after_point:
-          type: integer
-        reason:
-          type: string
-          nullable: true
 
     # ── Common ─────────────────────────────────────
     ErrorResponse:
