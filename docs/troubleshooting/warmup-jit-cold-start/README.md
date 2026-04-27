@@ -164,3 +164,66 @@ JAVA_OPTS_VARIANTS=$'default||기본\nthreshold_on|-XX:Tier3InvocationThreshold=
 - 각 run 전 `compose down -v`로 MySQL 볼륨까지 완전 초기화하므로 run당 MySQL 기동 시간이 포함된다.
 - 측정값은 Docker 캐시, 로컬 CPU 상태, 백그라운드 프로세스 영향으로 일부 달라질 수 있다.
 - `threshold on` 비교는 startup 비용이 커서 측정 시간이 꽤 길다.
+
+---
+
+## 후속 (2026-04-27): 워밍업 모듈 리팩토링 + service-layer 워밍업 + AppCDS 시도
+
+### 1. 리팩토링 (코드 품질, 성능 변화 없음)
+
+`modules/warmup` 인프라와 4개 도메인 `*BusinessWarmup`을 정리했다. 알고리즘 동등.
+
+- `StartupWarmupProperties`에 매직 상수 승격 (`jpaRepeat`, `servletRepeat`, `businessRepeat`)
+- `ServletStartupWarmup` 두 갈래(`warmupEndpoints` / `warmupLegacy`) → 단일 경로
+- 도메인 레이어 보일러플레이트(`measureTimeMillis { repeat(N) {...} }` + 로깅) → `BusinessWarmupRunner`로 흡수
+- 4개 도메인은 `BusinessWarmup` 구현체로 단순화, 매직 상수는 `WarmupProbe`로 일원화
+- 깨진 `JpaStartupWarmupTest` 단언 정정
+- `member-api/application.yaml`의 평문 자격증명 + `/auth/register` 워밍업 → invalid login(`warmup@warmup.invalid`/`x`) 1건으로 안전화
+
+이 변경은 운영 안전성 향상이며 cold-start 알고리즘은 변경 없음. **첫 요청 시간 변화는 워밍업이 자극하는 코드 경로 자체가 valid → invalid login으로 바뀐 부수 효과**(BCrypt match + JWT signing 경로가 빠짐 = ~50–100ms 단축)이지 본 리팩토링의 직접 효과가 아니다.
+
+### 2. service-layer 워밍업 추가 (`MemberBusinessWarmup` ← `LoginUserUseCase`)
+
+invalid login 기반 HTTP 워밍업이 BCrypt/JWT 경로를 자극하지 못하는 부분을 보완하기 위해 `MemberBusinessWarmup`에 `LoginUserUseCase.login(...)` 직접 호출을 추가했다. invalid 자격증명이라 `UserNotFoundException`을 throw하지만 use case 메서드 바이트코드 + Spring service-layer 호출 체인이 자극된다.
+
+| case | startup avg | **first req avg** | 2nd avg | 3rd avg | business warmup |
+|---|---:|---:|---:|---:|---:|
+| service-layer 워밍업 미적용 | 9.15s | **42.0ms** | 22.4ms | 10.2ms | 2811ms |
+| service-layer 워밍업 적용 | 8.97s | **25.9ms** | 7.5ms | 5.7ms | 2198ms |
+
+(member-api 단독, RUNS=3, invalid login 측정)
+
+해석:
+- 첫 요청 평균 ~38% 단축 (42 → 26ms). 단 RUNS=3이라 통계적 신뢰도는 약함.
+- 분산 감소가 더 의미 있음: 미적용은 19–69ms (3.6×), 적용은 16–32ms (2×) — tail latency 안정화 신호.
+- startup / business warmup 시간은 사실상 동일 (LoginUseCase 2회 추가의 비용 무시 가능).
+
+### 3. AppCDS 시도와 실패
+
+Spring Boot 4.0.3 + Kotlin 2.3.10 + Spring Data JPA 환경에서 AppCDS archive 사용 시 부팅 실패가 재현된다.
+
+```
+QueryCreationException: Cannot create query for method
+  [UserJpaRepository.findByEmail(java.lang.String)];
+  Cannot invoke "java.lang.Class.getSimpleName()" because "it" is null
+  at KotlinReflectionUtils.findKotlinFunction
+  at AbstractRepositoryMetadata.getReturnType
+```
+
+원인: Spring Data가 메서드 파생 쿼리(`findByEmail`)를 분석할 때 `KotlinReflectionUtils.isSuspend`로 Kotlin suspend 함수 여부를 체크. 그 과정에서 `KClasses.getFunctions` → `KClassImpl.getMembers`가 walk 중 inherited Java parameterized interface(`JpaRepository<User, Long>`) 메서드의 declaring `Class<?>`를 archive에서 못 찾고 null 반환 → `getSimpleName()` NPE.
+
+시도한 조합 모두 동일 재현:
+- fat jar + `-XX:SharedArchiveFile`
+- extracted layered jar + archive (warmup OFF로 학습)
+- extracted layered jar + archive (warmup ON으로 학습)
+
+archive에는 "실행된 클래스 비트맵"이 들어가지 archive 시점의 generic resolution 결과는 들어가지 않으므로, 학습 시 reflection 경로를 다 자극해도 해결 안 됨. 단순 옵션 추가로는 본 스택에서 도입 불가.
+
+대안 카드 (별도 검토):
+1. **Spring Boot AOT (`processAot`)** — repository proxy를 빌드 타임에 생성해 reflection lookup 자체를 줄임. 정공법.
+2. **CRaC** — 워밍업 이후 JVM 스냅샷. cold-start ms 단위. 인프라 부담 큼.
+3. **GraalVM native-image** — 부팅 100ms대. Kotlin reflection 메타데이터 직접 작성 부담.
+
+### 추가 자료
+
+- [results-member-service-warmup-2026-04-27.tsv](results-member-service-warmup-2026-04-27.tsv) — service-layer 워밍업 미적용 vs 적용, member-api 단독, 3회
