@@ -56,4 +56,18 @@ enum class ErrorMessage(
     KIOSK_TERMINAL_NOT_FOUND("등록되지 않은 키오스크입니다."),
 
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다."),
+
+
+    EMAIL_VERIFICATION_CODE_NOT_FOUND("이메일 인증 코드를 찾을 수 없습니다."),
+    EMAIL_VERIFICATION_CODE_EXPIRED("이메일 인증 코드가 만료되었습니다."),
+    EMAIL_VERIFICATION_CODE_INVALID("이메일 인증 코드가 올바르지 않습니다."),
+    EMAIL_VERIFICATION_ALREADY_VERIFIED("이미 인증이 완료된 코드입니다."),
+    EMAIL_SEND_FAILED("이메일 발송에 실패했습니다."),
+
+    PASSWORD_RESET_TOKEN_NOT_FOUND("비밀번호 재설정 토큰을 찾을 수 없습니다."),
+    PASSWORD_RESET_TOKEN_EXPIRED("비밀번호 재설정 토큰이 만료되었습니다."),
+    PASSWORD_RESET_TOKEN_ALREADY_USED("이미 사용된 비밀번호 재설정 토큰입니다."),
+
+    IDENTITY_VERIFICATION_FAILED("본인인증에 실패했습니다."),
+    PORTONE_API_ERROR("PortOne API 호출 중 오류가 발생했습니다."),
 }
