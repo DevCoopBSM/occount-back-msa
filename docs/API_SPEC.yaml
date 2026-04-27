@@ -244,6 +244,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/ItemLookupListResponse'
 
+  /api/v3/items/search:
+    get:
+      tags: [Item]
+      operationId: searchItems
+      summary: 상품명 풀텍스트 검색
+      description: |
+        MySQL ngram FULLTEXT 인덱스로 상품명을 검색합니다. 활성 상품만 relevance 내림차순으로 반환합니다. (PERMIT_ALL)
+
+        - 빈/공백 쿼리는 빈 배열을 반환합니다.
+        - boolean-mode 메타문자(`+ - > < ( ) ~ * " @`)는 sanitize됩니다.
+        - ngram_token_size(기본 2) 미만 길이의 쿼리는 결과가 없습니다.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 검색어
+          schema:
+            type: string
+          example: "초코"
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemListResponse'
+
   /api/v3/items/without-barcode:
     get:
       tags: [Item]
