@@ -1,6 +1,6 @@
 package devcoop.occount.order.api.sse
 
-import devcoop.occount.order.application.port.OrderStatusNotifier
+import devcoop.occount.order.application.output.OrderStatusNotifier
 import devcoop.occount.order.application.shared.OrderStreamEvent
 import devcoop.occount.order.application.shared.isTerminal
 import org.springframework.stereotype.Component

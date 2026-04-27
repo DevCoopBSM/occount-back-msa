@@ -449,7 +449,7 @@ class OrderUseCaseFlowTest {
         override fun <T : Any> executeInNewTransaction(action: () -> T): T = action()
     }
 
-    private class NoOpOrderStatusNotifier : devcoop.occount.order.application.port.OrderStatusNotifier {
+    private class NoOpOrderStatusNotifier : devcoop.occount.order.application.output.OrderStatusNotifier {
         override fun notify(event: devcoop.occount.order.application.shared.OrderStreamEvent) = Unit
     }
 

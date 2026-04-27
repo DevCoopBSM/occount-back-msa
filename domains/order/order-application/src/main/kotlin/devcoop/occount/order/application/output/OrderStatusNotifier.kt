@@ -1,4 +1,4 @@
-package devcoop.occount.order.application.port
+package devcoop.occount.order.application.output
 
 import devcoop.occount.order.application.shared.OrderStreamEvent
 

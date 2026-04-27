@@ -5,7 +5,7 @@ import devcoop.occount.order.application.exception.OrderConcurrencyException
 import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.output.PersistedOrder
 import devcoop.occount.order.application.output.TransactionPort
-import devcoop.occount.order.application.port.OrderStatusNotifier
+import devcoop.occount.order.application.output.OrderStatusNotifier
 import devcoop.occount.order.application.shared.OrderStreamEvent
 import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderStatus

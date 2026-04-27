@@ -1,6 +1,6 @@
 package devcoop.occount.order.application.support
 
-import devcoop.occount.order.application.port.OrderStatusNotifier
+import devcoop.occount.order.application.output.OrderStatusNotifier
 import devcoop.occount.order.domain.order.OrderAggregate
 import org.springframework.stereotype.Component
 

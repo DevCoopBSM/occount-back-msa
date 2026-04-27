@@ -9,8 +9,8 @@ import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
 import devcoop.occount.order.application.exception.OrderConcurrencyException
 import devcoop.occount.order.application.exception.OrderNotFoundException
 import devcoop.occount.order.application.exception.OrderTransactionFailedException
-import devcoop.occount.order.application.port.OrderStatusNotifier
 import devcoop.occount.order.application.output.OrderRepository
+import devcoop.occount.order.application.output.OrderStatusNotifier
 import devcoop.occount.order.application.output.TransactionPort
 import devcoop.occount.order.domain.order.OrderAggregate
 import org.slf4j.LoggerFactory
