@@ -25,6 +25,7 @@ class OrderUseCaseFlowTest {
         val eventPublisher = FakeEventPublisher()
         val handleOrderPaymentEventUseCase = handleOrderPaymentEventUseCase(orderRepository, eventPublisher)
         val handleOrderStockEventUseCase = handleOrderStockEventUseCase(orderRepository, eventPublisher)
+        val sweeper = compensationSweeper(orderRepository, eventPublisher)
 
         handleOrderPaymentEventUseCase.applyFailedPayment(
             PaymentFailedEvent(
@@ -38,6 +39,7 @@ class OrderUseCaseFlowTest {
             completedStockEvent(),
             recordConsumption = {},
         )
+        sweeper.sweep()
 
         val publishedEvent = eventPublisher.published.last().payload
         assertInstanceOf(OrderStockCompensationRequestedEvent::class.java, publishedEvent)
@@ -115,8 +117,10 @@ class OrderUseCaseFlowTest {
         )
         val eventPublisher = FakeEventPublisher()
         val cancelOrderUseCase = cancelOrderUseCase(orderRepository, eventPublisher)
+        val sweeper = compensationSweeper(orderRepository, eventPublisher)
 
         cancelOrderUseCase.cancel(ORDER_ID, KIOSK_ID)
+        sweeper.sweep()
 
         val publishedEvent = eventPublisher.published.last().payload
         assertInstanceOf(OrderPaymentCompensationRequestedEvent::class.java, publishedEvent)
@@ -153,9 +157,12 @@ class OrderUseCaseFlowTest {
         )
         val eventPublisher = FakeEventPublisher()
         val expireTimedOutOrdersUseCase = expireTimedOutOrdersUseCase(orderRepository, eventPublisher)
+        val sweeper = compensationSweeper(orderRepository, eventPublisher)
 
         expireTimedOutOrdersUseCase.expire()
+        sweeper.sweep()
         expireTimedOutOrdersUseCase.expire()
+        sweeper.sweep()
 
         val publishedEvents = eventPublisher.published.map { it.payload }
         assertEquals(1, publishedEvents.filterIsInstance<OrderPaymentCompensationRequestedEvent>().size)
@@ -307,7 +314,7 @@ class OrderUseCaseFlowTest {
     ): CancelOrderUseCase {
         return CancelOrderUseCase(
             orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionPort()),
-            orderLifecycleProcessor = orderLifecycleProcessor(orderRepository, eventPublisher),
+            orderLifecycleProcessor = orderLifecycleProcessor(),
             orderPaymentCancellationEventPublisher = OrderPaymentCancellationEventPublisher(eventPublisher),
             orderResponseMapper = OrderResponseMapper(),
         )
@@ -319,7 +326,7 @@ class OrderUseCaseFlowTest {
     ): HandleOrderPaymentEventUseCase {
         return HandleOrderPaymentEventUseCase(
             orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionPort()),
-            orderLifecycleProcessor = orderLifecycleProcessor(orderRepository, eventPublisher),
+            orderLifecycleProcessor = orderLifecycleProcessor(),
         )
     }
 
@@ -329,7 +336,7 @@ class OrderUseCaseFlowTest {
     ): HandleOrderStockEventUseCase {
         return HandleOrderStockEventUseCase(
             orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionPort()),
-            orderLifecycleProcessor = orderLifecycleProcessor(orderRepository, eventPublisher),
+            orderLifecycleProcessor = orderLifecycleProcessor(),
             orderPaymentRequestScheduler = OrderPaymentRequestScheduler(
                 orderRepository,
                 eventPublisher,
@@ -348,21 +355,32 @@ class OrderUseCaseFlowTest {
             orderRepository = orderRepository,
             expireOrderUseCase = ExpireOrderUseCase(
                 orderMutationExecutor = OrderMutationExecutor(orderRepository, TestTransactionPort()),
-                orderLifecycleProcessor = orderLifecycleProcessor(orderRepository, eventPublisher),
+                orderLifecycleProcessor = orderLifecycleProcessor(),
                 orderPaymentCancellationEventPublisher = OrderPaymentCancellationEventPublisher(eventPublisher),
                 orderResponseMapper = OrderResponseMapper(),
             ),
         )
     }
 
-    private fun orderLifecycleProcessor(
-        orderRepository: FakeOrderRepository,
-        eventPublisher: FakeEventPublisher,
-    ): OrderLifecycleProcessor {
+    private fun orderLifecycleProcessor(): OrderLifecycleProcessor {
         return OrderLifecycleProcessor(
-            orderCompensationScheduler = OrderCompensationScheduler(orderRepository, eventPublisher, TestTransactionPort()),
             orderStatusNotifier = NoOpOrderStatusNotifier(),
             orderStreamEventMapper = OrderStreamEventMapper(),
+        )
+    }
+
+    private fun compensationSweeper(
+        orderRepository: FakeOrderRepository,
+        eventPublisher: FakeEventPublisher,
+    ): CompensationSweeper {
+        return CompensationSweeper(
+            orderRepository = orderRepository,
+            orderCompensationScheduler = OrderCompensationScheduler(
+                orderRepository = orderRepository,
+                eventPublisher = eventPublisher,
+                transactionPort = TestTransactionPort(),
+            ),
+            batchSize = 100,
         )
     }
 
@@ -402,6 +420,13 @@ class OrderUseCaseFlowTest {
             return orders.values
                 .filter { it.expiresAt <= now && !it.status.isFinalForClient() }
                 .map { it.orderId }
+        }
+
+        override fun findOrderIdsRequiringCompensation(limit: Int): List<Long> {
+            return orders.values
+                .filter { it.shouldRequestPaymentCompensation() || it.shouldRequestStockCompensation() }
+                .map { it.orderId }
+                .take(limit)
         }
     }
 

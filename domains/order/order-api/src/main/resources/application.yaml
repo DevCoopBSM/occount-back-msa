@@ -52,6 +52,9 @@ management:
 order:
   timeout-seconds: ${ORDER_TIMEOUT_SECONDS}
   async-timeout-buffer-millis: ${ORDER_ASYNC_TIMEOUT_BUFFER_MILLIS}
+  compensation-sweeper:
+    fixed-delay-ms: 1000
+    batch-size: 100
 
 services:
   item:

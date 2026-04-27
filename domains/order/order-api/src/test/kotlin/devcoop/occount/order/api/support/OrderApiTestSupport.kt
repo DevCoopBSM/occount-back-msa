@@ -79,6 +79,15 @@ class FakeOrderRepository(
             .filter { order -> order.expiresAt <= now && !order.status.isFinalForClient() }
             .map(OrderAggregate::orderId)
     }
+
+    override fun findOrderIdsRequiringCompensation(limit: Int): List<Long> {
+        return ordersById.values
+            .filter { order ->
+                order.shouldRequestPaymentCompensation() || order.shouldRequestStockCompensation()
+            }
+            .map(OrderAggregate::orderId)
+            .take(limit)
+    }
 }
 
 class FakeTransactionPort : TransactionPort {
