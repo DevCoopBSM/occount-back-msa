@@ -36,7 +36,7 @@ jwt:
 app:
   default-pin: ${DEFAULT_PIN}
   startup-warmup:
-    servlet-endpoints:
+    http-endpoints:
       - path: /api/v3/auth/login
         method: POST
         body: '{"email":"warmup@warmup.invalid","password":"x"}'

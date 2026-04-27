@@ -18,7 +18,7 @@ import kotlin.system.measureTimeMillis
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnProperty(
     prefix = "app.startup-warmup",
-    name = ["enabled", "servlet-enabled"],
+    name = ["enabled", "http-enabled"],
     havingValue = "true",
     matchIfMissing = true,
 )
@@ -35,14 +35,14 @@ class ServletStartupWarmup(
             return
         }
 
-        val rounds = properties.servletRepeat.coerceAtLeast(1)
-        val endpoints = properties.servletEndpoints
+        val rounds = properties.httpRepeat.coerceAtLeast(1)
+        val endpoints = properties.httpEndpoints
             .takeIf { it.isNotEmpty() }
-            ?: listOf(ServletWarmupTargets.defaultEndpoint(environment, properties))
+            ?: listOf(HttpWarmupTargets.defaultEndpoint(environment, properties))
 
-        val baseUri = ServletWarmupTargets.resolveBase(port, environment)
+        val baseUri = HttpWarmupTargets.resolveBase(port, environment)
         val client = HttpClient.newBuilder()
-            .connectTimeout(properties.servletTimeout)
+            .connectTimeout(properties.httpTimeout)
             .build()
         val targets = endpoints.map { it to URI.create("$baseUri${it.path}") }
 
@@ -76,7 +76,8 @@ class ServletStartupWarmup(
     }
 
     private fun buildRequest(endpoint: WarmupEndpoint, uri: URI): HttpRequest {
-        val builder = HttpRequest.newBuilder(uri).timeout(properties.servletTimeout)
+        val builder = HttpRequest.newBuilder(uri).timeout(properties.httpTimeout)
+        endpoint.headers.forEach { (name, value) -> builder.header(name, value) }
         return when (endpoint.method.uppercase()) {
             "POST" -> builder
                 .POST(HttpRequest.BodyPublishers.ofString(endpoint.body.orEmpty()))

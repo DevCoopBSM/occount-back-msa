@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
@@ -13,6 +14,7 @@ import kotlin.system.measureTimeMillis
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
+@ConditionalOnClass(EntityManagerFactory::class)
 @ConditionalOnBean(EntityManagerFactory::class)
 @ConditionalOnProperty(
     prefix = "app.startup-warmup",

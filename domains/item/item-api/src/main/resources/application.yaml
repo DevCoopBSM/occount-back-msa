@@ -40,6 +40,12 @@ toss:
 app:
   stock-sync:
     cron: ${APP_STOCK_SYNC_CRON}
+  startup-warmup:
+    http-endpoints:
+      - path: /api/v3/items/categories
+        method: GET
+      - path: /api/v3/items/without-barcode
+        method: GET
 
 management:
   tracing:
