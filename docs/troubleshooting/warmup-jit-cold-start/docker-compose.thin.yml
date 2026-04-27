@@ -1,0 +1,250 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    command:
+      - --skip-name-resolve
+      - --performance-schema=OFF
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    volumes:
+      - mysql-thin-data:/var/lib/mysql
+      - ../../../docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p123456"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  member-api:
+    build:
+      context: ../../..
+      dockerfile: docs/troubleshooting/warmup-jit-cold-start/Dockerfile.thin
+      args:
+        JAR_PATH: bench-jars/member-api.jar
+    restart: unless-stopped
+    environment:
+      JAVA_OPTS: ${JAVA_OPTS:-}
+      APP_STARTUP_WARMUP_ENABLED: ${APP_STARTUP_WARMUP_ENABLED:-true}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_member?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_SECRET_KEY: df93043843653badaf156d8de9fc7706b80412cbcb7c1b37213d4e64b1c11ab1
+      JWT_ACCESS_EXPIRATION_TIME: 3600000
+      JWT_KIOSK_EXPIRATION_TIME: 86400000
+      JWT_PREFIX: Bearer
+      JWT_HEADER: Authorization
+      DEFAULT_PIN: "000000"
+      OTEL_SDK_DISABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v3/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  item-api:
+    build:
+      context: ../../..
+      dockerfile: docs/troubleshooting/warmup-jit-cold-start/Dockerfile.thin
+      args:
+        JAR_PATH: bench-jars/item-api.jar
+    restart: unless-stopped
+    environment:
+      JAVA_OPTS: ${JAVA_OPTS:-}
+      APP_STARTUP_WARMUP_ENABLED: ${APP_STARTUP_WARMUP_ENABLED:-true}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_item?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_SECRET_KEY: df93043843653badaf156d8de9fc7706b80412cbcb7c1b37213d4e64b1c11ab1
+      JWT_ACCESS_EXPIRATION_TIME: 3600000
+      JWT_KIOSK_EXPIRATION_TIME: 86400000
+      JWT_PREFIX: Bearer
+      JWT_HEADER: Authorization
+      OCCOUNT_TOSS_API_URL: ""
+      APP_STOCK_SYNC_CRON: "0 0 0 * * *"
+      OTEL_SDK_DISABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v3/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  order-api:
+    build:
+      context: ../../..
+      dockerfile: docs/troubleshooting/warmup-jit-cold-start/Dockerfile.thin
+      args:
+        JAR_PATH: bench-jars/order-api.jar
+    restart: unless-stopped
+    environment:
+      JAVA_OPTS: ${JAVA_OPTS:-}
+      APP_STARTUP_WARMUP_ENABLED: ${APP_STARTUP_WARMUP_ENABLED:-true}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_order?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_SECRET_KEY: df93043843653badaf156d8de9fc7706b80412cbcb7c1b37213d4e64b1c11ab1
+      JWT_ACCESS_EXPIRATION_TIME: 3600000
+      JWT_KIOSK_EXPIRATION_TIME: 86400000
+      JWT_PREFIX: Bearer
+      JWT_HEADER: Authorization
+      ITEM_SERVICE_BASE_URL: http://item-api:8080/api/v3
+      ORDER_TIMEOUT_SECONDS: 30
+      ORDER_ASYNC_TIMEOUT_BUFFER_MILLIS: 10000
+      OTEL_SDK_DISABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      item-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v3/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  payment-api:
+    build:
+      context: ../../..
+      dockerfile: docs/troubleshooting/warmup-jit-cold-start/Dockerfile.thin
+      args:
+        JAR_PATH: bench-jars/payment-api.jar
+    restart: unless-stopped
+    environment:
+      JAVA_OPTS: ${JAVA_OPTS:-}
+      APP_STARTUP_WARMUP_ENABLED: ${APP_STARTUP_WARMUP_ENABLED:-true}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_payment?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_SECRET_KEY: df93043843653badaf156d8de9fc7706b80412cbcb7c1b37213d4e64b1c11ab1
+      JWT_ACCESS_EXPIRATION_TIME: 3600000
+      JWT_KIOSK_EXPIRATION_TIME: 86400000
+      JWT_PREFIX: Bearer
+      JWT_HEADER: Authorization
+      MEMBER_API_URL: http://member-api:8080
+      VAN_API_HOST_1: 127.0.0.1
+      VAN_API_HOST_2: 127.0.0.1
+      VAN_API_HOST_3: 127.0.0.1
+      VAN_API_HOST_4: ""
+      VAN_API_PORT_1: 5555
+      VAN_API_PORT_2: 5555
+      VAN_API_PORT_3: 5555
+      VAN_API_PORT_4: 0
+      VAN_API_PROTOCOL_STX: "02"
+      VAN_API_PROTOCOL_ETX: "03"
+      VAN_API_PROTOCOL_SEPARATOR: "1c"
+      VAN_API_PROTOCOL_RECORD_SEPARATOR: "1e"
+      VAN_API_PROTOCOL_BLANK: "20"
+      VAN_API_PROTOCOL_ACK: "06"
+      VAN_API_PROTOCOL_DLE: "10"
+      VAN_API_PROTOCOL_FORM_FEED: "0c"
+      VAN_API_PROTOCOL_NAK: "15"
+      VAN_API_PROTOCOL_TRANSACTION_TIMEOUT_SECONDS: 30
+      VAN_API_MESSAGE_PAYMENT_SERVICE_TYPE: "0101"
+      VAN_API_MESSAGE_REFUND_SERVICE_TYPE: "2101"
+      VAN_API_MESSAGE_TERMINAL_CLOSE_SERVICE_TYPE: "9001"
+      VAN_API_MESSAGE_TERMINAL_CLOSE_FILLER: "1000202"
+      VAN_API_MESSAGE_TRANSACTION_TYPE: "01"
+      VAN_API_MESSAGE_INSTALLMENT_MONTHS: "00"
+      VAN_PROTOCOL_CODES_CANCEL_MESSAGE_TYPE: "0"
+      VAN_PROTOCOL_CODES_REJECT_STATUS_PREFIX: "9"
+      VAN_PROTOCOL_CODES_CARD_INSERT_KEYWORD: "INSERT"
+      OTEL_SDK_DISABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      member-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v3/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  api-gateway:
+    build:
+      context: ../../..
+      dockerfile: docs/troubleshooting/warmup-jit-cold-start/Dockerfile.thin
+      args:
+        JAR_PATH: bench-jars/api-gateway.jar
+    restart: unless-stopped
+    ports:
+      - "18080:8080"
+    environment:
+      JAVA_OPTS: ${JAVA_OPTS:-}
+      APP_STARTUP_WARMUP_ENABLED: ${APP_STARTUP_WARMUP_ENABLED:-true}
+      MEMBER_API_URL: http://member-api:8080
+      ITEM_API_URL: http://item-api:8080
+      ORDER_API_URL: http://order-api:8080
+      PAYMENT_API_URL: http://payment-api:8080
+      JWT_ACCESS_EXPIRATION_TIME: 3600000
+      JWT_KIOSK_EXPIRATION_TIME: 86400000
+      JWT_PREFIX: Bearer
+      JWT_HEADER: Authorization
+      JWT_SECRET_KEY: df93043843653badaf156d8de9fc7706b80412cbcb7c1b37213d4e64b1c11ab1
+      OTEL_SDK_DISABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
+    depends_on:
+      member-api:
+        condition: service_healthy
+      item-api:
+        condition: service_healthy
+      order-api:
+        condition: service_healthy
+      payment-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v3/actuator/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+      start_period: 5s
+
+volumes:
+  mysql-thin-data:

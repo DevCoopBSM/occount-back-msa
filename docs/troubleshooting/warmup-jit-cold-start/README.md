@@ -227,3 +227,97 @@ archive에는 "실행된 클래스 비트맵"이 들어가지 archive 시점의 
 ### 추가 자료
 
 - [results-member-service-warmup-2026-04-27.tsv](results-member-service-warmup-2026-04-27.tsv) — service-layer 워밍업 미적용 vs 적용, member-api 단독, 3회
+
+---
+
+## 후속 (2026-04-27): 게이트웨이/리액티브 워밍업 도입 + 도메인 엔드포인트 확장
+
+### 배경
+
+운영에서 모든 도메인 API는 워밍업이 도는데도 **게이트웨이를 통한 첫 요청이 약 0.8s** 걸리는 현상이 관찰됐다. 원인을 분리해 보면:
+
+1. `ServletStartupWarmup`이 `@ConditionalOnWebApplication(SERVLET)`이라 WebFlux/Netty 기반 `api-gateway`에선 자동 비활성 → 게이트웨이는 워밍업 0이었음
+2. 도메인 워밍업도 대부분 `/actuator/health/ping`만 데우고 있어 실제 비즈니스 경로(컨트롤러/서비스/JPA)는 콜드
+3. 게이트웨이는 첫 요청에서 한꺼번에 데워야 할 게 많음:
+   - Reactor Netty downstream connection pool (초기 연결 0개)
+   - Route Predicate/Filter 체인 컴파일
+   - JJWT 클래스로딩 + JWT 파싱 경로
+   - Netty PooledByteBufAllocator arenas
+
+### 변경 요약
+
+`modules/warmup` 인프라 확장:
+- **`ReactiveStartupWarmup` 신규** — `@ConditionalOnWebApplication(REACTIVE)` + `WebClient` 기반 셀프 호출
+- `ServletStartupWarmup` / Reactive 양쪽이 같은 `app.startup-warmup.http-*` 키 공유 (`servletEndpoints` → `httpEndpoints` 등)
+- `WarmupEndpoint`에 `headers: Map<String, String>` 필드 추가 (다운스트림 인증 헤더 전파)
+- `JpaStartupWarmup`에 `@ConditionalOnClass(EntityManagerFactory)` 추가 — JPA 미사용 모듈(게이트웨이)에서도 안전 로딩
+
+도메인별 워밍업 엔드포인트 설정:
+
+| 모듈 | 워밍업 엔드포인트 |
+|---|---|
+| `api-gateway` | `POST /api/v3/auth/login`, `GET /api/v3/items`, `GET /api/v3/orders/{dummy}`, `GET /api/v3/wallet/balance` |
+| `item-api` | `GET /api/v3/items/categories`, `GET /api/v3/items/without-barcode` |
+| `order-api` | `GET /api/v3/orders/0` |
+| `payment-api` | `GET /api/v3/wallet/point`, `GET /api/v3/wallet/charges` (모두 `X-Authenticated-User-Id: 0` 헤더) |
+| `member-api` | 기존 유지 (`POST /api/v3/auth/login`) |
+
+### 측정 방법
+
+`docker-compose.thin.yml`로 mysql + kafka + 5개 서비스(member-api, item-api, order-api, payment-api, api-gateway) 풀스택 기동. 호스트에서 빌드한 jar를 컨테이너에 마운트하는 방식(빌드 OOM 회피).
+
+각 run:
+1. `compose down -v` → 전체 teardown (MySQL 볼륨 포함)
+2. mysql/kafka → member/item → order/payment → api-gateway 순차 기동
+3. 각 서비스 healthcheck 통과 확인 후 5초 settle
+4. 게이트웨이 컨테이너 내부에서 `curl -w '%{time_total}'`로 4개 라우트 × 3회 측정 (1회=콜드, 2-3회=웜)
+
+비교군:
+- **warmup ON**: 현재 상태 (게이트웨이 + 모든 도메인 워밍업 활성)
+- **warmup OFF**: `APP_STARTUP_WARMUP_ENABLED=false` 일괄 적용 (모든 워밍업 비활성)
+
+3 runs × 2 variants. 측정일 2026-04-27, 호스트는 Apple Silicon, Docker Desktop 메모리 3.8GB.
+
+### 결과 (게이트웨이 첫 요청, ms)
+
+| Path | warmup ON 평균 | warmup OFF 평균 | ON range | OFF range | 변화 |
+|---|---:|---:|---:|---:|---:|
+| `POST /api/v3/auth/login` | **59.5** | **2343.6** | 57–63 | 531–5887 | **−97.5%** |
+| `GET /api/v3/items` | **32.6** | **1260.7** | 25–40 | 923–1906 | **−97.4%** |
+| `GET /api/v3/orders/0` | **61.8** | **1318.2** | 34–99 | 373–3202 | **−95.3%** |
+| `GET /api/v3/wallet/point` | 50.7 | 57.5 | 17–101 | 19–132 | −11.8% |
+
+### 해석
+
+**1. 게이트웨이 워밍업 효과는 명확하다.** 다운스트림까지 프록시되는 3개 경로(`/auth/login`, `/items`, `/orders`)에서 첫 요청이 **20–40× 단축**됐다. 0.8s 추정치보다 더 큰 폭인 이유는 OFF 측이 풀스택 콜드여서 게이트웨이뿐 아니라 다운스트림 API 첫 요청 비용까지 포함하기 때문.
+
+**2. tail latency 안정화가 더 큰 가치.** range 폭 비교:
+- `/auth/login` ON: 57–63ms (5.4ms 폭) vs OFF: 531–5887ms (5356ms 폭, 1000× 분산)
+- `/items` ON: 25–40ms vs OFF: 923–1906ms
+
+평균 단축보다 P99 안정화 효과가 더 의미 있음. 부팅 직후 동시 요청이 몰릴 때 큐잉/타임아웃 위험을 사실상 제거한다.
+
+**3. `/wallet/point`는 게이트웨이에서 끝나서 차이 미미.** 인증 필요 경로인데 측정에 Bearer 토큰을 넣지 않아 게이트웨이가 401로 즉시 응답 → 다운스트림(payment-api) 콜드 비용이 측정에 포함되지 않음. 게이트웨이의 JWT validator + 401 응답 경로 자체는 워밍업으로 데워졌고(ON 17ms vs OFF 19ms 첫 요청 최저값), 워밍업으로 인한 평균 차이가 작은 건 측정 노이즈에 묻힌 결과.
+
+**4. 비용은 무시 가능.** 게이트웨이 워밍업 자체는 약 0.6s (4 endpoints × 10 rounds, 비동기 WebClient). startupProbe로 게이팅되므로 트래픽 유입 지연 없음.
+
+### 결론
+
+게이트웨이/리액티브 워밍업 도입은 **첫 요청 평균 95–98% 단축, tail latency 1000× 안정화**로 명확한 효과. 비용은 startup +0.6s. 운영의 0.8s 콜드 스타트 관찰값을 직접 해소한다.
+
+### 재현 방법
+
+Docker Desktop 메모리가 6GB 이상 권장 (5개 jar + mysql + kafka 동시 기동). gradle in-container 빌드는 OOM 위험 → 호스트에서 jar 빌드 후 마운트하는 thin 방식 사용.
+
+```sh
+./docs/troubleshooting/warmup-jit-cold-start/gateway-warmup-bench.sh
+```
+
+스크립트가 `bench-jars/`가 없으면 자동으로 호스트 빌드 후 복사한다. 결과는 `/tmp/gateway-warmup-bench-results.tsv`에 저장.
+
+### 추가 자료
+
+- [results-gateway-warmup-2026-04-27.tsv](results-gateway-warmup-2026-04-27.tsv) — 게이트웨이 워밍업 ON vs OFF, 풀스택, 4 routes × 3 runs
+- [docker-compose.thin.yml](docker-compose.thin.yml) — thin 런타임 컴포즈 (호스트 jar 마운트)
+- [Dockerfile.thin](Dockerfile.thin) — JRE + curl + jar COPY만 하는 런타임 이미지
+- [gateway-warmup-bench.sh](gateway-warmup-bench.sh) — 벤치 자동화
