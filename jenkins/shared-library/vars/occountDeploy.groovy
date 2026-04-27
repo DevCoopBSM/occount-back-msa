@@ -24,7 +24,7 @@ def call(Map cfg) {
     def TRIGGER_ALL_PATHS = [
         'build.gradle', 'build.gradle.kts',
         'settings.gradle', 'settings.gradle.kts',
-        'gradle.properties', 'gradle/', 'buildSrc/',
+        'gradle.properties', 'gradle/', 'buildSrc/', 'modules/',
     ]
 
     pipeline {
@@ -127,8 +127,7 @@ def call(Map cfg) {
 
                         // fat jar + Dockerfile을 서비스 디렉토리로 복사
                         container('gradle') {
-                            for (int i = 0; i < svcsToBuild.size(); i++) {
-                                def svc = svcsToBuild[i]
+                            svcsToBuild.each { svc ->
                                 def jarFile = sh(
                                     script: "ls ${env.WORKSPACE}/${svc.dir}/build/libs/*.jar 2>/dev/null | grep -v plain | tail -1",
                                     returnStdout: true
@@ -139,26 +138,24 @@ def call(Map cfg) {
                             }
                         }
 
-                        // 각 서비스 Dockerfile 기반으로 병렬 빌드
-                        def parallelStages = [:]
-                        for (int i = 0; i < svcsToBuild.size(); i++) {
-                            def svc = svcsToBuild[i]
-                            parallelStages["${svc.name}"] = {
-                                container('kaniko') {
-                                    sh """
-                                        /kaniko/executor \\
-                                            --context=dir://${env.WORKSPACE}/${svc.dir} \\
-                                            --dockerfile=${env.WORKSPACE}/${svc.dir}/Dockerfile \\
-                                            --destination=${env.IMAGE_PREFIX}/${svc.name}:${imageTag} \\
-                                            --build-arg BASE_IMAGE=${env.HARBOR_URL}/base/eclipse-temurin:21-jre-alpine \\
-                                            --snapshot-mode=full \\
-                                            --skip-tls-verify \\
-                                            --skip-tls-verify-pull
-                                    """
-                                }
+                        // kaniko는 컨테이너당 단일 프로세스만 지원한다.
+                        // 같은 컨테이너에서 parallel 로 띄우면 root fs 스냅샷이
+                        // 서로의 쓰기와 충돌해 "archive/tar: write too long" 으로 실패하므로 순차 실행한다.
+                        container('kaniko') {
+                            svcsToBuild.each { svc ->
+                                sh """
+                                    /kaniko/executor \\
+                                        --context=dir://${env.WORKSPACE}/${svc.dir} \\
+                                        --dockerfile=${env.WORKSPACE}/${svc.dir}/Dockerfile \\
+                                        --destination=${env.IMAGE_PREFIX}/${svc.name}:${imageTag} \\
+                                        --build-arg BASE_IMAGE=${env.HARBOR_URL}/base/eclipse-temurin:21-jre-alpine \\
+                                        --snapshot-mode=redo \\
+                                        --single-snapshot \\
+                                        --skip-tls-verify \\
+                                        --skip-tls-verify-pull
+                                """
                             }
                         }
-                        parallel parallelStages
                     }
                 }
             }
