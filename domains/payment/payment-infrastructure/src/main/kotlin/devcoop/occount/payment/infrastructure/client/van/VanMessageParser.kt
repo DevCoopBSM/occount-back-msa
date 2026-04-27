@@ -78,7 +78,23 @@ class VanMessageParser(
 
         val (cardStatus, approvalNumber) = vanResponse.getApprovalInfo()
         if (approvalNumber.isNullOrBlank()) {
-            return null
+            // serviceType이 있으면 VAN이 완전한 응답을 보낸 것이므로 거절로 처리
+            // serviceType이 없으면 파싱이 불가능한 제어 문자 수준의 중간 프레임으로 무시
+            if (vanResponse.serviceType == null) {
+                return null
+            }
+            val reason = vanResponse.getRejectionReason()
+            log.warn("승인번호 없는 VAN 응답 수신 - 거절로 처리: status={}", vanResponse.status)
+            return failureResult(
+                message = "거래가 거절되었습니다: $reason",
+                errorCode = "TRANSACTION_REJECTED",
+                transaction = createTransactionResult(
+                    vanResponse,
+                    rejectCode = vanResponse.status,
+                    rejectMessage = reason,
+                ),
+                rawResponse = rawResponse,
+            )
         }
         if (!approvalNumber.all { it.isDigit() }) {
             log.error("비정상적인 응답: 승인번호가 숫자가 아닙니다 (approvalNumber={})", approvalNumber)

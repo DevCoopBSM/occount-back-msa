@@ -173,6 +173,10 @@ class VanTerminalClient(
                             continue
                         }
 
+                        if (!parsed.success) {
+                            return parsed
+                        }
+
                         if (currentTransactionType.get() == TransactionType.APPROVE) {
                             approvalPhase.set(ApprovalPhase.CARD_PROCESSING)
                         }
