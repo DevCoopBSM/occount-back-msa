@@ -6,32 +6,40 @@ import org.springframework.mock.env.MockEnvironment
 
 class ServletWarmupTargetTest {
     @Test
-    fun `resolve uses context path and actuator base path by default`() {
+    fun `defaultEndpoint uses context path and actuator base path by default`() {
         val environment = MockEnvironment()
             .withProperty("server.servlet.context-path", "/api/v3")
             .withProperty("management.endpoints.web.base-path", "/actuator")
 
-        val target = ServletWarmupTarget.resolve(
-            port = 8080,
-            environment = environment,
-            properties = StartupWarmupProperties(),
-        )
+        val endpoint = ServletWarmupTargets.defaultEndpoint(environment, StartupWarmupProperties())
 
-        assertEquals("http://127.0.0.1:8080/api/v3/actuator/health/ping", target.toString())
+        assertEquals("/api/v3/actuator/health/ping", endpoint.path)
+        assertEquals("GET", endpoint.method)
     }
 
     @Test
-    fun `resolve honors explicit warmup path`() {
+    fun `resolveBase returns scheme and port only`() {
+        val base = ServletWarmupTargets.resolveBase(8080, MockEnvironment())
+        assertEquals("http://127.0.0.1:8080", base)
+    }
+
+    @Test
+    fun `resolveBase uses https when ssl is enabled`() {
+        val environment = MockEnvironment()
+            .withProperty("server.ssl.enabled", "true")
+
+        val base = ServletWarmupTargets.resolveBase(8443, environment)
+        assertEquals("https://127.0.0.1:8443", base)
+    }
+
+    @Test
+    fun `defaultEndpoint honors explicit warmup path`() {
         val properties = StartupWarmupProperties().apply {
             servletPath = "/internal/warmup"
         }
 
-        val target = ServletWarmupTarget.resolve(
-            port = 8081,
-            environment = MockEnvironment(),
-            properties = properties,
-        )
+        val endpoint = ServletWarmupTargets.defaultEndpoint(MockEnvironment(), properties)
 
-        assertEquals("http://127.0.0.1:8081/internal/warmup", target.toString())
+        assertEquals("/internal/warmup", endpoint.path)
     }
 }

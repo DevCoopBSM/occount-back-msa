@@ -6,10 +6,13 @@ import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.core.Ordered
+import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import kotlin.system.measureTimeMillis
 
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @ConditionalOnBean(EntityManagerFactory::class)
 @ConditionalOnProperty(
     prefix = "app.startup-warmup",
@@ -19,6 +22,7 @@ import kotlin.system.measureTimeMillis
 )
 class JpaStartupWarmup(
     private val entityManagerFactory: EntityManagerFactory,
+    private val properties: StartupWarmupProperties,
 ) : ApplicationRunner {
     override fun run(args: ApplicationArguments) {
         val entityNames = entityManagerFactory.metamodel.entities
@@ -29,9 +33,11 @@ class JpaStartupWarmup(
             return
         }
 
+        val rounds = properties.jpaRepeat.coerceAtLeast(1)
+
         val elapsed = runCatching {
             measureTimeMillis {
-                repeat(POOL_WARMUP_COUNT) {
+                repeat(rounds) {
                     val entityManager = entityManagerFactory.createEntityManager()
                     try {
                         entityNames.forEach { entityName ->
@@ -50,7 +56,7 @@ class JpaStartupWarmup(
         elapsed.onSuccess { duration ->
             log.info(
                 "JPA startup warmup completed for {} entities ({} rounds) in {} ms",
-                entityNames.size, POOL_WARMUP_COUNT, duration,
+                entityNames.size, rounds, duration,
             )
         }.onFailure { exception ->
             log.warn("JPA startup warmup failed", exception)
@@ -58,7 +64,6 @@ class JpaStartupWarmup(
     }
 
     companion object {
-        private const val POOL_WARMUP_COUNT = 10
         private val log = LoggerFactory.getLogger(JpaStartupWarmup::class.java)
     }
 }
