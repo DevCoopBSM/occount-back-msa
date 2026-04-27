@@ -147,6 +147,7 @@ services:
       JWT_KIOSK_EXPIRATION_TIME: ${JWT_KIOSK_EXPIRATION_TIME:-86400000}
       JWT_PREFIX: ${JWT_PREFIX:-Bearer}
       JWT_HEADER: ${JWT_HEADER:-Authorization}
+      APP_FOOD_SAFETY: ${APP_FOOD_SAFETY}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://datadog-agent:4318/v1/traces}
     depends_on:
       mysql:
