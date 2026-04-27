@@ -1,11 +1,11 @@
 package devcoop.occount.item.api.support
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import devcoop.occount.item.application.output.ItemRepository
 import devcoop.occount.item.domain.item.Category
 import devcoop.occount.item.domain.item.Item
 import org.springframework.dao.OptimisticLockingFailureException
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
+import tools.jackson.module.kotlin.jacksonMapperBuilder
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.transaction.PlatformTransactionManager
@@ -122,9 +122,7 @@ class TestTransactionManager : PlatformTransactionManager {
 }
 
 fun mockMvc(vararg controllers: Any): MockMvc {
-    val messageConverter = MappingJackson2HttpMessageConverter(
-        jacksonObjectMapper(),
-    )
+    val messageConverter = JacksonJsonHttpMessageConverter(jacksonMapperBuilder())
     return MockMvcBuilders.standaloneSetup(*controllers)
         .setControllerAdvice(ApiAdviceHandler())
         .setMessageConverters(messageConverter)
