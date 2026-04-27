@@ -42,7 +42,7 @@ class ItemControllerTest {
 
         mockMvc.perform(get("/items/categories"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.itemCategories.length()").isNotEmpty)
+            .andExpect(jsonPath("$.categories.length()").isNotEmpty)
     }
 
     @Test

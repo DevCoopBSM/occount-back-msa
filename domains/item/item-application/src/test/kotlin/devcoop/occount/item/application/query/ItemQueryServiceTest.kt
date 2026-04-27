@@ -31,7 +31,7 @@ class ItemQueryServiceTest {
 
         val result = itemQueryService.getItemCategories()
 
-        assertEquals(Category.entries, result.itemCategories)
+        assertEquals(Category.entries, result.categories)
     }
 
     @Test

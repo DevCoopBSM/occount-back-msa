@@ -18,7 +18,7 @@ class ItemQueryService(
     }
 
     fun getItemCategories(): ItemCategoryListResponse {
-        return ItemCategoryListResponse(Category.entries)
+        return ItemCategoryListResponse(categories = Category.entries)
     }
 
     fun getItemsWithoutBarcode(): ItemLookupListResponse {
