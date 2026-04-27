@@ -30,7 +30,7 @@ class OrderController(
     @PostMapping
     fun createOrder(
         @RequestBody orderRequest: OrderRequest,
-        @RequestHeader(value = AuthHeaders.KIOSK_ID, defaultValue = "1") kioskId: String,
+        @RequestHeader(value = AuthHeaders.KIOSK_ID, required = true) kioskId: String,
         @RequestHeader(value = AuthHeaders.AUTHENTICATED_USER_ID, required = false) userIdHeader: String?,
     ): ResponseEntity<OrderResponse> {
         val userId = userIdHeader?.toLongOrNull()
