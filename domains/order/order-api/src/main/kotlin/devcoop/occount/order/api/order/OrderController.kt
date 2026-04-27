@@ -4,9 +4,9 @@ import devcoop.occount.core.common.auth.AuthHeaders
 import devcoop.occount.order.api.sse.OrderSseRegistry
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
+import devcoop.occount.order.application.query.OrderQueryService
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
-import devcoop.occount.order.application.usecase.order.get.GetOrderUseCase
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -24,7 +24,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 class OrderController(
     private val createOrderUseCase: CreateOrderUseCase,
     private val cancelOrderUseCase: CancelOrderUseCase,
-    private val getOrderUseCase: GetOrderUseCase,
+    private val orderQueryService: OrderQueryService,
     private val orderSseRegistry: OrderSseRegistry,
 ) {
     @PostMapping
@@ -42,7 +42,7 @@ class OrderController(
     fun getOrder(
         @PathVariable orderId: Long,
     ): ResponseEntity<OrderResponse> {
-        val response = getOrderUseCase.getOrder(orderId)
+        val response = orderQueryService.getOrder(orderId)
         return ResponseEntity.ok(response)
     }
 
@@ -51,7 +51,7 @@ class OrderController(
         @PathVariable orderId: Long,
     ): SseEmitter {
         return orderSseRegistry.register(orderId) {
-            getOrderUseCase.getOrderStreamEvent(orderId)
+            orderQueryService.getOrderStreamEvent(orderId)
         }
     }
 

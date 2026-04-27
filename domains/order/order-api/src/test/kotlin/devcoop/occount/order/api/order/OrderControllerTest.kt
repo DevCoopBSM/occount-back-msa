@@ -15,9 +15,9 @@ import devcoop.occount.order.application.support.OrderMutationExecutor
 import devcoop.occount.order.application.support.OrderPaymentCancellationEventPublisher
 import devcoop.occount.order.application.support.OrderResponseMapper
 import devcoop.occount.order.application.support.OrderStreamEventMapper
+import devcoop.occount.order.application.query.OrderQueryService
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
-import devcoop.occount.order.application.usecase.order.get.GetOrderUseCase
 import devcoop.occount.order.domain.order.OrderStatus
 import org.hamcrest.Matchers.containsString
 import org.springframework.test.web.servlet.MockMvc
@@ -182,7 +182,7 @@ class OrderControllerTest {
                     orderPaymentCancellationEventPublisher = OrderPaymentCancellationEventPublisher(eventPublisher),
                     orderResponseMapper = OrderResponseMapper(),
                 ),
-                getOrderUseCase = GetOrderUseCase(
+                orderQueryService = OrderQueryService(
                     orderRepository = orderRepository,
                     orderResponseMapper = OrderResponseMapper(),
                     orderStreamEventMapper = OrderStreamEventMapper(),
