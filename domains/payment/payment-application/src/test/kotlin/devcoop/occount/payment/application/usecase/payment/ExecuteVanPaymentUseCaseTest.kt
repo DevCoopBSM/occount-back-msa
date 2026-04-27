@@ -10,6 +10,7 @@ import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.dto.response.CardResult
 import devcoop.occount.payment.application.dto.response.TransactionResult
 import devcoop.occount.payment.application.dto.response.VanResult
+import devcoop.occount.payment.application.exception.DuplicateEventException
 import devcoop.occount.payment.application.exception.PaymentCancelledException
 import devcoop.occount.payment.application.output.CardPaymentPort
 import devcoop.occount.payment.application.output.OrderPaymentCancellationRequestResult
@@ -23,6 +24,10 @@ import devcoop.occount.payment.domain.payment.CardType
 import devcoop.occount.payment.domain.payment.PaymentLog
 import devcoop.occount.payment.domain.payment.PaymentType
 import devcoop.occount.payment.domain.wallet.Wallet
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.TransactionDefinition
+import org.springframework.transaction.TransactionStatus
+import org.springframework.transaction.support.SimpleTransactionStatus
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -35,7 +40,7 @@ class ExecuteVanPaymentUseCaseTest {
         val cardPaymentPort = FakeCardPaymentPort()
         val paymentFacade = paymentFacade(cardPaymentPort)
         val eventPublisher = FakeEventPublisher()
-        val useCase = ExecuteVanPaymentUseCase(paymentFacade, executionRepository, eventPublisher)
+        val useCase = ExecuteVanPaymentUseCase(paymentFacade, executionRepository, eventPublisher, NoopTransactionManager())
 
         useCase.execute(requestedEvent())
 
@@ -44,12 +49,28 @@ class ExecuteVanPaymentUseCaseTest {
     }
 
     @Test
+    fun `execute skips duplicate consumption`() {
+        val executionRepository = FakeOrderPaymentExecutionRepository()
+        val cardPaymentPort = FakeCardPaymentPort()
+        val paymentFacade = paymentFacade(cardPaymentPort)
+        val eventPublisher = FakeEventPublisher()
+        val useCase = ExecuteVanPaymentUseCase(paymentFacade, executionRepository, eventPublisher, NoopTransactionManager())
+
+        useCase.execute(requestedEvent(), recordConsumption = { throw DuplicateEventException() })
+
+        assertEquals(0, cardPaymentPort.approvedAmounts.size)
+        assertEquals(0, eventPublisher.published.size)
+        assertEquals(null, executionRepository.completedOrderId)
+        assertEquals(null, executionRepository.cancelledOrderId)
+    }
+
+    @Test
     fun `execute publishes failed when request was cancelled before start`() {
         val executionRepository = FakeOrderPaymentExecutionRepository(startResult = OrderPaymentExecutionStartResult.CANCELLED_BEFORE_START)
         val cardPaymentPort = FakeCardPaymentPort()
         val paymentFacade = paymentFacade(cardPaymentPort)
         val eventPublisher = FakeEventPublisher()
-        val useCase = ExecuteVanPaymentUseCase(paymentFacade, executionRepository, eventPublisher)
+        val useCase = ExecuteVanPaymentUseCase(paymentFacade, executionRepository, eventPublisher, NoopTransactionManager())
 
         useCase.execute(requestedEvent())
 
@@ -64,7 +85,7 @@ class ExecuteVanPaymentUseCaseTest {
         val cardPaymentPort = FakeCardPaymentPort()
         val paymentFacade = paymentFacade(cardPaymentPort)
         val eventPublisher = FakeEventPublisher()
-        val useCase = ExecuteVanPaymentUseCase(paymentFacade, executionRepository, eventPublisher)
+        val useCase = ExecuteVanPaymentUseCase(paymentFacade, executionRepository, eventPublisher, NoopTransactionManager())
 
         useCase.execute(requestedEvent())
 
@@ -79,7 +100,7 @@ class ExecuteVanPaymentUseCaseTest {
         val cardPaymentPort = FakeCardPaymentPort(error = PaymentCancelledException())
         val paymentFacade = paymentFacade(cardPaymentPort)
         val eventPublisher = FakeEventPublisher()
-        val useCase = ExecuteVanPaymentUseCase(paymentFacade, executionRepository, eventPublisher)
+        val useCase = ExecuteVanPaymentUseCase(paymentFacade, executionRepository, eventPublisher, NoopTransactionManager())
 
         useCase.execute(requestedEvent())
 
@@ -123,6 +144,12 @@ class ExecuteVanPaymentUseCaseTest {
             ),
             getWalletPointQueryService = GetWalletPointQueryService(FakeWalletRepository()),
         )
+    }
+
+    private class NoopTransactionManager : PlatformTransactionManager {
+        override fun getTransaction(definition: TransactionDefinition?): TransactionStatus = SimpleTransactionStatus()
+        override fun commit(status: TransactionStatus) = Unit
+        override fun rollback(status: TransactionStatus) = Unit
     }
 
     private class FakeOrderPaymentExecutionRepository(

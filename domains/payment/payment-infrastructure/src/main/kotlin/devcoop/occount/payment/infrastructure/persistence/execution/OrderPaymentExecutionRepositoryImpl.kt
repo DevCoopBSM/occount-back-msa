@@ -11,9 +11,8 @@ import org.springframework.transaction.annotation.Transactional
 class OrderPaymentExecutionRepositoryImpl(
     private val persistenceRepository: OrderPaymentExecutionPersistenceRepository,
 ) : OrderPaymentExecutionRepository {
-    @Transactional
     override fun startProcessing(orderId: Long): OrderPaymentExecutionStartResult {
-        val execution = persistenceRepository.findByOrderIdForUpdate(orderId)
+        val execution = persistenceRepository.findById(orderId).orElse(null)
         if (execution == null) {
             persistenceRepository.save(
                 OrderPaymentExecutionJpaEntity(
@@ -70,17 +69,14 @@ class OrderPaymentExecutionRepositoryImpl(
             .orElse(false)
     }
 
-    @Transactional
     override fun markCompleted(orderId: Long) {
         upsertState(orderId, OrderPaymentExecutionState.COMPLETED, false)
     }
 
-    @Transactional
     override fun markFailed(orderId: Long) {
         upsertState(orderId, OrderPaymentExecutionState.FAILED, false)
     }
 
-    @Transactional
     override fun markCancelled(orderId: Long) {
         upsertState(orderId, OrderPaymentExecutionState.CANCELLED, true)
     }
@@ -90,7 +86,7 @@ class OrderPaymentExecutionRepositoryImpl(
         state: OrderPaymentExecutionState,
         cancellationRequested: Boolean,
     ) {
-        val execution = persistenceRepository.findByOrderIdForUpdate(orderId)
+        val execution = persistenceRepository.findById(orderId).orElse(null)
         if (execution == null) {
             persistenceRepository.save(
                 OrderPaymentExecutionJpaEntity(
