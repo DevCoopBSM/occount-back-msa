@@ -33,6 +33,17 @@ class ItemQueryService(
         )
     }
 
+    fun searchItems(query: String): ItemListResponse {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty()) {
+            return ItemListResponse(items = emptyList())
+        }
+
+        return ItemListResponse(
+            items = itemRepository.searchByName(trimmed).map(ItemMapper::toResponse),
+        )
+    }
+
     fun getItemByBarcode(barcode: String): ItemLookupResponse {
         val item = itemRepository.findByBarcode(barcode)
             ?: throw ItemNotFoundException()
