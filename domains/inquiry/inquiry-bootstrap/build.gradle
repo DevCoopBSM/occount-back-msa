@@ -1,0 +1,21 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+bootJar {
+    archiveFileName.set('inquiry-api.jar')
+}
+
+dependencies {
+    implementation project(':domains:inquiry:inquiry-api')
+    implementation project(':domains:inquiry:inquiry-infrastructure')
+    implementation project(':modules:db')
+    implementation project(':modules:observability')
+    implementation project(':modules:warmup')
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'tools.jackson.module:jackson-module-kotlin'
+
+    runtimeOnly 'com.mysql:mysql-connector-j'
+}
