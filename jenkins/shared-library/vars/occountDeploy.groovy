@@ -24,7 +24,7 @@ def call(Map cfg) {
     def TRIGGER_ALL_PATHS = [
         'build.gradle', 'build.gradle.kts',
         'settings.gradle', 'settings.gradle.kts',
-        'gradle.properties', 'gradle/', 'buildSrc/',
+        'gradle.properties', 'gradle/', 'buildSrc/', 'modules/',
     ]
 
     pipeline {
@@ -127,8 +127,7 @@ def call(Map cfg) {
 
                         // fat jar + Dockerfile을 서비스 디렉토리로 복사
                         container('gradle') {
-                            for (int i = 0; i < svcsToBuild.size(); i++) {
-                                def svc = svcsToBuild[i]
+                            svcsToBuild.each { svc ->
                                 def jarFile = sh(
                                     script: "ls ${env.WORKSPACE}/${svc.dir}/build/libs/*.jar 2>/dev/null | grep -v plain | tail -1",
                                     returnStdout: true
@@ -140,16 +139,19 @@ def call(Map cfg) {
                         }
 
                         // 각 서비스 Dockerfile 기반으로 병렬 빌드
+                        // NOTE: .each 사용 필수 — for 루프 내 클로저는 Jenkins CPS 변환 후
+                        // 마지막 svc 값만 캡처하여 모든 브랜치가 동일 컨텍스트로 빌드됨
                         def parallelStages = [:]
-                        for (int i = 0; i < svcsToBuild.size(); i++) {
-                            def svc = svcsToBuild[i]
-                            parallelStages["${svc.name}"] = {
+                        svcsToBuild.each { svc ->
+                            def svcName = svc.name
+                            def svcDir  = svc.dir
+                            parallelStages[svcName] = {
                                 container('kaniko') {
                                     sh """
                                         /kaniko/executor \\
-                                            --context=dir://${env.WORKSPACE}/${svc.dir} \\
-                                            --dockerfile=${env.WORKSPACE}/${svc.dir}/Dockerfile \\
-                                            --destination=${env.IMAGE_PREFIX}/${svc.name}:${imageTag} \\
+                                            --context=dir://${env.WORKSPACE}/${svcDir} \\
+                                            --dockerfile=${env.WORKSPACE}/${svcDir}/Dockerfile \\
+                                            --destination=${env.IMAGE_PREFIX}/${svcName}:${imageTag} \\
                                             --build-arg BASE_IMAGE=${env.HARBOR_URL}/base/eclipse-temurin:21-jre-alpine \\
                                             --snapshot-mode=full \\
                                             --skip-tls-verify \\
