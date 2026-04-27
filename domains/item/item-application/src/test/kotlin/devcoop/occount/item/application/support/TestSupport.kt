@@ -81,6 +81,14 @@ class FakeItemRepository(
         return itemIds.mapNotNull(itemsById::get)
     }
 
+    override fun searchByName(query: String): List<Item> {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty()) return emptyList()
+        return itemsById.values.filter {
+            it.isActive() && it.getName().contains(trimmed, ignoreCase = true)
+        }
+    }
+
     override fun findById(id: Long): Item? {
         return itemsById[id]
     }
