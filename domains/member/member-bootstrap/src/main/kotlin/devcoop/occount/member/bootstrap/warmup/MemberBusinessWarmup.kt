@@ -1,56 +1,39 @@
 package devcoop.occount.member.bootstrap.warmup
 
+import devcoop.occount.member.application.output.TokenGenerator
+import devcoop.occount.member.application.output.UserRepository
+import devcoop.occount.member.application.usecase.login.KioskLoginRequest
 import devcoop.occount.member.application.usecase.login.LoginUserUseCase
 import devcoop.occount.member.application.usecase.login.MemberLoginRequest
-import devcoop.occount.member.application.output.UserRepository
-import org.slf4j.LoggerFactory
-import org.springframework.boot.ApplicationArguments
-import org.springframework.boot.ApplicationRunner
+import devcoop.occount.warmup.BusinessWarmup
+import devcoop.occount.warmup.WarmupProbe
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
-import kotlin.system.measureTimeMillis
 
 @Component
 class MemberBusinessWarmup(
-    private val loginUserUseCase: LoginUserUseCase,
+    private val passwordEncoder: PasswordEncoder,
+    private val tokenGenerator: TokenGenerator,
     private val userRepository: UserRepository,
-) : ApplicationRunner {
+    private val loginUserUseCase: LoginUserUseCase,
+) : BusinessWarmup {
 
-    override fun run(args: ApplicationArguments) {
-        val elapsed = measureTimeMillis {
-            warmupMemberLogin()
-            warmupRepositoryLookups()
-        }
-        log.info(
-            "Member business warmup completed (login: {} rounds, lookup: {} rounds) in {} ms",
-            JIT_WARMUP_COUNT,
-            JIT_WARMUP_COUNT,
-            elapsed,
-        )
-    }
+    override fun warmup() {
+        val encoded = passwordEncoder.encode(WarmupProbe.PASSWORD)
+        passwordEncoder.matches(WarmupProbe.PASSWORD, encoded)
 
-    private fun warmupMemberLogin() {
+        tokenGenerator.createAccessToken(WarmupProbe.USER_ID, WarmupProbe.ROLE)
+        tokenGenerator.createKioskToken(WarmupProbe.USER_ID, WarmupProbe.ROLE)
+
+        userRepository.findByEmail(WarmupProbe.EMAIL)
+        userRepository.findByUserBarcode(WarmupProbe.BARCODE)
+        userRepository.findById(WarmupProbe.USER_ID)
+
         runCatching {
-            repeat(JIT_WARMUP_COUNT) {
-                loginUserUseCase.login(MemberLoginRequest(WARMUP_EMAIL, WARMUP_PASSWORD))
-            }
-        }.onFailure { exception ->
-            log.warn("Member login warmup skipped, falling back to lookup warmup", exception)
+            loginUserUseCase.login(MemberLoginRequest(WarmupProbe.EMAIL, WarmupProbe.PASSWORD))
         }
-    }
-
-    private fun warmupRepositoryLookups() {
-        repeat(JIT_WARMUP_COUNT) {
-            userRepository.findByEmail(WARMUP_EMAIL)
-            userRepository.findByUserBarcode(WARMUP_BARCODE)
-            userRepository.findById(-1L)
+        runCatching {
+            loginUserUseCase.login(KioskLoginRequest(WarmupProbe.BARCODE, WarmupProbe.PIN))
         }
-    }
-
-    companion object {
-        private const val JIT_WARMUP_COUNT = 10
-        private const val WARMUP_EMAIL = "warmup@warmup.internal"
-        private const val WARMUP_PASSWORD = "password1234"
-        private const val WARMUP_BARCODE = "000000000000"
-        private val log = LoggerFactory.getLogger(MemberBusinessWarmup::class.java)
     }
 }
