@@ -1,0 +1,7 @@
+case	variant	service	run	label	commit	startup_seconds	first_request_seconds	second_request_seconds	third_request_seconds	business_warmup_ms	servlet_warmup_ms	jpa_warmup_ms	java_opts
+service_off	default	member-api	1	service-layer 워밍업 미적용 / 기본	ea4e5acb (dev, uncommitted)	10.836	0.018978	0.005343	0.005492	2394	361
+service_off	default	member-api	2	service-layer 워밍업 미적용 / 기본	ea4e5acb (dev, uncommitted)	6.934	0.037748	0.007826	0.005986	3122	584
+service_off	default	member-api	3	service-layer 워밍업 미적용 / 기본	ea4e5acb (dev, uncommitted)	9.668	0.069135	0.054181	0.019199	2917	2699
+service_on	default	member-api	1	service-layer 워밍업 적용 / 기본	ea4e5acb (dev, +LoginUserUseCase warmup)	11.240	0.029731	0.009108	0.006864	2556	450
+service_on	default	member-api	2	service-layer 워밍업 적용 / 기본	ea4e5acb (dev, +LoginUserUseCase warmup)	11.518	0.031702	0.007514	0.005432	2253	443
+service_on	default	member-api	3	service-layer 워밍업 적용 / 기본	ea4e5acb (dev, +LoginUserUseCase warmup)	4.163	0.016189	0.005955	0.004893	1786	235
