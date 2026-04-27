@@ -69,6 +69,7 @@ class OrderControllerTest {
         mockMvc.perform(
             post("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header(AuthHeaders.KIOSK_ID, "kiosk-1")
                 .content(
                     """
                     {
