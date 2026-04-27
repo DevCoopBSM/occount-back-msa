@@ -127,7 +127,7 @@ class OrderControllerTest {
         mockMvc.perform(asyncDispatch(asyncResult))
             .andExpect(status().isOk)
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
-            .andExpect(content().string(containsString("event:COMPLETED")))
+            .andExpect(content().string(containsString("event:completed")))
     }
 
     @Test
