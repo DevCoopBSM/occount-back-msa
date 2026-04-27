@@ -6,9 +6,7 @@ import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
 import devcoop.occount.core.common.event.ItemStockCompensationPayload
 import devcoop.occount.core.common.event.OrderStockCompensationRequestedEvent
-import devcoop.occount.order.application.exception.OrderConcurrencyException
 import devcoop.occount.order.application.exception.OrderNotFoundException
-import devcoop.occount.order.application.exception.OrderTransactionFailedException
 import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.output.PersistedOrder
 import devcoop.occount.order.application.output.TransactionPort
@@ -26,7 +24,6 @@ class OrderCompensationScheduler(
         runCatching {
             scheduleCompensationIfNeeded(
                 orderId = orderId,
-                logContext = "결제 보상",
                 shouldMark = { it.shouldRequestPaymentCompensation() },
                 mark = { it.copy(paymentCompensationRequested = true) },
                 publish = ::publishPaymentCompensationRequested,
@@ -35,7 +32,6 @@ class OrderCompensationScheduler(
         runCatching {
             scheduleCompensationIfNeeded(
                 orderId = orderId,
-                logContext = "재고 보상",
                 shouldMark = { it.shouldRequestStockCompensation() },
                 mark = { it.copy(stockCompensationRequested = true) },
                 publish = ::publishStockCompensationRequested,
@@ -45,30 +41,16 @@ class OrderCompensationScheduler(
 
     private fun scheduleCompensationIfNeeded(
         orderId: Long,
-        logContext: String,
         shouldMark: (OrderAggregate) -> Boolean,
         mark: (OrderAggregate) -> OrderAggregate,
         publish: (OrderAggregate) -> Unit,
     ) {
-        repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
-            try {
-                transactionPort.executeInNewTransaction {
-                    val persisted = loadPersistedOrder(orderId)
-                    if (!shouldMark(persisted.order)) return@executeInNewTransaction
-                    val updatedOrder = orderRepository.save(mark(persisted.order), persisted.persistenceVersion)
-                    publish(updatedOrder)
-                }
-                return
-            } catch (ex: OrderConcurrencyException) {
-                log.warn("{} 중 낙관적 락 충돌 - 주문={} 시도={}", logContext, orderId, attempt)
-                if (attempt == OrderRetryPolicy.MAX_RETRY_COUNT - 1) throw OrderTransactionFailedException()
-                backoff(attempt)
-            }
+        transactionPort.executeInNewTransaction {
+            val persisted = loadPersistedOrder(orderId)
+            if (!shouldMark(persisted.order)) return@executeInNewTransaction
+            val updatedOrder = orderRepository.save(mark(persisted.order), persisted.persistenceVersion)
+            publish(updatedOrder)
         }
-    }
-
-    private fun backoff(attempt: Int) {
-        Thread.sleep(OrderRetryPolicy.BASE_BACKOFF_MILLIS * (1L shl attempt))
     }
 
     private fun loadPersistedOrder(orderId: Long): PersistedOrder {

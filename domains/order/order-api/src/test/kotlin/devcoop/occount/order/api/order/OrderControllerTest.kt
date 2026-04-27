@@ -10,7 +10,6 @@ import devcoop.occount.order.api.support.FakeTransactionPort
 import devcoop.occount.order.api.support.mockMvc
 import devcoop.occount.order.api.support.orderFixture
 import devcoop.occount.order.application.config.OrderTimeoutConfig
-import devcoop.occount.order.application.support.OrderCompensationScheduler
 import devcoop.occount.order.application.support.OrderLifecycleProcessor
 import devcoop.occount.order.application.support.OrderMutationExecutor
 import devcoop.occount.order.application.support.OrderPaymentCancellationEventPublisher
@@ -177,11 +176,6 @@ class OrderControllerTest {
                 cancelOrderUseCase = CancelOrderUseCase(
                     orderMutationExecutor = OrderMutationExecutor(orderRepository, transactionPort),
                     orderLifecycleProcessor = OrderLifecycleProcessor(
-                        orderCompensationScheduler = OrderCompensationScheduler(
-                            orderRepository = orderRepository,
-                            eventPublisher = eventPublisher,
-                            transactionPort = transactionPort,
-                        ),
                         orderStatusNotifier = FakeOrderStatusNotifier(),
                         orderStreamEventMapper = OrderStreamEventMapper(),
                     ),
