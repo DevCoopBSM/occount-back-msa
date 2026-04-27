@@ -691,6 +691,9 @@ components:
           description: 상품 카테고리
         price:
           type: integer
+        quantity:
+          type: integer
+          description: 재고 수량
         barcode:
           type: string
           nullable: true
