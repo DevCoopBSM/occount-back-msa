@@ -2,14 +2,14 @@ package devcoop.occount.warmup
 
 import org.springframework.core.env.Environment
 
-internal object ServletWarmupTargets {
+internal object HttpWarmupTargets {
     fun resolveBase(port: Int, environment: Environment): String {
         val scheme = if (environment.getProperty("server.ssl.enabled", Boolean::class.java, false)) "https" else "http"
         return "$scheme://127.0.0.1:$port"
     }
 
     fun defaultEndpoint(environment: Environment, properties: StartupWarmupProperties): WarmupEndpoint {
-        val configuredPath = properties.servletPath
+        val configuredPath = properties.httpPath
             ?.takeIf { it.isNotBlank() }
             ?.let(::normalizePath)
         val path = configuredPath ?: defaultActuatorPath(environment)
