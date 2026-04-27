@@ -158,8 +158,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserPreOrderInfoResponse'
               example:
-                user_name: "홍길동"
-                point: 3500
+                username: "홍길동"
         "401":
           description: 인증 실패
 
@@ -669,12 +668,9 @@ components:
     UserPreOrderInfoResponse:
       type: object
       properties:
-        user_name:
+        username:
           type: string
           description: 회원 이름
-        point:
-          type: integer
-          description: 보유 포인트
 
     # ── Item ───────────────────────────────────────
     ItemListResponse:
