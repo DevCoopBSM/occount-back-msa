@@ -4,11 +4,11 @@ import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.domain.user.User
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import tools.jackson.module.kotlin.jacksonMapperBuilder
 
 private val sharedPasswordEncoder = FakePasswordEncoder()
 
@@ -81,9 +81,7 @@ class FakePasswordEncoder : PasswordEncoder {
 }
 
 fun mockMvc(vararg controllers: Any): MockMvc {
-    val messageConverter = MappingJackson2HttpMessageConverter(
-        jacksonObjectMapper(),
-    )
+    val messageConverter = JacksonJsonHttpMessageConverter(jacksonMapperBuilder())
     return MockMvcBuilders.standaloneSetup(*controllers)
         .setControllerAdvice(ApiAdviceHandler())
         .setMessageConverters(messageConverter)
