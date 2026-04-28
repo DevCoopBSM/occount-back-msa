@@ -417,7 +417,7 @@ paths:
       tags: [AriPick]
       operationId: searchAripickFoods
       summary: 아리픽 식품 검색
-      description: 키워드로 식약처 제품명을 검색합니다. (AUTHENTICATED)
+      description: 키워드로 식약처 제품명을 검색합니다. (PERMIT_ALL)
       security:
         - BearerAuth: []
       parameters:
@@ -1100,9 +1100,9 @@ components:
     # ── AriPick ───────────────────────────────────
     CreateAripickRequest:
       type: object
-      required: [typeNSeq, reason]
+      required: [type_n_seq, reason]
       properties:
-        typeNSeq:
+        type_n_seq:
           type: integer
           format: int64
         reason:
@@ -1119,14 +1119,14 @@ components:
     AripickFoodSearchItemResponse:
       type: object
       properties:
-        typeNSeq:
+        type_n_seq:
           type: integer
           format: int64
         name:
           type: string
         company:
           type: string
-        kcalInfo:
+        kcal_info:
           type: string
 
     CreateAripickBlockedKeywordRequest:
@@ -1139,12 +1139,12 @@ components:
     AripickBlockedKeywordResponse:
       type: object
       properties:
-        keywordId:
+        keyword_id:
           type: integer
           format: int64
         keyword:
           type: string
-        registeredDate:
+        registered_date:
           type: string
           format: date
 
@@ -1159,7 +1159,7 @@ components:
     AripickListResponse:
       type: object
       properties:
-        aripickItems:
+        aripick_items:
           type: array
           items:
             $ref: '#/components/schemas/AripickResponse'
@@ -1167,40 +1167,40 @@ components:
     AripickResponse:
       type: object
       properties:
-        proposalId:
+        proposal_id:
           type: integer
           format: int64
         name:
           type: string
         reason:
           type: string
-        proposerId:
+        proposer_id:
           type: integer
           format: int64
-        proposalDate:
+        proposal_date:
           type: string
           format: date
         status:
           type: string
           enum: [검토중, 승인됨, 거절됨]
-        likeCount:
+        like_count:
           type: integer
 
     AripickLikeToggleResponse:
       type: object
       properties:
-        proposalId:
+        proposal_id:
           type: integer
           format: int64
         liked:
           type: boolean
-        likeCount:
+        like_count:
           type: integer
 
     AripickStatsResponse:
       type: object
       properties:
-        totalProposals:
+        total_proposals:
           type: integer
           format: int64
         approved:

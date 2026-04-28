@@ -3,6 +3,7 @@ package devcoop.occount.suggestion.application.usecase.aripick
 import devcoop.occount.suggestion.application.output.AripickPolicyRepository
 import devcoop.occount.suggestion.domain.aripick.AripickBlockedKeywordAlreadyExistsException
 import devcoop.occount.suggestion.domain.aripick.AripickInvalidBlockedKeywordException
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 
 @Service
@@ -29,7 +30,11 @@ class AripickPolicyUseCase(
         if (aripickPolicyRepository.existsBlockedKeyword(normalized)) {
             throw AripickBlockedKeywordAlreadyExistsException()
         }
-        val saved = aripickPolicyRepository.saveBlockedKeyword(normalized)
+        val saved = try {
+            aripickPolicyRepository.saveBlockedKeyword(normalized)
+        } catch (ex: DataIntegrityViolationException) {
+            throw AripickBlockedKeywordAlreadyExistsException()
+        }
         return AripickBlockedKeywordResponse(
             keywordId = saved.getKeywordId(),
             keyword = saved.getKeyword(),

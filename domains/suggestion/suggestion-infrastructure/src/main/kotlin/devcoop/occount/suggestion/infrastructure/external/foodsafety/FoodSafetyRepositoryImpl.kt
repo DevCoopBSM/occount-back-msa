@@ -29,7 +29,7 @@ class FoodSafetyRepositoryImpl(
         val encoded = URLEncoder.encode(keyword, StandardCharsets.UTF_8)
         val html = requestHtml(
             "${baseUrl.trimEnd('/')}/hilow/qfood/sfoodlist.do?searchValue=$encoded",
-        ) ?: return emptyList()
+        )
 
         return parseSearchHtml(html)
     }
@@ -37,12 +37,12 @@ class FoodSafetyRepositoryImpl(
     override fun getDetail(typeNSeq: Long): FoodSafetyProductDetail? {
         val html = requestHtml(
             "${baseUrl.trimEnd('/')}/hilow/qfood/sfoodview.do?typenseq=$typeNSeq",
-        ) ?: return null
+        )
 
         return parseDetailHtml(typeNSeq, html)
     }
 
-    private fun requestHtml(url: String): String? {
+    private fun requestHtml(url: String): String {
         return try {
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
