@@ -10,9 +10,44 @@ import kotlin.test.assertTrue
 
 class VanMessageParserTest {
     private val eucKr: Charset = Charset.forName("EUC-KR")
+<<<<<<< HEAD
     private val protocolSpec = VanTestFixtures.protocolSpec
     private val parser = VanTestFixtures.messageParser()
     private val recordSeparator = VanTestFixtures.recordSeparatorChar
+=======
+    private val protocolCodes = VanProtocolCodes(
+        cancelMessageType = "2102",
+        rejectStatusPrefix = "9",
+        cardInsertKeyword = "카드 삽입",
+    )
+    private val protocolSpec = VanProtocolSpec(
+        VanProperties(
+            terminals = mapOf(1 to VanProperties.Terminal(host = "localhost", port = 5555)),
+            protocol = VanProperties.Protocol(
+                stx = "02",
+                etx = "03",
+                separator = "1c",
+                recordSeparator = "1e",
+                blank = "20",
+                ack = "06",
+                dle = "10",
+                formFeed = "0c",
+                nak = "15",
+                transactionTimeoutSeconds = 30L,
+            ),
+            message = VanProperties.Message(
+                paymentServiceType = "0101",
+                refundServiceType = "2101",
+                terminalCloseServiceType = "9999",
+                terminalCloseFiller = "CLOSE",
+                transactionType = "D1",
+                installmentMonths = "00",
+            ),
+        ),
+    )
+    private val responseParser = VanResponseParser(protocolSpec, protocolCodes)
+    private val parser = VanMessageParser(protocolSpec, responseParser)
+>>>>>>> ae03c36 (test(payment): VAN 취소 전문 테스트 보강)
 
     @Test
     fun `승인 응답을 VanResult로 파싱한다`() {
@@ -47,6 +82,7 @@ class VanMessageParserTest {
         assertEquals("7010", result.transaction?.messageNumber)
         assertEquals(0, result.transaction?.installmentMonths)
         assertEquals("12345678", result.transaction?.approvalNumber)
+        assertEquals("20260420", result.transaction?.approvalDate)
         assertEquals("876543210123", result.transaction?.transactionId)
         assertEquals("12345678", result.transaction?.terminalId)
         assertEquals("99887766554433", result.transaction?.merchantNumber)
@@ -107,6 +143,41 @@ class VanMessageParserTest {
         assertEquals("한도 초과", result.transaction?.rejectMessage)
     }
 
+    @Test
+    fun `취소 응답은 승인번호가 없어도 성공으로 파싱한다`() {
+        val cancelParser = cancelParser()
+        val response = buildResponse(
+            header = "00842102",
+            "0203",
+            "55554444****111*",
+            "1000",
+            "90",
+            "0",
+            "00",
+            "267733358",
+            "20260420",
+            "201936",
+            "876543210123",
+            "0011223344",
+            "99887766554433",
+            "0300테스트카드체크",
+            "0007테스트카드",
+            "1",
+            "00",
+            "IC신용취소",
+            "테스트포인트잔여:0\u001e",
+        )
+
+        val result = cancelParser.parsePaymentResponse(response)
+
+        assertNotNull(result)
+        assertTrue(result.success)
+        assertEquals("정상취소 완료", result.message)
+        assertEquals("20260420", result.transaction?.approvalDate)
+        assertEquals("267733358", result.transaction?.terminalId)
+        assertEquals("CANCELLED", result.additional?.approvalStatus)
+    }
+
     private fun buildResponse(header: String, vararg fields: String): ByteArray {
         return buildString {
             append(protocolSpec.stxByte.toProtocolChar())
@@ -119,8 +190,11 @@ class VanMessageParserTest {
             append('.')
         }.toByteArray(eucKr)
     }
+<<<<<<< HEAD
 
     private fun Byte.toProtocolChar(): Char {
         return (toInt() and 0xff).toChar()
     }
+=======
+>>>>>>> ae03c36 (test(payment): VAN 취소 전문 테스트 보강)
 }
