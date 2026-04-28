@@ -1,27 +1,16 @@
 package devcoop.occount.warmup
 
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext
 import org.springframework.context.event.EventListener
 import org.springframework.core.env.Environment
-import org.springframework.stereotype.Component
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import kotlin.system.measureTimeMillis
 
-@Component
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-@ConditionalOnProperty(
-    prefix = "app.startup-warmup",
-    name = ["enabled", "http-enabled"],
-    havingValue = "true",
-    matchIfMissing = true,
-)
 class ServletStartupWarmup(
     private val applicationContext: ServletWebServerApplicationContext,
     private val environment: Environment,
@@ -78,11 +67,12 @@ class ServletStartupWarmup(
     private fun buildRequest(endpoint: WarmupEndpoint, uri: URI): HttpRequest {
         val builder = HttpRequest.newBuilder(uri).timeout(properties.httpTimeout)
         endpoint.headers.forEach { (name, value) -> builder.header(name, value) }
-        return when (endpoint.method.uppercase()) {
-            "POST" -> builder
-                .POST(HttpRequest.BodyPublishers.ofString(endpoint.body.orEmpty()))
-                .header("Content-Type", endpoint.contentType)
-                .build()
+        val method = endpoint.method.uppercase()
+        val body = HttpRequest.BodyPublishers.ofString(endpoint.body.orEmpty())
+        return when (method) {
+            "POST" -> builder.setHeader("Content-Type", endpoint.contentType).POST(body).build()
+            "PUT" -> builder.setHeader("Content-Type", endpoint.contentType).PUT(body).build()
+            "PATCH" -> builder.setHeader("Content-Type", endpoint.contentType).method("PATCH", body).build()
             else -> builder.GET().build()
         }
     }
