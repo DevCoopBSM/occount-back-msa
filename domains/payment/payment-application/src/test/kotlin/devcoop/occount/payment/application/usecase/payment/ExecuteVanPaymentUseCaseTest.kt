@@ -164,6 +164,7 @@ class ExecuteVanPaymentUseCaseTest {
         override fun markCompleted(orderId: Long) { completedOrderId = orderId }
         override fun markFailed(orderId: Long) = Unit
         override fun markCancelled(orderId: Long) { cancelledOrderId = orderId }
+        override fun findStuckInProcessing(updatedBefore: LocalDateTime, limit: Int): List<Long> = emptyList()
     }
 
     private class FakeEventPublisher : EventPublisher {

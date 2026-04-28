@@ -7,6 +7,7 @@ import devcoop.occount.payment.application.output.CardPaymentPort
 import devcoop.occount.payment.application.output.OrderPaymentCancellationRequestResult
 import devcoop.occount.payment.application.output.OrderPaymentExecutionRepository
 import devcoop.occount.payment.application.output.OrderPaymentExecutionStartResult
+import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -70,5 +71,6 @@ class CancelPendingOrderPaymentUseCaseTest {
         override fun markCompleted(orderId: Long) = Unit
         override fun markFailed(orderId: Long) = Unit
         override fun markCancelled(orderId: Long) = Unit
+        override fun findStuckInProcessing(updatedBefore: LocalDateTime, limit: Int): List<Long> = emptyList()
     }
 }
