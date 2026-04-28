@@ -55,6 +55,12 @@ class ItemController(
         return itemQueryService.getItemsByIds(ids)
     }
 
+    @GetMapping("/search")
+    @ResponseStatus(HttpStatus.OK)
+    fun searchItems(@RequestParam q: String): ItemListResponse {
+        return itemQueryService.searchItems(q)
+    }
+
     @GetMapping("/{barcode}")
     @ResponseStatus(HttpStatus.OK)
     fun getItemByBarcode(@PathVariable barcode: String): ItemLookupResponse {

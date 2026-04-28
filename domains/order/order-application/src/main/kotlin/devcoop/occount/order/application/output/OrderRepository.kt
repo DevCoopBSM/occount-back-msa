@@ -9,4 +9,5 @@ interface OrderRepository {
     fun save(order: OrderAggregate): OrderAggregate
     fun save(order: OrderAggregate, persistenceVersion: Long): OrderAggregate
     fun findExpiredNonFinalOrderIds(now: Instant): List<Long>
+    fun findOrderIdsRequiringCompensation(limit: Int): List<Long>
 }

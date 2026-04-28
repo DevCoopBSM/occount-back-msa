@@ -1,19 +1,15 @@
 package devcoop.occount.order.application.support
 
-import devcoop.occount.order.application.port.OrderStatusNotifier
+import devcoop.occount.order.application.output.OrderStatusNotifier
 import devcoop.occount.order.domain.order.OrderAggregate
 import org.springframework.stereotype.Component
 
 @Component
 class OrderLifecycleProcessor(
-    private val orderCompensationScheduler: OrderCompensationScheduler,
     private val orderStatusNotifier: OrderStatusNotifier,
     private val orderStreamEventMapper: OrderStreamEventMapper,
 ) {
     fun processAfterOrderStateChange(order: OrderAggregate) {
-        if (order.requiresCompensation()) {
-            orderCompensationScheduler.scheduleRequiredCompensations(order.orderId)
-        }
         val reconciledOrder = order.reconcileStatus()
         try {
             orderStatusNotifier.notify(orderStreamEventMapper.toStreamEvent(reconciledOrder))

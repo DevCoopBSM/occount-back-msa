@@ -1,4 +1,4 @@
-package devcoop.occount.order.application.usecase.order.get
+package devcoop.occount.order.application.query
 
 import devcoop.occount.order.application.exception.OrderNotFoundException
 import devcoop.occount.order.application.output.OrderRepository
@@ -9,7 +9,7 @@ import devcoop.occount.order.application.support.OrderStreamEventMapper
 import org.springframework.stereotype.Service
 
 @Service
-class GetOrderUseCase(
+class OrderQueryService(
     private val orderRepository: OrderRepository,
     private val orderResponseMapper: OrderResponseMapper,
     private val orderStreamEventMapper: OrderStreamEventMapper,

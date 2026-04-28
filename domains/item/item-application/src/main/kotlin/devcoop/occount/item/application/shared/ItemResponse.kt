@@ -7,5 +7,6 @@ data class ItemResponse(
     val name: String,
     val category: Category,
     val price: Int,
+    val quantity: Int,
     val barcode: String? = null,
 )

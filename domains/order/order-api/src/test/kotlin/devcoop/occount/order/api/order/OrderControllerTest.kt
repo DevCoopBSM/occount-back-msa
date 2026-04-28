@@ -10,15 +10,14 @@ import devcoop.occount.order.api.support.FakeTransactionPort
 import devcoop.occount.order.api.support.mockMvc
 import devcoop.occount.order.api.support.orderFixture
 import devcoop.occount.order.application.config.OrderTimeoutConfig
-import devcoop.occount.order.application.support.OrderCompensationScheduler
 import devcoop.occount.order.application.support.OrderLifecycleProcessor
 import devcoop.occount.order.application.support.OrderMutationExecutor
 import devcoop.occount.order.application.support.OrderPaymentCancellationEventPublisher
 import devcoop.occount.order.application.support.OrderResponseMapper
 import devcoop.occount.order.application.support.OrderStreamEventMapper
+import devcoop.occount.order.application.query.OrderQueryService
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
-import devcoop.occount.order.application.usecase.order.get.GetOrderUseCase
 import devcoop.occount.order.domain.order.OrderStatus
 import org.hamcrest.Matchers.containsString
 import org.springframework.test.web.servlet.MockMvc
@@ -70,6 +69,7 @@ class OrderControllerTest {
         mockMvc.perform(
             post("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header(AuthHeaders.KIOSK_ID, "kiosk-1")
                 .content(
                     """
                     {
@@ -128,7 +128,7 @@ class OrderControllerTest {
         mockMvc.perform(asyncDispatch(asyncResult))
             .andExpect(status().isOk)
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
-            .andExpect(content().string(containsString("event:COMPLETED")))
+            .andExpect(content().string(containsString("event:completed")))
     }
 
     @Test
@@ -177,18 +177,13 @@ class OrderControllerTest {
                 cancelOrderUseCase = CancelOrderUseCase(
                     orderMutationExecutor = OrderMutationExecutor(orderRepository, transactionPort),
                     orderLifecycleProcessor = OrderLifecycleProcessor(
-                        orderCompensationScheduler = OrderCompensationScheduler(
-                            orderRepository = orderRepository,
-                            eventPublisher = eventPublisher,
-                            transactionPort = transactionPort,
-                        ),
                         orderStatusNotifier = FakeOrderStatusNotifier(),
                         orderStreamEventMapper = OrderStreamEventMapper(),
                     ),
                     orderPaymentCancellationEventPublisher = OrderPaymentCancellationEventPublisher(eventPublisher),
                     orderResponseMapper = OrderResponseMapper(),
                 ),
-                getOrderUseCase = GetOrderUseCase(
+                orderQueryService = OrderQueryService(
                     orderRepository = orderRepository,
                     orderResponseMapper = OrderResponseMapper(),
                     orderStreamEventMapper = OrderStreamEventMapper(),

@@ -74,6 +74,14 @@ member:
   read-api:
     url: ${MEMBER_API_URL}
 
+app:
+  startup-warmup:
+    http-endpoints:
+      - path: /api/v3/wallet/point
+        method: GET
+        headers:
+          X-Authenticated-User-Id: "0"
+
 management:
   tracing:
     sampling:

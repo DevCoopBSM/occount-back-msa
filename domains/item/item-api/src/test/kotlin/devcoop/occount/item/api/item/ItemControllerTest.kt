@@ -33,6 +33,7 @@ class ItemControllerTest {
             .andExpect(jsonPath("$.items.length()").value(1))
             .andExpect(jsonPath("$.items[0].itemId").value(1))
             .andExpect(jsonPath("$.items[0].name").value("Snack"))
+            .andExpect(jsonPath("$.items[0].quantity").value(3))
     }
 
     @Test
@@ -41,7 +42,7 @@ class ItemControllerTest {
 
         mockMvc.perform(get("/items/categories"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.itemCategories.length()").isNotEmpty)
+            .andExpect(jsonPath("$.categories.length()").isNotEmpty)
     }
 
     @Test
@@ -71,6 +72,23 @@ class ItemControllerTest {
         val mockMvc = mockMvc(controller(itemRepository))
 
         mockMvc.perform(get("/items/by-ids").param("ids", "2", "1"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.items.length()").value(2))
+    }
+
+    @Test
+    fun `search items returns matching active items`() {
+        val itemRepository = FakeItemRepository(
+            initialItems = listOf(
+                itemFixture(itemId = 1L, name = "초코 과자"),
+                itemFixture(itemId = 2L, name = "딸기 우유"),
+                itemFixture(itemId = 3L, name = "초코 우유"),
+                itemFixture(itemId = 4L, name = "초코 비활성", isActive = false),
+            ),
+        )
+        val mockMvc = mockMvc(controller(itemRepository))
+
+        mockMvc.perform(get("/items/search").param("q", "초코"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.items.length()").value(2))
     }

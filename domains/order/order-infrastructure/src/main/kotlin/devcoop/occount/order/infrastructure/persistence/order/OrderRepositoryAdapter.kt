@@ -5,6 +5,7 @@ import devcoop.occount.order.application.output.PersistedOrder
 import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderStatus
 import devcoop.occount.order.domain.order.isFinalForClient
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -41,4 +42,8 @@ class OrderRepositoryAdapter(
         val finalStatuses = OrderStatus.entries.filter { it.isFinalForClient() }
         return orderJpaRepository.findExpiredNonFinalOrderIds(now, finalStatuses)
     }
+
+    @Transactional(readOnly = true)
+    override fun findOrderIdsRequiringCompensation(limit: Int): List<Long> =
+        orderJpaRepository.findOrderIdsRequiringCompensation(PageRequest.ofSize(limit))
 }

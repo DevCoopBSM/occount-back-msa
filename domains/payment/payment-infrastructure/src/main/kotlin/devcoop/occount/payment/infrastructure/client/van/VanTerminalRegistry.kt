@@ -1,8 +1,10 @@
 package devcoop.occount.payment.infrastructure.client.van
 
 import devcoop.occount.payment.application.exception.KioskTerminalNotFoundException
+import io.micrometer.tracing.Tracer
 import jakarta.annotation.PreDestroy
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.stereotype.Component
 
 @Component
@@ -11,6 +13,7 @@ class VanTerminalRegistry(
     messageBuilder: VanMessageBuilder,
     messageParser: VanMessageParser,
     protocolSpec: VanProtocolSpec,
+    tracerProvider: ObjectProvider<Tracer>,
 ) {
     private val log = LoggerFactory.getLogger(VanTerminalRegistry::class.java)
 
@@ -18,7 +21,7 @@ class VanTerminalRegistry(
         .filter { it.value.host.isNotBlank() }
         .mapValues { (kioskId, terminal) ->
             log.info("VAN 단말기 등록 - 키오스크 {}: {}:{}", kioskId, terminal.host, terminal.port)
-            VanTerminalClient(terminal, messageBuilder, messageParser, protocolSpec)
+            VanTerminalClient(terminal, messageBuilder, messageParser, protocolSpec, tracerProvider.ifAvailable)
         }
 
     fun get(kioskId: String): VanTerminalClient {

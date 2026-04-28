@@ -1,5 +1,7 @@
 package devcoop.occount.payment.application.output
 
+import java.time.LocalDateTime
+
 interface OrderPaymentExecutionRepository {
     fun startProcessing(orderId: Long): OrderPaymentExecutionStartResult
 
@@ -12,6 +14,8 @@ interface OrderPaymentExecutionRepository {
     fun markFailed(orderId: Long)
 
     fun markCancelled(orderId: Long)
+
+    fun findStuckInProcessing(updatedBefore: LocalDateTime, limit: Int): List<Long>
 }
 
 enum class OrderPaymentExecutionState {

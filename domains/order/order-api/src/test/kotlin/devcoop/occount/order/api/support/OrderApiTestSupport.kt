@@ -1,20 +1,20 @@
 package devcoop.occount.order.api.support
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.order.application.exception.OrderConcurrencyException
 import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.output.PersistedOrder
 import devcoop.occount.order.application.output.TransactionPort
-import devcoop.occount.order.application.port.OrderStatusNotifier
+import devcoop.occount.order.application.output.OrderStatusNotifier
 import devcoop.occount.order.application.shared.OrderStreamEvent
 import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderStatus
 import devcoop.occount.order.domain.order.RequestedOrderLine
 import devcoop.occount.order.domain.order.isFinalForClient
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import tools.jackson.module.kotlin.jacksonMapperBuilder
 import java.time.Instant
 
 fun orderFixture(
@@ -79,6 +79,15 @@ class FakeOrderRepository(
             .filter { order -> order.expiresAt <= now && !order.status.isFinalForClient() }
             .map(OrderAggregate::orderId)
     }
+
+    override fun findOrderIdsRequiringCompensation(limit: Int): List<Long> {
+        return ordersById.values
+            .filter { order ->
+                order.shouldRequestPaymentCompensation() || order.shouldRequestStockCompensation()
+            }
+            .map(OrderAggregate::orderId)
+            .take(limit)
+    }
 }
 
 class FakeTransactionPort : TransactionPort {
@@ -102,9 +111,7 @@ class FakeOrderStatusNotifier : OrderStatusNotifier {
 }
 
 fun mockMvc(vararg controllers: Any): MockMvc {
-    val messageConverter = MappingJackson2HttpMessageConverter(
-        jacksonObjectMapper(),
-    )
+    val messageConverter = JacksonJsonHttpMessageConverter(jacksonMapperBuilder())
     return MockMvcBuilders.standaloneSetup(*controllers)
         .setControllerAdvice(ApiAdviceHandler())
         .setMessageConverters(messageConverter)

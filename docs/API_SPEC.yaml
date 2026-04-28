@@ -158,8 +158,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserPreOrderInfoResponse'
               example:
-                user_name: "홍길동"
-                point: 3500
+                username: "홍길동"
         "401":
           description: 인증 실패
 
@@ -243,6 +242,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ItemLookupListResponse'
+
+  /api/v3/items/search:
+    get:
+      tags: [Item]
+      operationId: searchItems
+      summary: 상품명 풀텍스트 검색
+      description: |
+        MySQL ngram FULLTEXT 인덱스로 상품명을 검색합니다. 활성 상품만 relevance 내림차순으로 반환합니다. (PERMIT_ALL)
+
+        - 빈/공백 쿼리는 빈 배열을 반환합니다.
+        - boolean-mode 메타문자(`+ - > < ( ) ~ * " @`)는 sanitize됩니다.
+        - ngram_token_size(기본 2) 미만 길이의 쿼리는 결과가 없습니다.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 검색어
+          schema:
+            type: string
+          example: "초코"
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemListResponse'
 
   /api/v3/items/without-barcode:
     get:
@@ -447,7 +473,7 @@ paths:
         - 연결 즉시 현재 주문 상태를 전송합니다.
         - 각 메시지는 `event: <event_type>` 형식으로 전달됩니다.
         - 이벤트 타입은 `order_accepted`, `payment_requested`, `completed`, `failed`, `cancel_requested`, `cancelled`, `timed_out` 중 하나입니다.
-        - 주문이 최종 상태(`completed`, `failed`, `cancelled`, `compensation_failed`, `timed_out`)에 도달하면 서버가 연결을 종료합니다.
+        - 주문이 최종 상태(`completed`, `failed`, `cancelled`, `timed_out`)에 도달하면 서버가 연결을 종료합니다.
         - 주문 생성 직후 SSE 연결을 맺어 비동기 처리 결과를 수신하는 용도로 사용합니다.
       parameters:
         - name: orderId
@@ -579,26 +605,6 @@ paths:
         "401":
           description: 인증 실패
 
-  /api/v3/wallet/charges:
-    get:
-      tags: [Wallet]
-      operationId: getChargeHistory
-      summary: 포인트 충전 내역 조회
-      description: 로그인한 회원의 전체 포인트 충전/차감 내역을 반환합니다. (AUTHENTICATED)
-      security:
-        - BearerAuth: []
-      responses:
-        "200":
-          description: 조회 성공
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ChargeLogResult'
-        "401":
-          description: 인증 실패
-
 security:
   - BearerAuth: []
 
@@ -662,12 +668,9 @@ components:
     UserPreOrderInfoResponse:
       type: object
       properties:
-        user_name:
+        username:
           type: string
           description: 회원 이름
-        point:
-          type: integer
-          description: 보유 포인트
 
     # ── Item ───────────────────────────────────────
     ItemListResponse:
@@ -691,6 +694,9 @@ components:
           description: 상품 카테고리
         price:
           type: integer
+        quantity:
+          type: integer
+          description: 재고 수량
         barcode:
           type: string
           nullable: true
@@ -832,33 +838,6 @@ components:
         point:
           type: integer
           description: 현재 포인트 잔액
-
-    ChargeLogResult:
-      type: object
-      properties:
-        charge_id:
-          type: integer
-          format: int64
-        user_id:
-          type: integer
-          format: int64
-        charge_date:
-          type: string
-          format: date-time
-        charge_amount:
-          type: integer
-          description: 변동 포인트량 (음수면 차감)
-        payment_id:
-          type: integer
-          format: int64
-          nullable: true
-        before_point:
-          type: integer
-        after_point:
-          type: integer
-        reason:
-          type: string
-          nullable: true
 
     # ── Common ─────────────────────────────────────
     ErrorResponse:

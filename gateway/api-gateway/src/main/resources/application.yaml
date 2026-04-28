@@ -55,6 +55,19 @@ jwt:
   header: ${JWT_HEADER}
   secret-key: ${JWT_SECRET_KEY}
 
+app:
+  startup-warmup:
+    http-endpoints:
+      - path: /api/v3/auth/login
+        method: POST
+        body: '{"email":"warmup@warmup.invalid","password":"x"}'
+      - path: /api/v3/items
+        method: GET
+      - path: /api/v3/orders/00000000-0000-0000-0000-000000000000
+        method: GET
+      - path: /api/v3/wallet/balance
+        method: GET
+
 management:
   tracing:
     sampling:

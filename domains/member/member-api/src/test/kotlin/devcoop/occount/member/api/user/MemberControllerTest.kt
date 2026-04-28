@@ -4,7 +4,7 @@ import devcoop.occount.core.common.auth.AuthHeaders
 import devcoop.occount.member.api.support.FakeUserRepository
 import devcoop.occount.member.api.support.mockMvc
 import devcoop.occount.member.api.support.userFixture
-import devcoop.occount.member.application.usecase.query.UserQueryService
+import devcoop.occount.member.application.query.UserQueryService
 import org.junit.jupiter.api.Test
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
