@@ -5,6 +5,7 @@ import devcoop.occount.core.common.error.ErrorResponse
 import devcoop.occount.core.common.exception.BusinessBaseException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -20,6 +21,13 @@ class ApiAdviceHandler {
             .mapNotNull { error -> error.defaultMessage?.let { "_error" to it } }
             .toMap()
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(fieldErrors + globalErrors)
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    fun handleHttpMessageNotReadable(e: HttpMessageNotReadableException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse("요청 형식이 올바르지 않습니다."))
     }
 
     @ExceptionHandler(BusinessBaseException::class)
