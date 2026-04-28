@@ -4,24 +4,11 @@ import jakarta.persistence.EntityManagerFactory
 import org.slf4j.LoggerFactory
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
-import org.springframework.stereotype.Component
 import kotlin.system.measureTimeMillis
 
-@Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@ConditionalOnClass(EntityManagerFactory::class)
-@ConditionalOnBean(EntityManagerFactory::class)
-@ConditionalOnProperty(
-    prefix = "app.startup-warmup",
-    name = ["enabled", "jpa-enabled"],
-    havingValue = "true",
-    matchIfMissing = true,
-)
 class JpaStartupWarmup(
     private val entityManagerFactory: EntityManagerFactory,
     private val properties: StartupWarmupProperties,

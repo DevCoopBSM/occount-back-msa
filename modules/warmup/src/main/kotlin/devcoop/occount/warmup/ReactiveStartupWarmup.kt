@@ -1,29 +1,16 @@
 package devcoop.occount.warmup
 
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.boot.web.server.reactive.context.ReactiveWebServerApplicationContext
 import org.springframework.context.event.EventListener
 import org.springframework.core.env.Environment
 import org.springframework.http.HttpMethod
-import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
 import java.time.Duration
 import kotlin.system.measureTimeMillis
 
-@Component
-@ConditionalOnClass(WebClient::class)
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-@ConditionalOnProperty(
-    prefix = "app.startup-warmup",
-    name = ["enabled", "http-enabled"],
-    havingValue = "true",
-    matchIfMissing = true,
-)
 class ReactiveStartupWarmup(
     private val applicationContext: ReactiveWebServerApplicationContext,
     private val environment: Environment,

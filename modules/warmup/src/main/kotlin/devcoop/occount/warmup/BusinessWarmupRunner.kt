@@ -3,20 +3,11 @@ package devcoop.occount.warmup
 import org.slf4j.LoggerFactory
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
-import org.springframework.stereotype.Component
 import kotlin.system.measureTimeMillis
 
-@Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 100)
-@ConditionalOnProperty(
-    prefix = "app.startup-warmup",
-    name = ["enabled", "business-enabled"],
-    havingValue = "true",
-    matchIfMissing = true,
-)
 class BusinessWarmupRunner(
     private val warmups: List<BusinessWarmup>,
     private val properties: StartupWarmupProperties,
