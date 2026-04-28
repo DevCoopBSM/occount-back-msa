@@ -2,6 +2,7 @@ package devcoop.occount.suggestion.infrastructure.persistence.aripick
 
 import devcoop.occount.suggestion.application.output.AripickPolicyRepository
 import devcoop.occount.suggestion.domain.aripick.AripickBlockedKeyword
+import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -17,8 +18,7 @@ class AripickPolicyRepositoryImpl(
     }
 
     override fun findBlockedKeywords(): List<AripickBlockedKeyword> {
-        return blockedKeywordPersistenceRepository.findAll()
-            .sortedByDescending { it.getKeywordId() }
+        return blockedKeywordPersistenceRepository.findAllByOrderByKeywordIdDesc()
             .map(::toDomain)
     }
 
@@ -31,10 +31,11 @@ class AripickPolicyRepositoryImpl(
     }
 
     override fun deleteBlockedKeyword(keywordId: Long) {
-        if (!blockedKeywordPersistenceRepository.existsById(keywordId)) {
+        try {
+            blockedKeywordPersistenceRepository.deleteById(keywordId)
+        } catch (_: EmptyResultDataAccessException) {
             return
         }
-        blockedKeywordPersistenceRepository.deleteById(keywordId)
     }
 
     private fun toDomain(entity: AripickBlockedKeywordJpaEntity): AripickBlockedKeyword {

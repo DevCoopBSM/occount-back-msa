@@ -69,20 +69,11 @@ class FoodSafetyRepositoryImpl(
 }
 
 internal fun parseSearchHtml(html: String): List<FoodSafetySearchItem> {
-    val linkPattern = Regex(
-        "<a\\s+href=\"sfoodview\\.do\\?typenseq=(\\d+)\"[^>]*>(.*?)</a>",
-        setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
-    )
-    val spanPattern = Regex(
-        "<span(?:\\s+class=\"([^\"]+)\")?>(.*?)</span>",
-        setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
-    )
-
-    return linkPattern.findAll(html).mapNotNull { match ->
+    return SEARCH_LINK_PATTERN.findAll(html).mapNotNull { match ->
         val typeNSeq = match.groupValues[1].toLongOrNull() ?: return@mapNotNull null
         val content = match.groupValues[2]
 
-        val spans = spanPattern.findAll(content).map { span ->
+        val spans = SEARCH_SPAN_PATTERN.findAll(content).map { span ->
             val clazz = span.groupValues[1]
             val text = stripTag(span.groupValues[2])
             clazz to text
@@ -131,7 +122,19 @@ internal fun parseDetailHtml(
 
 internal fun stripTag(raw: String): String {
     return raw
-        .replace(Regex("<[^>]*>"), "")
+        .replace(TAG_REGEX, "")
         .replace("&nbsp;", " ")
         .trim()
 }
+
+private val SEARCH_LINK_PATTERN = Regex(
+    "<a\\s+href=\"sfoodview\\.do\\?typenseq=(\\d+)\"[^>]*>(.*?)</a>",
+    setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
+)
+
+private val SEARCH_SPAN_PATTERN = Regex(
+    "<span(?:\\s+class=\"([^\"]+)\")?>(.*?)</span>",
+    setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
+)
+
+private val TAG_REGEX = Regex("<[^>]*>")
