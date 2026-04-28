@@ -64,37 +64,6 @@ class VanMessageBuilder(
         )
     }
 
-    fun buildCardlessCancelMessage(
-        amount: Int,
-        approvalDate: String,
-        terminalSequence: String,
-        approvalNumber: String,
-    ): ByteArray {
-        val amountString = amount.toString()
-        val paddedApprovalNumber = formatApprovalNumber(approvalNumber)
-        val filler1 = buildString {
-            append(CARDLESS_CANCEL_TAG)
-            append(CARDLESS_CANCEL_VALUE_LENGTH)
-            append(CARDLESS_CANCEL_CODE)
-            append(approvalDate)
-            append(terminalSequence)
-            append(paddedApprovalNumber)
-        }
-
-        return buildMessage(
-            serviceType = message.refundServiceType,
-            bodyWriter = {
-                writeAscii(amountString)
-                write(protocolSpec.separatorByte.toInt())
-                writeAscii(approvalDate)
-                write(protocolSpec.separatorByte.toInt())
-                writeAscii(paddedApprovalNumber)
-                write(protocolSpec.separatorByte.toInt())
-                writeAscii(filler1)
-            },
-        )
-    }
-
     fun buildTerminalCloseMessage(): ByteArray {
         return buildMessage(
             serviceType = message.terminalCloseServiceType,
@@ -141,19 +110,5 @@ class VanMessageBuilder(
 
     private fun ByteArrayOutputStream.writeAscii(value: String) {
         write(value.toByteArray(Charsets.US_ASCII))
-    }
-
-    private fun formatApprovalNumber(approvalNumber: String): String {
-        require(approvalNumber.length <= APPROVAL_NUMBER_LENGTH) {
-            "승인번호는 12자를 넘을 수 없습니다."
-        }
-        return approvalNumber.padEnd(APPROVAL_NUMBER_LENGTH, ' ')
-    }
-
-    companion object {
-        private const val CARDLESS_CANCEL_TAG = "02"
-        private const val CARDLESS_CANCEL_VALUE_LENGTH = "026"
-        private const val CARDLESS_CANCEL_CODE = "CANC"
-        private const val APPROVAL_NUMBER_LENGTH = 12
     }
 }

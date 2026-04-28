@@ -34,6 +34,7 @@ class VanProtocolSpecTest {
         assertFrameEquals(repeated(protocolSpec.formFeedByte), frames[3], "form feed signal frame should match")
         assertFrameEquals(byteArrayOf(protocolSpec.dleByte), frames[4], "DLE signal frame should match")
     }
+
     private fun assertFrameEquals(expected: ByteArray, actual: ByteArray, message: String) {
         assertTrue(actual.contentEquals(expected), message)
     }
