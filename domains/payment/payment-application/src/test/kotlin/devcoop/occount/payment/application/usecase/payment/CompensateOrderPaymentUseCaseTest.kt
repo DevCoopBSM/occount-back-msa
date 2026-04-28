@@ -20,6 +20,7 @@ import devcoop.occount.payment.domain.wallet.ChargeLog
 import devcoop.occount.payment.domain.wallet.ChargeReason
 import devcoop.occount.payment.domain.wallet.PointTransaction
 import devcoop.occount.payment.domain.wallet.Wallet
+import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -160,7 +161,7 @@ class CompensateOrderPaymentUseCaseTest {
 
         override fun findById(paymentId: Long): PaymentLog? = paymentLogs[paymentId]
         override fun findByUserId(userId: Long): List<PaymentLog> = paymentLogs.values.filter { it.getUserId() == userId }
-        override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: java.time.LocalDateTime, endDate: java.time.LocalDateTime): List<PaymentLog> = paymentLogs.values.toList()
+        override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<PaymentLog> = paymentLogs.values.toList()
         override fun findByPaymentType(paymentType: PaymentType): List<PaymentLog> = paymentLogs.values.filter { it.getPaymentType() == paymentType }
         override fun save(paymentLog: PaymentLog): PaymentLog {
             paymentLogs[paymentLog.getPaymentId()] = paymentLog
