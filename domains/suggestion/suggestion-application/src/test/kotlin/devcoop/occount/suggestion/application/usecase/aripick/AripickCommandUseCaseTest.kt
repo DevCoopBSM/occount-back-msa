@@ -241,6 +241,34 @@ class AripickCommandUseCaseTest {
     }
 
     @Test
+    fun `toggle like throws when increment count update fails`() {
+        val repository = FakeAripickRepository(
+            initialItems = listOf(aripickFixture(proposalId = 1L, like = 0)),
+            increaseLikeCountFailIds = setOf(1L),
+        )
+        val useCase = AripickCommandUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository(), AripickMapper())
+
+        assertThrows(AripickNotFoundException::class.java) {
+            useCase.toggleLike(proposalId = 1L, userId = 7L)
+        }
+    }
+
+    @Test
+    fun `toggle like throws when decrement count update fails`() {
+        val repository = FakeAripickRepository(
+            initialItems = listOf(aripickFixture(proposalId = 1L, like = 1)),
+            decreaseLikeCountFailIds = setOf(1L),
+        ).apply {
+            saveLikeIfAbsent(1L, 7L)
+        }
+        val useCase = AripickCommandUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository(), AripickMapper())
+
+        assertThrows(AripickNotFoundException::class.java) {
+            useCase.toggleLike(proposalId = 1L, userId = 7L)
+        }
+    }
+
+    @Test
     fun `pending changes status to pending`() {
         val repository = FakeAripickRepository(
             initialItems = listOf(aripickFixture(proposalId = 1L, status = AripickStatus.승인됨)),

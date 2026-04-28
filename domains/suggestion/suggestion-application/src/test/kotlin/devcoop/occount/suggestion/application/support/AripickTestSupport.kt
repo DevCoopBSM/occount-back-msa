@@ -33,6 +33,8 @@ fun aripickFixture(
 class FakeAripickRepository(
     initialItems: List<AripickItem> = emptyList(),
     private val statusUpdateFailIds: Set<Long> = emptySet(),
+    private val increaseLikeCountFailIds: Set<Long> = emptySet(),
+    private val decreaseLikeCountFailIds: Set<Long> = emptySet(),
 ) : AripickRepository {
     private val itemsById = linkedMapOf<Long, AripickItem>().apply {
         initialItems.forEach { put(it.getProposalId(), it) }
@@ -97,12 +99,18 @@ class FakeAripickRepository(
     }
 
     override fun increaseLikeCount(proposalId: Long): Boolean {
+        if (increaseLikeCountFailIds.contains(proposalId)) {
+            return false
+        }
         val current = itemsById[proposalId] ?: return false
         itemsById[proposalId] = current.toggleLike(alreadyLiked = false)
         return true
     }
 
     override fun decreaseLikeCount(proposalId: Long): Boolean {
+        if (decreaseLikeCountFailIds.contains(proposalId)) {
+            return false
+        }
         val current = itemsById[proposalId] ?: return false
         itemsById[proposalId] = current.toggleLike(alreadyLiked = true)
         return true

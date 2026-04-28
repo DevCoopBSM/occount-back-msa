@@ -101,11 +101,15 @@ class AripickCommandUseCase(
 
         if (alreadyLiked) {
             if (aripickRepository.deleteLike(proposalId, userId)) {
-                aripickRepository.decreaseLikeCount(proposalId)
+                if (!aripickRepository.decreaseLikeCount(proposalId)) {
+                    throw AripickNotFoundException()
+                }
             }
         } else {
             if (aripickRepository.saveLikeIfAbsent(proposalId, userId)) {
-                aripickRepository.increaseLikeCount(proposalId)
+                if (!aripickRepository.increaseLikeCount(proposalId)) {
+                    throw AripickNotFoundException()
+                }
             }
         }
 

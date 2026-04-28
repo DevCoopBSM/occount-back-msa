@@ -79,8 +79,8 @@ class AuthenticationPolicyTest {
     }
 
     @Test
-    fun `ari pick foods search requires authentication`() {
-        assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.GET, "/api/v3/ari-pick/foods"))
+    fun `ari pick foods search path is public`() {
+        assertEquals(AuthenticationRule.Access.PERMIT_ALL, policy.resolveAccess(HttpMethod.GET, "/api/v3/ari-pick/foods"))
     }
 
     @Test
