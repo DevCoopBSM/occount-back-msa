@@ -30,11 +30,11 @@ class VanTerminalClient(
         )
     }
 
-    fun refund(approvalNumber: String, approvalDate: String, amount: Int): VanResult {
+    fun refund(approvalNumber: String, approvalDate: String, terminalSequence: String, amount: Int): VanResult {
         return executeTransaction(
-            actionName = "카드환불",
+            actionName = "무카드 취소",
             transactionType = TransactionType.REFUND,
-            requestMessage = messageBuilder.buildRefundMessage(amount, approvalDate, approvalNumber),
+            requestMessage = messageBuilder.buildCardlessCancelMessage(amount, approvalDate, terminalSequence, approvalNumber),
         )
     }
 
