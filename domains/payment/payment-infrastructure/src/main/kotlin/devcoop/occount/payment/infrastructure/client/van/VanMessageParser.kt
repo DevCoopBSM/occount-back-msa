@@ -57,6 +57,7 @@ class VanMessageParser(
         startTime: LocalDateTime,
         rawResponse: String,
     ): VanResult? {
+        val isCancel = vanResponse.isCancelMessage()
         if (vanResponse.isCardInsertMessage()) {
             log.info("중간 메시지 수신: {}", vanResponse.cardNumber?.trim())
             return null
@@ -77,7 +78,7 @@ class VanMessageParser(
         }
 
         val (cardStatus, approvalNumber) = vanResponse.getApprovalInfo()
-        if (approvalNumber.isNullOrBlank()) {
+        if (approvalNumber.isNullOrBlank() && !(isCancel && vanResponse.isSuccessfulResponse())) {
             return null
         }
         if (!approvalNumber.all { it.isDigit() }) {
@@ -90,7 +91,6 @@ class VanMessageParser(
         }
 
         val (cardBrand, cardName, _) = vanResponse.extractCardInfo()
-        val isCancel = vanResponse.isCancelMessage()
         val endTime = LocalDateTime.now()
 
         return VanResult(
