@@ -40,6 +40,10 @@ data class VanRawResponse(
         return serviceType == protocolCodes.cancelMessageType
     }
 
+    fun isSuccessfulResponse(): Boolean {
+        return status == SUCCESS_RESPONSE_CODE
+    }
+
     fun getApprovalInfo(): Pair<String?, String?> {
         val statusAndApproval = status?.split('\u001e') // Record Separator
         val icCreditAndApproval = icCredit?.split('\u001e')
@@ -69,5 +73,9 @@ data class VanRawResponse(
         return icCredit?.split('\u001e')?.getOrNull(1)
             ?: status?.split('\u001e')?.getOrNull(1)
             ?: "알 수 없는 거절 사유"
+    }
+
+    companion object {
+        private const val SUCCESS_RESPONSE_CODE = "00"
     }
 }
