@@ -5,27 +5,27 @@ import kotlin.test.assertEquals
 
 class VanProtocolSpecTest {
     private val message = VanProperties.Message(
-        paymentServiceType = env("VAN_API_MESSAGE_PAYMENT_SERVICE_TYPE"),
-        refundServiceType = env("VAN_API_MESSAGE_REFUND_SERVICE_TYPE"),
-        terminalCloseServiceType = env("VAN_API_MESSAGE_TERMINAL_CLOSE_SERVICE_TYPE"),
-        terminalCloseFiller = env("VAN_API_MESSAGE_TERMINAL_CLOSE_FILLER"),
-        transactionType = env("VAN_API_MESSAGE_TRANSACTION_TYPE"),
-        installmentMonths = env("VAN_API_MESSAGE_INSTALLMENT_MONTHS"),
+        paymentServiceType = "0101",
+        refundServiceType = "2101",
+        terminalCloseServiceType = "9999",
+        terminalCloseFiller = "CLOSE",
+        transactionType = "D1",
+        installmentMonths = "00",
     )
     private val protocolSpec = VanProtocolSpec(
         VanProperties(
             terminals = mapOf(1 to VanProperties.Terminal(host = "localhost", port = 5555)),
             protocol = VanProperties.Protocol(
-                stx = env("VAN_API_PROTOCOL_STX"),
-                etx = env("VAN_API_PROTOCOL_ETX"),
-                separator = env("VAN_API_PROTOCOL_SEPARATOR"),
-                recordSeparator = env("VAN_API_PROTOCOL_RECORD_SEPARATOR"),
-                blank = env("VAN_API_PROTOCOL_BLANK"),
-                ack = env("VAN_API_PROTOCOL_ACK"),
-                dle = env("VAN_API_PROTOCOL_DLE"),
-                formFeed = env("VAN_API_PROTOCOL_FORM_FEED"),
-                nak = env("VAN_API_PROTOCOL_NAK"),
-                transactionTimeoutSeconds = env("VAN_API_PROTOCOL_TRANSACTION_TIMEOUT_SECONDS").toLongOrNull() ?: 30L,
+                stx = "02",
+                etx = "03",
+                separator = "1c",
+                recordSeparator = "1e",
+                blank = "20",
+                ack = "06",
+                dle = "10",
+                formFeed = "0c",
+                nak = "15",
+                transactionTimeoutSeconds = 30L,
             ),
             message = message,
         ),
@@ -49,9 +49,5 @@ class VanProtocolSpecTest {
         assertEquals("060606", protocolSpec.toHex(frames[2]))
         assertEquals("0c0c0c", protocolSpec.toHex(frames[3]))
         assertEquals("10", protocolSpec.toHex(frames[4]))
-    }
-
-    private fun env(name: String): String {
-        return System.getenv(name).orEmpty()
     }
 }

@@ -11,32 +11,32 @@ import kotlin.test.assertTrue
 class VanMessageParserTest {
     private val eucKr: Charset = Charset.forName("EUC-KR")
     private val protocolCodes = VanProtocolCodes(
-        cancelMessageType = env("VAN_PROTOCOL_CODES_CANCEL_MESSAGE_TYPE"),
-        rejectStatusPrefix = env("VAN_PROTOCOL_CODES_REJECT_STATUS_PREFIX"),
-        cardInsertKeyword = env("VAN_PROTOCOL_CODES_CARD_INSERT_KEYWORD"),
+        cancelMessageType = "2102",
+        rejectStatusPrefix = "9",
+        cardInsertKeyword = "카드 삽입",
     )
     private val protocolSpec = VanProtocolSpec(
         VanProperties(
             terminals = mapOf(1 to VanProperties.Terminal(host = "localhost", port = 5555)),
             protocol = VanProperties.Protocol(
-                stx = env("VAN_API_PROTOCOL_STX"),
-                etx = env("VAN_API_PROTOCOL_ETX"),
-                separator = env("VAN_API_PROTOCOL_SEPARATOR"),
-                recordSeparator = env("VAN_API_PROTOCOL_RECORD_SEPARATOR"),
-                blank = env("VAN_API_PROTOCOL_BLANK"),
-                ack = env("VAN_API_PROTOCOL_ACK"),
-                dle = env("VAN_API_PROTOCOL_DLE"),
-                formFeed = env("VAN_API_PROTOCOL_FORM_FEED"),
-                nak = env("VAN_API_PROTOCOL_NAK"),
-                transactionTimeoutSeconds = env("VAN_API_PROTOCOL_TRANSACTION_TIMEOUT_SECONDS").toLongOrNull() ?: 30L,
+                stx = "02",
+                etx = "03",
+                separator = "1c",
+                recordSeparator = "1e",
+                blank = "20",
+                ack = "06",
+                dle = "10",
+                formFeed = "0c",
+                nak = "15",
+                transactionTimeoutSeconds = 30L,
             ),
             message = VanProperties.Message(
-                paymentServiceType = env("VAN_API_MESSAGE_PAYMENT_SERVICE_TYPE"),
-                refundServiceType = env("VAN_API_MESSAGE_REFUND_SERVICE_TYPE"),
-                terminalCloseServiceType = env("VAN_API_MESSAGE_TERMINAL_CLOSE_SERVICE_TYPE"),
-                terminalCloseFiller = env("VAN_API_MESSAGE_TERMINAL_CLOSE_FILLER"),
-                transactionType = env("VAN_API_MESSAGE_TRANSACTION_TYPE"),
-                installmentMonths = env("VAN_API_MESSAGE_INSTALLMENT_MONTHS"),
+                paymentServiceType = "0101",
+                refundServiceType = "2101",
+                terminalCloseServiceType = "9999",
+                terminalCloseFiller = "CLOSE",
+                transactionType = "D1",
+                installmentMonths = "00",
             ),
         ),
     )
@@ -76,6 +76,7 @@ class VanMessageParserTest {
         assertEquals("7010", result.transaction?.messageNumber)
         assertEquals(0, result.transaction?.installmentMonths)
         assertEquals("12345678", result.transaction?.approvalNumber)
+        assertEquals("20260420", result.transaction?.approvalDate)
         assertEquals("876543210123", result.transaction?.transactionId)
         assertEquals("12345678", result.transaction?.terminalId)
         assertEquals("99887766554433", result.transaction?.merchantNumber)
@@ -133,6 +134,47 @@ class VanMessageParserTest {
         assertEquals("한도 초과", result.transaction?.rejectMessage)
     }
 
+    @Test
+    fun `취소 응답은 승인번호가 없어도 성공으로 파싱한다`() {
+        val cancelProtocolCodes = VanProtocolCodes(
+            cancelMessageType = "2102",
+            rejectStatusPrefix = "9",
+            cardInsertKeyword = "카드 삽입",
+        )
+        val cancelResponseParser = VanResponseParser(protocolSpec, cancelProtocolCodes)
+        val cancelParser = VanMessageParser(protocolSpec, cancelResponseParser)
+        val response = buildResponse(
+            header = "00842102",
+            "0203",
+            "55554444****111*",
+            "1000",
+            "90",
+            "0",
+            "00",
+            "267733358",
+            "20260420",
+            "201936",
+            "876543210123",
+            "0011223344",
+            "99887766554433",
+            "0300테스트카드체크",
+            "0007테스트카드",
+            "1",
+            "00",
+            "IC신용취소",
+            "테스트포인트잔여:0\u001e",
+        )
+
+        val result = cancelParser.parsePaymentResponse(response)
+
+        assertNotNull(result)
+        assertTrue(result.success)
+        assertEquals("정상취소 완료", result.message)
+        assertEquals("20260420", result.transaction?.approvalDate)
+        assertEquals("267733358", result.transaction?.terminalId)
+        assertEquals("CANCELLED", result.additional?.approvalStatus)
+    }
+
     private fun buildResponse(header: String, vararg fields: String): ByteArray {
         return buildString {
             append('\u0002')
@@ -145,6 +187,4 @@ class VanMessageParserTest {
             append('.')
         }.toByteArray(eucKr)
     }
-
-    private fun env(name: String): String = System.getenv(name).orEmpty()
 }
