@@ -16,7 +16,7 @@ class AuthenticationPolicy {
         rule(HttpMethod.GET, "/api/v3/items").permitAll()
         rule(HttpMethod.GET, "/api/v3/ari-pick").permitAll()
         rule(HttpMethod.GET, "/api/v3/ari-pick/stats").permitAll()
-        rule(HttpMethod.GET, "/api/v3/ari-pick/foods").authenticated()
+        rule(HttpMethod.GET, "/api/v3/ari-pick/foods").permitAll()
         rule(HttpMethod.GET, "/api/v3/ari-pick/blocked-keywords").adminOnly()
         rule(HttpMethod.POST, "/api/v3/ari-pick/blocked-keywords").adminOnly()
         rule(HttpMethod.DELETE, "/api/v3/ari-pick/blocked-keywords/{keywordId}").adminOnly()
