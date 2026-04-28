@@ -10,44 +10,9 @@ import kotlin.test.assertTrue
 
 class VanMessageParserTest {
     private val eucKr: Charset = Charset.forName("EUC-KR")
-<<<<<<< HEAD
     private val protocolSpec = VanTestFixtures.protocolSpec
     private val parser = VanTestFixtures.messageParser()
     private val recordSeparator = VanTestFixtures.recordSeparatorChar
-=======
-    private val protocolCodes = VanProtocolCodes(
-        cancelMessageType = "2102",
-        rejectStatusPrefix = "9",
-        cardInsertKeyword = "카드 삽입",
-    )
-    private val protocolSpec = VanProtocolSpec(
-        VanProperties(
-            terminals = mapOf(1 to VanProperties.Terminal(host = "localhost", port = 5555)),
-            protocol = VanProperties.Protocol(
-                stx = "02",
-                etx = "03",
-                separator = "1c",
-                recordSeparator = "1e",
-                blank = "20",
-                ack = "06",
-                dle = "10",
-                formFeed = "0c",
-                nak = "15",
-                transactionTimeoutSeconds = 30L,
-            ),
-            message = VanProperties.Message(
-                paymentServiceType = "0101",
-                refundServiceType = "2101",
-                terminalCloseServiceType = "9999",
-                terminalCloseFiller = "CLOSE",
-                transactionType = "D1",
-                installmentMonths = "00",
-            ),
-        ),
-    )
-    private val responseParser = VanResponseParser(protocolSpec, protocolCodes)
-    private val parser = VanMessageParser(protocolSpec, responseParser)
->>>>>>> ae03c36 (test(payment): VAN 취소 전문 테스트 보강)
 
     @Test
     fun `승인 응답을 VanResult로 파싱한다`() {
@@ -165,7 +130,7 @@ class VanMessageParserTest {
             "1",
             "00",
             "IC신용취소",
-            "테스트포인트잔여:0\u001e",
+            "테스트포인트잔여:0${recordSeparator}",
         )
 
         val result = cancelParser.parsePaymentResponse(response)
@@ -190,11 +155,17 @@ class VanMessageParserTest {
             append('.')
         }.toByteArray(eucKr)
     }
-<<<<<<< HEAD
-
     private fun Byte.toProtocolChar(): Char {
         return (toInt() and 0xff).toChar()
     }
-=======
->>>>>>> ae03c36 (test(payment): VAN 취소 전문 테스트 보강)
+
+    private fun cancelParser(): VanMessageParser {
+        val cancelProtocolCodes = VanProtocolCodes(
+            cancelMessageType = "2102",
+            rejectStatusPrefix = VanTestFixtures.protocolCodes.rejectStatusPrefix,
+            cardInsertKeyword = VanTestFixtures.protocolCodes.cardInsertKeyword,
+        )
+        val cancelResponseParser = VanResponseParser(protocolSpec, cancelProtocolCodes)
+        return VanMessageParser(protocolSpec, cancelResponseParser)
+    }
 }
