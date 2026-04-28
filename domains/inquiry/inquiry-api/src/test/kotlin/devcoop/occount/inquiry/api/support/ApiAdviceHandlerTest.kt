@@ -46,7 +46,8 @@ class ApiAdviceHandlerTest {
     fun `handleValidationException returns 400 with field errors`() {
         val fieldError = FieldError("request", "title", "제목을 입력해주세요.")
         val bindingResult = mock(BindingResult::class.java)
-        `when`(bindingResult.allErrors).thenReturn(listOf(fieldError))
+        `when`(bindingResult.fieldErrors).thenReturn(listOf(fieldError))
+        `when`(bindingResult.globalErrors).thenReturn(emptyList())
 
         val exception = mock(MethodArgumentNotValidException::class.java)
         `when`(exception.bindingResult).thenReturn(bindingResult)
