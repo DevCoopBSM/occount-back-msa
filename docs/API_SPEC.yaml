@@ -664,7 +664,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ValidationErrorResponse'
+              example:
+                title: "제목을 입력해주세요."
+                category: "카테고리를 선택해주세요."
         "401":
           description: 인증 실패
 
@@ -1083,6 +1086,15 @@ components:
         - ACCOUNT
         - SERVICE
         - OTHER
+
+    ValidationErrorResponse:
+      type: object
+      description: 필드 유효성 검사 실패 시 반환되는 필드명-오류메시지 맵
+      additionalProperties:
+        type: string
+      example:
+        title: "제목을 입력해주세요."
+        category: "카테고리를 선택해주세요."
 
     # ── Common ─────────────────────────────────────
     ErrorResponse:
