@@ -995,12 +995,16 @@ components:
       properties:
         title:
           type: string
+          minLength: 1
           maxLength: 100
-          description: 문의 제목
+          pattern: ".*\\S.*"
+          description: 문의 제목 (공백 문자열 불가)
         content:
           type: string
+          minLength: 1
           maxLength: 2000
-          description: 문의 내용
+          pattern: ".*\\S.*"
+          description: 문의 내용 (공백 문자열 불가)
         category:
           $ref: '#/components/schemas/InquiryCategory'
 
