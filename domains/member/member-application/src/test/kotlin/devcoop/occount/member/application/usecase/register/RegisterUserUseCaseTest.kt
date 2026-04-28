@@ -18,7 +18,7 @@ class RegisterUserUseCaseTest {
 
     private val request = MemberRegisterRequest(
         userCiNumber = "CI123456",
-        userName = "홍길동",
+        username = "홍길동",
         userPhone = "010-1234-5678",
         userEmail = "test@test.com",
         password = "password1234",

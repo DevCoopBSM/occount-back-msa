@@ -60,7 +60,7 @@ class ApiAdviceHandlerTest {
         val bindingResult = BeanPropertyBindingResult(
             MemberRegisterRequest(
                 userCiNumber = "CI123",
-                userName = "홍길동",
+                username = "홍길동",
                 userPhone = null,
                 userEmail = "invalid-email",
                 password = "password1234",

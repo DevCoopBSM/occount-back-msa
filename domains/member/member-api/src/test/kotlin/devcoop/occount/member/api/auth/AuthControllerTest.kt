@@ -45,7 +45,7 @@ class AuthControllerTest {
                     """
                     {
                       "userCiNumber": "CI123",
-                      "userName": "홍길동",
+                      "username": "홍길동",
                       "userPhone": null,
                       "userEmail": "test@test.com",
                       "password": "password1234"
@@ -81,7 +81,7 @@ class AuthControllerTest {
                     """
                     {
                       "userCiNumber": "CI123",
-                      "userName": "홍길동",
+                      "username": "홍길동",
                       "userPhone": null,
                       "userEmail": "invalid-email",
                       "password": "short"

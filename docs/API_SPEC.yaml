@@ -54,7 +54,7 @@ paths:
               $ref: '#/components/schemas/MemberRegisterRequest'
             example:
               user_ci_number: "CI1234567890"
-              user_name: "홍길동"
+              username: "홍길동"
               user_phone: "010-1234-5678"
               user_email: "hong@example.com"
               password: "pass1234"
@@ -620,12 +620,12 @@ components:
     # ── Auth ──────────────────────────────────────
     MemberRegisterRequest:
       type: object
-      required: [user_ci_number, user_name, user_email, password]
+      required: [user_ci_number, username, user_email, password]
       properties:
         user_ci_number:
           type: string
           description: 학생 CI 번호
-        user_name:
+        username:
           type: string
           maxLength: 55
           description: 이름
