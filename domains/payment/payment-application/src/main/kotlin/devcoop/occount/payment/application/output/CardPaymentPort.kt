@@ -6,7 +6,14 @@ import devcoop.occount.payment.application.dto.response.VanResult
 interface CardPaymentPort {
     fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: Long? = null): VanResult
 
-    fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int, kioskId: String): VanResult
+    fun refund(
+        transactionId: String?,
+        approvalNumber: String?,
+        approvalDate: String,
+        terminalId: String?,
+        amount: Int,
+        kioskId: String
+    ): VanResult
 
     fun requestPendingApprovalCancellation(paymentKey: Long, kioskId: String)
 }
