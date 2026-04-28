@@ -23,6 +23,7 @@ class AuthenticationPolicy {
         rule("/api/v3/orders/**").authenticated()
         rule("/api/v3/points/**").authenticated()
         rule("/api/v3/wallet/**").authenticated()
+        rule("/api/v3/inquiries/**").authenticated()
 
         rule(HttpMethod.POST, "/api/v3/items").adminOnly()
         rule(HttpMethod.PUT, "/api/v3/items/{id}").adminOnly()

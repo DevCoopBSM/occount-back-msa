@@ -27,6 +27,12 @@ include 'domains:payment:payment-infrastructure'
 include 'domains:payment:payment-bootstrap'
 
 
+include 'domains:inquiry:inquiry-domain'
+include 'domains:inquiry:inquiry-application'
+include 'domains:inquiry:inquiry-api'
+include 'domains:inquiry:inquiry-infrastructure'
+include 'domains:inquiry:inquiry-bootstrap'
+
 include 'gateway:api-gateway'
 
 include 'modules:db'

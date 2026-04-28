@@ -228,6 +228,35 @@ services:
       retries: 5
       start_period: 60s
 
+  inquiry-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_MODULE: "domains:inquiry:inquiry-bootstrap"
+        APP_BUILD_DIR: "domains/inquiry/inquiry-bootstrap/build/libs"
+        APP_JAR_NAME: "inquiry-api.jar"
+    restart: unless-stopped
+    ports:
+      - "8085:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_inquiry?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true&cacheServerConfiguration=true&rewriteBatchedStatements=true&useLocalSessionState=true&elideSetAutoCommits=true&maintainTimeStats=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://datadog-agent:4318/v1/traces}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v3/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   api-gateway:
     build:
       context: .
@@ -244,6 +273,7 @@ services:
       ITEM_API_URL: http://item-api:8080
       ORDER_API_URL: http://order-api:8080
       PAYMENT_API_URL: http://payment-api:8080
+      INQUIRY_API_URL: http://inquiry-api:8080
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://datadog-agent:4318/v1/traces}
       JWT_ACCESS_EXPIRATION_TIME: ${JWT_ACCESS_EXPIRATION_TIME:-3600000}
       JWT_KIOSK_EXPIRATION_TIME: ${JWT_KIOSK_EXPIRATION_TIME:-86400000}
@@ -258,6 +288,8 @@ services:
       order-api:
         condition: service_healthy
       payment-api:
+        condition: service_healthy
+      inquiry-api:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/v3/actuator/health"]

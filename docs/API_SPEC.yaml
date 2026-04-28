@@ -35,6 +35,8 @@ tags:
     description: 주문 생성 및 취소
   - name: Wallet
     description: 포인트 잔액 및 충전 내역
+  - name: Inquiry
+    description: 1:1 문의 제출 및 조회
 
 paths:
   # ───────────────────────────────────────────────
@@ -605,6 +607,126 @@ paths:
         "401":
           description: 인증 실패
 
+  /api/v3/wallet/charges:
+    get:
+      tags: [Wallet]
+      operationId: getChargeHistory
+      summary: 포인트 충전 내역 조회
+      description: 로그인한 회원의 전체 포인트 충전/차감 내역을 반환합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChargeLogResult'
+        "401":
+          description: 인증 실패
+
+  # ───────────────────────────────────────────────
+  # Inquiry
+  # ───────────────────────────────────────────────
+  /api/v3/inquiries:
+    post:
+      tags: [Inquiry]
+      operationId: createInquiry
+      summary: 문의 제출
+      description: 로그인한 회원이 새로운 문의를 제출합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInquiryRequest'
+            example:
+              title: "결제가 안돼요"
+              content: "포인트 결제 시 오류가 발생합니다."
+              category: "PAYMENT"
+      responses:
+        "201":
+          description: 문의 접수 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateInquiryResponse'
+              example:
+                inquiryId: 1
+                status: "RECEIVED"
+                createdAt: "2026-04-28T08:30:00"
+        "400":
+          description: 요청 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+              example:
+                title: "제목을 입력해주세요."
+                category: "카테고리를 선택해주세요."
+        "401":
+          description: 인증 실패
+
+    get:
+      tags: [Inquiry]
+      operationId: getInquiryList
+      summary: 내 문의 목록 조회
+      description: 로그인한 회원 본인이 제출한 전체 문의 목록을 최신순으로 반환합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InquiryListResponse'
+        "401":
+          description: 인증 실패
+
+  /api/v3/inquiries/{inquiryId}:
+    get:
+      tags: [Inquiry]
+      operationId: getInquiryDetail
+      summary: 문의 상세 조회
+      description: 단건 문의의 상세 내용을 조회합니다. 본인의 문의가 아닌 경우 403을 반환합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: inquiryId
+          in: path
+          required: true
+          description: 조회할 문의 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InquiryDetailResponse'
+        "401":
+          description: 인증 실패
+        "403":
+          description: 본인의 문의가 아님
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: 문의를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 security:
   - BearerAuth: []
 
@@ -838,6 +960,145 @@ components:
         point:
           type: integer
           description: 현재 포인트 잔액
+
+    ChargeLogResult:
+      type: object
+      properties:
+        chargeId:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        chargeDate:
+          type: string
+          format: date-time
+        chargeAmount:
+          type: integer
+          description: 변동 포인트량 (음수면 차감)
+        paymentId:
+          type: integer
+          format: int64
+          nullable: true
+        beforePoint:
+          type: integer
+        afterPoint:
+          type: integer
+        reason:
+          type: string
+          nullable: true
+
+    # ── Inquiry ────────────────────────────────────
+    CreateInquiryRequest:
+      type: object
+      required: [title, content, category]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: ".*\\S.*"
+          description: 문의 제목 (공백 문자열 불가)
+        content:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          pattern: ".*\\S.*"
+          description: 문의 내용 (공백 문자열 불가)
+        category:
+          $ref: '#/components/schemas/InquiryCategory'
+
+    CreateInquiryResponse:
+      type: object
+      properties:
+        inquiryId:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/InquiryStatus'
+        createdAt:
+          type: string
+          format: date-time
+
+    InquiryListResponse:
+      type: object
+      properties:
+        inquiries:
+          type: array
+          items:
+            $ref: '#/components/schemas/InquiryListItemResponse'
+
+    InquiryListItemResponse:
+      type: object
+      properties:
+        inquiryId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        category:
+          $ref: '#/components/schemas/InquiryCategory'
+        status:
+          $ref: '#/components/schemas/InquiryStatus'
+        createdAt:
+          type: string
+          format: date-time
+
+    InquiryDetailResponse:
+      type: object
+      properties:
+        inquiryId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        content:
+          type: string
+        category:
+          $ref: '#/components/schemas/InquiryCategory'
+        status:
+          $ref: '#/components/schemas/InquiryStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    InquiryStatus:
+      type: string
+      description: |
+        문의 처리 상태.
+        - `RECEIVED` — 접수됨 (초기값)
+        - `IN_PROGRESS` — 처리중
+        - `COMPLETED` — 완료
+      enum:
+        - RECEIVED
+        - IN_PROGRESS
+        - COMPLETED
+
+    InquiryCategory:
+      type: string
+      description: |
+        문의 카테고리.
+        - `PAYMENT` — 결제 관련
+        - `ACCOUNT` — 계정 관련
+        - `SERVICE` — 서비스 오류 관련
+        - `OTHER` — 기타
+      enum:
+        - PAYMENT
+        - ACCOUNT
+        - SERVICE
+        - OTHER
+
+    ValidationErrorResponse:
+      type: object
+      description: 필드 유효성 검사 실패 시 반환되는 필드명-오류메시지 맵
+      additionalProperties:
+        type: string
+      example:
+        title: "제목을 입력해주세요."
+        category: "카테고리를 선택해주세요."
 
     # ── Common ─────────────────────────────────────
     ErrorResponse:

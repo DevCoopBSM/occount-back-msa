@@ -47,6 +47,10 @@ spring:
               uri: ${PAYMENT_API_URL}
               predicates:
                 - Path=/api/v3/wallet/**
+            - id: inquiry-api
+              uri: ${INQUIRY_API_URL}
+              predicates:
+                - Path=/api/v3/inquiries/**
 
 jwt:
   access-expiration-time: ${JWT_ACCESS_EXPIRATION_TIME}
