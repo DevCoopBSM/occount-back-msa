@@ -29,15 +29,19 @@ class VanCardPaymentClient(
         transactionId: String?,
         approvalNumber: String?,
         approvalDate: String,
+        terminalId: String?,
         amount: Int,
         kioskId: String,
     ): VanResult {
         if (approvalNumber == null) throw InvalidPaymentRequestException()
-        log.info("카드환불 요청 - 키오스크: {}, 승인번호: {}, 금액: {}원", kioskId, approvalNumber, amount)
-        return execute("카드환불") {
+        val originalTransactionDate = normalizeOriginalTransactionDate(approvalDate)
+        val originalTransactionSequence = extractOriginalTransactionSequence(terminalId)
+        log.info("무카드 취소 요청 - 키오스크: {}, 승인번호: {}, 금액: {}원", kioskId, maskApprovalNumber(approvalNumber), amount)
+        return execute("무카드 취소") {
             vanTerminalRegistry.get(kioskId).refund(
                 approvalNumber = approvalNumber,
-                approvalDate = approvalDate,
+                approvalDate = originalTransactionDate,
+                terminalSequence = originalTransactionSequence,
                 amount = amount,
             )
         }
@@ -77,5 +81,36 @@ class VanCardPaymentClient(
             null -> throw InvalidPaymentRequestException()
             else -> throw InvalidPaymentRequestException()
         }
+    }
+
+    private fun normalizeOriginalTransactionDate(approvalDate: String): String {
+        val digitsOnly = approvalDate.filter(Char::isDigit)
+        return when (digitsOnly.length) {
+            6 -> digitsOnly
+            8 -> digitsOnly.takeLast(6)
+            else -> throw InvalidPaymentRequestException()
+        }
+    }
+
+    private fun extractOriginalTransactionSequence(terminalId: String?): String {
+        val digitsOnly = terminalId?.filter(Char::isDigit).orEmpty()
+        if (digitsOnly.length < ORIGINAL_TRANSACTION_SEQUENCE_LENGTH) {
+            throw InvalidPaymentRequestException()
+        }
+        return digitsOnly.takeLast(ORIGINAL_TRANSACTION_SEQUENCE_LENGTH)
+    }
+
+    private fun maskApprovalNumber(approvalNumber: String): String {
+        if (approvalNumber.length <= APPROVAL_NUMBER_VISIBLE_SUFFIX_LENGTH) {
+            return MASK.repeat(approvalNumber.length)
+        }
+        return MASK.repeat(approvalNumber.length - APPROVAL_NUMBER_VISIBLE_SUFFIX_LENGTH) +
+            approvalNumber.takeLast(APPROVAL_NUMBER_VISIBLE_SUFFIX_LENGTH)
+    }
+
+    companion object {
+        private const val ORIGINAL_TRANSACTION_SEQUENCE_LENGTH = 4
+        private const val APPROVAL_NUMBER_VISIBLE_SUFFIX_LENGTH = 4
+        private const val MASK = "*"
     }
 }
