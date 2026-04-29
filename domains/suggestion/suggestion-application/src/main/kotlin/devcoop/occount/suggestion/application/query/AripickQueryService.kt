@@ -27,9 +27,9 @@ class AripickQueryService(
     fun getStats(): AripickStatsResponse {
         return AripickStatsResponse(
             totalProposals = aripickRepository.countAll(),
-            approved = aripickRepository.countByStatus(AripickStatus.승인됨),
-            pending = aripickRepository.countByStatus(AripickStatus.검토중),
-            rejected = aripickRepository.countByStatus(AripickStatus.거절됨),
+            approved = aripickRepository.countByStatus(AripickStatus.APPROVED),
+            pending = aripickRepository.countByStatus(AripickStatus.PENDING),
+            rejected = aripickRepository.countByStatus(AripickStatus.REJECTED),
         )
     }
 }

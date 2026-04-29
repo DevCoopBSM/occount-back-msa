@@ -40,10 +40,10 @@ class AripickQueryServiceTest {
     fun `get stats aggregates by status`() {
         val repository = FakeAripickRepository(
             initialItems = listOf(
-                aripickFixture(proposalId = 1L, status = AripickStatus.검토중),
-                aripickFixture(proposalId = 2L, status = AripickStatus.승인됨),
-                aripickFixture(proposalId = 3L, status = AripickStatus.거절됨),
-                aripickFixture(proposalId = 4L, status = AripickStatus.승인됨),
+                aripickFixture(proposalId = 1L, status = AripickStatus.PENDING),
+                aripickFixture(proposalId = 2L, status = AripickStatus.APPROVED),
+                aripickFixture(proposalId = 3L, status = AripickStatus.REJECTED),
+                aripickFixture(proposalId = 4L, status = AripickStatus.APPROVED),
             ),
         )
         val service = AripickQueryService(repository, AripickMapper())

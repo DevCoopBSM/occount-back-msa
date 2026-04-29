@@ -28,7 +28,7 @@ class AripickJpaEntity(
     private var proposerId: Long = 0L,
     @Enumerated(EnumType.STRING)
     @field:Column(name = "status", nullable = false)
-    private var status: AripickStatus = AripickStatus.검토중,
+    private var status: AripickStatus = AripickStatus.PENDING,
     @field:Column(name = "like_count", nullable = false)
     private var likeCount: Int = 0,
 ) {

@@ -8,8 +8,8 @@ import devcoop.occount.suggestion.application.query.AripickListResponse
 import devcoop.occount.suggestion.application.query.AripickQueryService
 import devcoop.occount.suggestion.application.query.AripickStatsResponse
 import devcoop.occount.suggestion.application.shared.AripickResponse
-import devcoop.occount.suggestion.application.usecase.aripick.AripickBlockedKeywordListResponse
-import devcoop.occount.suggestion.application.usecase.aripick.AripickBlockedKeywordResponse
+import devcoop.occount.suggestion.application.shared.AripickBlockedKeywordListResponse
+import devcoop.occount.suggestion.application.shared.AripickBlockedKeywordResponse
 import devcoop.occount.suggestion.application.usecase.aripick.AripickCommandUseCase
 import devcoop.occount.suggestion.application.usecase.aripick.AripickLikeToggleResponse
 import devcoop.occount.suggestion.application.usecase.aripick.AripickPolicyUseCase
@@ -37,7 +37,7 @@ class AripickControllerTest {
                     reason = "원함",
                     proposerId = 7L,
                     proposalDate = java.time.LocalDate.of(2026, 4, 22),
-                    status = AripickStatus.검토중,
+                    status = AripickStatus.PENDING,
                     likeCount = 0,
                 ),
             ),
@@ -60,7 +60,7 @@ class AripickControllerTest {
             reason = "원함",
             proposerId = 7L,
             proposalDate = java.time.LocalDate.of(2026, 4, 22),
-            status = AripickStatus.검토중,
+            status = AripickStatus.PENDING,
             likeCount = 1,
         )
         `when`(queryService.getItem(1L)).thenReturn(expected)
@@ -101,7 +101,7 @@ class AripickControllerTest {
             reason = "원함",
             proposerId = 7L,
             proposalDate = java.time.LocalDate.of(2026, 4, 22),
-            status = AripickStatus.검토중,
+            status = AripickStatus.PENDING,
             likeCount = 0,
         )
         `when`(commandUseCase.create(request, 7L)).thenReturn(expected)
@@ -122,7 +122,7 @@ class AripickControllerTest {
             reason = "원함",
             proposerId = 7L,
             proposalDate = java.time.LocalDate.of(2026, 4, 22),
-            status = AripickStatus.승인됨,
+            status = AripickStatus.APPROVED,
             likeCount = 0,
         )
         `when`(commandUseCase.approve(1L)).thenReturn(expected)
@@ -143,7 +143,7 @@ class AripickControllerTest {
             reason = "원함",
             proposerId = 7L,
             proposalDate = java.time.LocalDate.of(2026, 4, 22),
-            status = AripickStatus.거절됨,
+            status = AripickStatus.REJECTED,
             likeCount = 0,
         )
         `when`(commandUseCase.reject(1L)).thenReturn(expected)
@@ -164,7 +164,7 @@ class AripickControllerTest {
             reason = "원함",
             proposerId = 7L,
             proposalDate = java.time.LocalDate.of(2026, 4, 22),
-            status = AripickStatus.검토중,
+            status = AripickStatus.PENDING,
             likeCount = 0,
         )
         `when`(commandUseCase.pending(1L)).thenReturn(expected)

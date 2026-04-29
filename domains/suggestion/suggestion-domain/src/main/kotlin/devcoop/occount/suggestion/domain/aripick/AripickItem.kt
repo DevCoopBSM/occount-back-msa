@@ -8,7 +8,7 @@ data class AripickItem(
     private val reason: String = "",
     private val proposalDate: LocalDate = LocalDate.now(),
     private val proposerId: Long = 0L,
-    private val status: AripickStatus = AripickStatus.검토중,
+    private val status: AripickStatus = AripickStatus.PENDING,
     private val like: Int = 0
 ) {
     fun getProposalId() = proposalId
@@ -28,15 +28,15 @@ data class AripickItem(
     }
 
     fun approve(): AripickItem {
-        return copy(status = AripickStatus.승인됨)
+        return copy(status = AripickStatus.APPROVED)
     }
 
     fun reject(): AripickItem {
-        return copy(status = AripickStatus.거절됨)
+        return copy(status = AripickStatus.REJECTED)
     }
 
     fun pending(): AripickItem {
-        return copy(status = AripickStatus.검토중)
+        return copy(status = AripickStatus.PENDING)
     }
 
     fun canDeleteBy(

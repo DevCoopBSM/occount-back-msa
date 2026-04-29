@@ -16,7 +16,7 @@ fun aripickFixture(
     reason: String = "학생 수요가 많음",
     proposalDate: LocalDate = LocalDate.of(2026, 4, 22),
     proposerId: Long = 1L,
-    status: AripickStatus = AripickStatus.검토중,
+    status: AripickStatus = AripickStatus.PENDING,
     like: Int = 0,
 ): AripickItem {
     return AripickItem(
@@ -74,9 +74,9 @@ class FakeAripickRepository(
         }
         val current = itemsById[proposalId] ?: return false
         itemsById[proposalId] = when (status) {
-            AripickStatus.검토중 -> current.pending()
-            AripickStatus.승인됨 -> current.approve()
-            AripickStatus.거절됨 -> current.reject()
+            AripickStatus.PENDING -> current.pending()
+            AripickStatus.APPROVED -> current.approve()
+            AripickStatus.REJECTED -> current.reject()
         }
         return true
     }

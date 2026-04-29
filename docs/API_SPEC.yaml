@@ -605,8 +605,8 @@ paths:
     patch:
       tags: [AriPick]
       operationId: pendingAripick
-      summary: 아리픽 제안 검토중 변경
-      description: 제안을 검토중 상태로 변경합니다. (ADMIN_ONLY)
+      summary: 아리픽 제안 PENDING 변경
+      description: 제안을 PENDING 상태로 변경합니다. (ADMIN_ONLY)
       security:
         - BearerAuth: []
       parameters:
@@ -1178,7 +1178,7 @@ components:
           format: date
         status:
           type: string
-          enum: [검토중, 승인됨, 거절됨]
+          enum: [PENDING, APPROVED, REJECTED]
         like_count:
           type: integer
 

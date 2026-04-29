@@ -44,7 +44,7 @@ class AripickCommandUseCaseTest {
 
         assertEquals(1L, result.proposalId)
         assertEquals(7L, result.proposerId)
-        assertEquals(AripickStatus.검토중, result.status)
+        assertEquals(AripickStatus.PENDING, result.status)
         assertEquals("신라면 큰사발면", result.name)
     }
 
@@ -143,7 +143,7 @@ class AripickCommandUseCaseTest {
 
         val result = useCase.approve(1L)
 
-        assertEquals(AripickStatus.승인됨, result.status)
+        assertEquals(AripickStatus.APPROVED, result.status)
     }
 
     @Test
@@ -166,7 +166,7 @@ class AripickCommandUseCaseTest {
 
         val result = useCase.reject(1L)
 
-        assertEquals(AripickStatus.거절됨, result.status)
+        assertEquals(AripickStatus.REJECTED, result.status)
     }
 
     @Test
@@ -271,13 +271,13 @@ class AripickCommandUseCaseTest {
     @Test
     fun `pending changes status to pending`() {
         val repository = FakeAripickRepository(
-            initialItems = listOf(aripickFixture(proposalId = 1L, status = AripickStatus.승인됨)),
+            initialItems = listOf(aripickFixture(proposalId = 1L, status = AripickStatus.APPROVED)),
         )
         val useCase = AripickCommandUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository(), AripickMapper())
 
         val result = useCase.pending(1L)
 
-        assertEquals(AripickStatus.검토중, result.status)
+        assertEquals(AripickStatus.PENDING, result.status)
     }
 
     @Test
