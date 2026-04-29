@@ -31,6 +31,8 @@ class KafkaConfig {
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+            ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true,
+            ProducerConfig.ACKS_CONFIG to "all",
         ))
         openTelemetry.ifAvailable?.let { otel ->
             factory.addPostProcessor { KafkaTelemetry.create(otel).wrap(it) }
