@@ -14,4 +14,11 @@ class UserQueryService(
 
         return UserPreOrderInfoResponse.Companion.toUserPreOrderInfoResponse(user)
     }
+
+    fun findUserBarcode(userId: Long): UserBarcodeResponse {
+        val user = userRepository.findById(userId)
+            ?: throw UserNotFoundException()
+
+        return UserBarcodeResponse.toUserBarcodeResponse(user)
+    }
 }
