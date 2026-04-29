@@ -5,6 +5,7 @@ import devcoop.occount.core.common.error.ErrorMessage
 import devcoop.occount.core.common.exception.BusinessBaseException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -13,8 +14,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 class ApiAdviceHandler {
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidationException(e: MethodArgumentNotValidException): ResponseEntity<Map<String, String>> {
-        val errors = e.bindingResult.fieldErrors.associate {
-            val field = it.field
+        val errors = e.bindingResult.allErrors.associate {
+            val field = if (it is FieldError) it.field else "global"
             val message = it.defaultMessage ?: "Invalid value"
             field to message
         }
