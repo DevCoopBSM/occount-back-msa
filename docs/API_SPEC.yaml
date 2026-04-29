@@ -31,6 +31,8 @@ tags:
     description: 회원 정보 조회
   - name: Item
     description: 상품 조회 및 관리
+  - name: AriPick
+    description: 아리픽 제안 등록/조회/승인/거절/좋아요
   - name: Order
     description: 주문 생성 및 취소
   - name: Wallet
@@ -54,7 +56,7 @@ paths:
               $ref: '#/components/schemas/MemberRegisterRequest'
             example:
               user_ci_number: "CI1234567890"
-              user_name: "홍길동"
+              username: "홍길동"
               user_phone: "010-1234-5678"
               user_email: "hong@example.com"
               password: "pass1234"
@@ -367,6 +369,330 @@ paths:
           description: 상품을 찾을 수 없음
 
   # ───────────────────────────────────────────────
+  # AriPick
+  # ───────────────────────────────────────────────
+  /api/v3/ari-pick:
+    get:
+      tags: [AriPick]
+      operationId: getAripickList
+      summary: 아리픽 제안 목록 조회
+      description: 제안 목록을 조회합니다. (PERMIT_ALL)
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickListResponse'
+
+    post:
+      tags: [AriPick]
+      operationId: createAripick
+      summary: 아리픽 제안 등록
+      description: 로그인 사용자가 식약처 typeNSeq 기반으로 제안을 등록합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAripickRequest'
+      responses:
+        "201":
+          description: 등록 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickResponse'
+        "400":
+          description: 매점 물품 수칙 위반
+        "503":
+          description: 식약처 연동 실패
+        "401":
+          description: 인증 실패
+
+  /api/v3/ari-pick/foods:
+    get:
+      tags: [AriPick]
+      operationId: searchAripickFoods
+      summary: 아리픽 식품 검색
+      description: 키워드로 식약처 제품명을 검색합니다. (PERMIT_ALL)
+      parameters:
+        - name: keyword
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 검색 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickFoodSearchResponse'
+        "503":
+          description: 식약처 연동 실패
+
+  /api/v3/ari-pick/blocked-keywords:
+    get:
+      tags: [AriPick]
+      operationId: getAripickBlockedKeywords
+      summary: 아리픽 금지 키워드 목록
+      description: 관리자가 등록된 금지 키워드를 조회합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickBlockedKeywordListResponse'
+        "403":
+          description: 관리자 권한 없음
+
+    post:
+      tags: [AriPick]
+      operationId: createAripickBlockedKeyword
+      summary: 아리픽 금지 키워드 등록
+      description: 관리자가 금지 키워드를 등록합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAripickBlockedKeywordRequest'
+      responses:
+        "201":
+          description: 등록 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickBlockedKeywordResponse'
+        "400":
+          description: 금지 키워드가 비어 있음
+        "409":
+          description: 이미 등록된 금지 키워드
+        "403":
+          description: 관리자 권한 없음
+
+  /api/v3/ari-pick/blocked-keywords/{keywordId}:
+    delete:
+      tags: [AriPick]
+      operationId: deleteAripickBlockedKeyword
+      summary: 아리픽 금지 키워드 삭제
+      description: 관리자가 금지 키워드를 삭제합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: keywordId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: 삭제 성공
+        "403":
+          description: 관리자 권한 없음
+
+  /api/v3/ari-pick/{proposalId}:
+    get:
+      tags: [AriPick]
+      operationId: getAripick
+      summary: 아리픽 제안 단일 조회
+      description: proposalId로 단일 제안을 조회합니다. (PERMIT_ALL)
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickResponse'
+        "404":
+          description: 제안을 찾을 수 없음
+
+    delete:
+      tags: [AriPick]
+      operationId: deleteAripickByUser
+      summary: 아리픽 제안 삭제 (작성자)
+      description: 로그인 사용자가 본인 제안을 삭제합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: 삭제 성공
+        "401":
+          description: 인증 실패
+        "403":
+          description: 본인 제안이 아님
+        "404":
+          description: 제안을 찾을 수 없음
+
+  /api/v3/ari-pick/{proposalId}/approve:
+    patch:
+      tags: [AriPick]
+      operationId: approveAripick
+      summary: 아리픽 제안 승인
+      description: 제안을 승인 상태로 변경합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 승인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickResponse'
+        "403":
+          description: 관리자 권한 없음
+        "404":
+          description: 제안을 찾을 수 없음
+
+  /api/v3/ari-pick/{proposalId}/reject:
+    patch:
+      tags: [AriPick]
+      operationId: rejectAripick
+      summary: 아리픽 제안 거절
+      description: 제안을 거절 상태로 변경합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 거절 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickResponse'
+        "403":
+          description: 관리자 권한 없음
+        "404":
+          description: 제안을 찾을 수 없음
+
+  /api/v3/ari-pick/{proposalId}/pending:
+    patch:
+      tags: [AriPick]
+      operationId: pendingAripick
+      summary: 아리픽 제안 PENDING 변경
+      description: 제안을 PENDING 상태로 변경합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 변경 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickResponse'
+        "403":
+          description: 관리자 권한 없음
+        "404":
+          description: 제안을 찾을 수 없음
+
+  /api/v3/ari-pick/{proposalId}/admin:
+    delete:
+      tags: [AriPick]
+      operationId: deleteAripickByAdmin
+      summary: 아리픽 제안 삭제 (관리자)
+      description: 관리자가 제안을 삭제합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: 삭제 성공
+        "403":
+          description: 관리자 권한 없음
+        "404":
+          description: 제안을 찾을 수 없음
+
+  /api/v3/ari-pick/{proposalId}/like:
+    post:
+      tags: [AriPick]
+      operationId: toggleAripickLike
+      summary: 아리픽 좋아요 토글
+      description: 좋아요를 토글합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 토글 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickLikeToggleResponse'
+        "401":
+          description: 인증 실패
+        "404":
+          description: 제안을 찾을 수 없음
+
+  /api/v3/ari-pick/stats:
+    get:
+      tags: [AriPick]
+      operationId: getAripickStats
+      summary: 아리픽 통계 조회
+      description: 아리픽 제안 통계를 조회합니다. (PERMIT_ALL)
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickStatsResponse'
+
+  # ───────────────────────────────────────────────
   # Order
   # ───────────────────────────────────────────────
   /api/v3/orders:
@@ -620,12 +946,12 @@ components:
     # ── Auth ──────────────────────────────────────
     MemberRegisterRequest:
       type: object
-      required: [user_ci_number, user_name, user_email, password]
+      required: [user_ci_number, username, user_email, password]
       properties:
         user_ci_number:
           type: string
           description: 학생 CI 번호
-        user_name:
+        username:
           type: string
           maxLength: 55
           description: 이름
@@ -766,6 +1092,122 @@ components:
           nullable: true
         quantity:
           type: integer
+
+    # ── AriPick ───────────────────────────────────
+    CreateAripickRequest:
+      type: object
+      required: [type_n_seq, reason]
+      properties:
+        type_n_seq:
+          type: integer
+          format: int64
+        reason:
+          type: string
+
+    AripickFoodSearchResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AripickFoodSearchItemResponse'
+
+    AripickFoodSearchItemResponse:
+      type: object
+      properties:
+        type_n_seq:
+          type: integer
+          format: int64
+        name:
+          type: string
+        company:
+          type: string
+        kcal_info:
+          type: string
+
+    CreateAripickBlockedKeywordRequest:
+      type: object
+      required: [keyword]
+      properties:
+        keyword:
+          type: string
+
+    AripickBlockedKeywordResponse:
+      type: object
+      properties:
+        keyword_id:
+          type: integer
+          format: int64
+        keyword:
+          type: string
+        registered_date:
+          type: string
+          format: date
+
+    AripickBlockedKeywordListResponse:
+      type: object
+      properties:
+        keywords:
+          type: array
+          items:
+            $ref: '#/components/schemas/AripickBlockedKeywordResponse'
+
+    AripickListResponse:
+      type: object
+      properties:
+        aripick_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AripickResponse'
+
+    AripickResponse:
+      type: object
+      properties:
+        proposal_id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        reason:
+          type: string
+        proposer_id:
+          type: integer
+          format: int64
+        proposal_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+        like_count:
+          type: integer
+
+    AripickLikeToggleResponse:
+      type: object
+      properties:
+        proposal_id:
+          type: integer
+          format: int64
+        liked:
+          type: boolean
+        like_count:
+          type: integer
+
+    AripickStatsResponse:
+      type: object
+      properties:
+        total_proposals:
+          type: integer
+          format: int64
+        approved:
+          type: integer
+          format: int64
+        pending:
+          type: integer
+          format: int64
+        rejected:
+          type: integer
+          format: int64
 
     # ── Order ──────────────────────────────────────
     OrderRequest:

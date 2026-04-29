@@ -14,6 +14,12 @@ include 'domains:item:item-api'
 include 'domains:item:item-infrastructure'
 include 'domains:item:item-bootstrap'
 
+include 'domains:suggestion:suggestion-domain'
+include 'domains:suggestion:suggestion-application'
+include 'domains:suggestion:suggestion-api'
+include 'domains:suggestion:suggestion-infrastructure'
+include 'domains:suggestion:suggestion-bootstrap'
+
 include 'domains:order:order-domain'
 include 'domains:order:order-application'
 include 'domains:order:order-api'

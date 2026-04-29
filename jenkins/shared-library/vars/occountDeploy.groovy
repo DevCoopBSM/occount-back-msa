@@ -17,6 +17,7 @@ def call(Map cfg) {
         [path: 'gateway/',         task: ':gateway:api-gateway:bootJar',              name: 'api-gateway',  dir: 'gateway/api-gateway',              yamlKey: 'apiGateway'],
         [path: 'domains/member/',  task: ':domains:member:member-bootstrap:bootJar',  name: 'member-api',   dir: 'domains/member/member-bootstrap',   yamlKey: 'memberApi'],
         [path: 'domains/item/',    task: ':domains:item:item-bootstrap:bootJar',      name: 'item-api',     dir: 'domains/item/item-bootstrap',        yamlKey: 'itemApi'],
+        [path: 'domains/suggestion/', task: ':domains:suggestion:suggestion-bootstrap:bootJar', name: 'suggestion-api', dir: 'domains/suggestion/suggestion-bootstrap', yamlKey: 'suggestionApi'],
         [path: 'domains/order/',   task: ':domains:order:order-bootstrap:bootJar',    name: 'order-api',    dir: 'domains/order/order-bootstrap',      yamlKey: 'orderApi'],
         [path: 'domains/payment/', task: ':domains:payment:payment-bootstrap:bootJar',name: 'payment-api',  dir: 'domains/payment/payment-bootstrap',  yamlKey: 'paymentApi'],
     ]
