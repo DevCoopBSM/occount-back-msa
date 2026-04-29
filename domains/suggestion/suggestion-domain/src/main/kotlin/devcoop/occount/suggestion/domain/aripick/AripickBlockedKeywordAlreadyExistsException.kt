@@ -3,5 +3,4 @@ package devcoop.occount.suggestion.domain.aripick
 import devcoop.occount.core.common.error.ErrorMessage
 import devcoop.occount.core.common.exception.BusinessBaseException
 
-class AripickBlockedKeywordAlreadyExistsException :
-    BusinessBaseException(ErrorMessage.ARIPICK_BLOCKED_KEYWORD_ALREADY_EXISTS)
+class AripickBlockedKeywordAlreadyExistsException : BusinessBaseException(ErrorMessage.ARIPICK_BLOCKED_KEYWORD_ALREADY_EXISTS)

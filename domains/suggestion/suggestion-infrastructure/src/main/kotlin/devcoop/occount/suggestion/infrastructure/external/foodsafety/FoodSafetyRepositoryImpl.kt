@@ -60,6 +60,10 @@ class FoodSafetyRepositoryImpl(
             }
         } catch (e: AripickFoodSafetyUnavailableException) {
             throw e
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            log.warn("FoodSafety request interrupted. url={}, message={}", url, e.message, e)
+            throw AripickFoodSafetyUnavailableException()
         } catch (e: Exception) {
             log.warn("FoodSafety request exception. url={}, message={}", url, e.message, e)
             throw AripickFoodSafetyUnavailableException()
