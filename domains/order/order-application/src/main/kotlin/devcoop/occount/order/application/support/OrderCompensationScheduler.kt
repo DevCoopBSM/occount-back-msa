@@ -61,7 +61,7 @@ class OrderCompensationScheduler(
     private fun publishPaymentCompensationRequested(order: OrderAggregate) {
         log.info("결제 보상 요청 이벤트 발행 - 주문={}", order.orderId)
         eventPublisher.publish(
-            topic = DomainTopics.ORDER_PAYMENT_COMPENSATION_REQUESTED,
+            topic = DomainTopics.PAYMENT_COMMANDS,
             key = order.orderId.toString(),
             eventType = DomainEventTypes.ORDER_PAYMENT_COMPENSATION_REQUESTED,
             payload = OrderPaymentCompensationRequestedEvent(

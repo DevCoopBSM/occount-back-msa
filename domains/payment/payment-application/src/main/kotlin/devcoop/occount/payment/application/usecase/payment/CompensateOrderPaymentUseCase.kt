@@ -96,7 +96,7 @@ class CompensateOrderPaymentUseCase(
 
     private fun publishCompensated(event: OrderPaymentCompensationRequestedEvent) {
         eventPublisher.publish(
-            topic = DomainTopics.PAYMENT_COMPENSATED,
+            topic = DomainTopics.PAYMENT_EVENTS,
             key = event.orderId.toString(),
             eventType = DomainEventTypes.PAYMENT_COMPENSATED,
             payload = PaymentCompensatedEvent(
@@ -108,7 +108,7 @@ class CompensateOrderPaymentUseCase(
 
     private fun publishFailed(event: OrderPaymentCompensationRequestedEvent, reason: String) {
         eventPublisher.publish(
-            topic = DomainTopics.PAYMENT_COMPENSATION_FAILED,
+            topic = DomainTopics.PAYMENT_EVENTS,
             key = event.orderId.toString(),
             eventType = DomainEventTypes.PAYMENT_COMPENSATION_FAILED,
             payload = PaymentCompensationFailedEvent(

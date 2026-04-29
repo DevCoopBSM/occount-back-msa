@@ -1,17 +1,17 @@
 package devcoop.occount.payment.infrastructure.event
 
 import devcoop.occount.core.common.event.DomainEventHeaders
+import devcoop.occount.core.common.event.DomainEventTypes
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.OrderPaymentCancellationRequestedEvent
 import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
 import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
-import devcoop.occount.db.outbox.ConsumedEventJpaEntity
 import devcoop.occount.db.outbox.ConsumedEventRepository
+import devcoop.occount.db.outbox.IdempotencyTracker
 import devcoop.occount.payment.application.exception.DuplicateEventException
 import devcoop.occount.payment.application.usecase.payment.CancelPendingOrderPaymentUseCase
 import devcoop.occount.payment.application.usecase.payment.CompensateOrderPaymentUseCase
 import devcoop.occount.payment.application.usecase.payment.ExecuteVanPaymentUseCase
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Component
@@ -25,33 +25,38 @@ class OrderPaymentEventListener(
     private val executeVanPaymentUseCase: ExecuteVanPaymentUseCase,
     private val cancelPendingOrderPaymentUseCase: CancelPendingOrderPaymentUseCase,
     private val compensateOrderPaymentUseCase: CompensateOrderPaymentUseCase,
-    private val consumedEventRepository: ConsumedEventRepository,
+    consumedEventRepository: ConsumedEventRepository,
 ) {
+    private val idempotency = IdempotencyTracker(CONSUMER_NAME, consumedEventRepository)
+
     @KafkaListener(
-        topics = [DomainTopics.ORDER_PAYMENT_REQUESTED],
-        groupId = PAYMENT_REQUESTED_CONSUMER,
+        topics = [DomainTopics.PAYMENT_COMMANDS],
+        groupId = CONSUMER_NAME,
     )
-    fun executeVanPayment(
+    fun handlePaymentCommand(
         payload: String,
         @Header(DomainEventHeaders.EVENT_ID) eventId: String,
+        @Header(DomainEventHeaders.EVENT_TYPE) eventType: String,
     ) {
+        when (eventType) {
+            DomainEventTypes.ORDER_PAYMENT_REQUESTED -> handlePaymentRequested(payload, eventId)
+            DomainEventTypes.ORDER_PAYMENT_CANCELLATION_REQUESTED -> handlePaymentCancellation(payload, eventId)
+            DomainEventTypes.ORDER_PAYMENT_COMPENSATION_REQUESTED -> handlePaymentCompensation(payload, eventId)
+            else -> log.warn("알 수 없는 결제 커맨드 eventType={} eventId={}", eventType, eventId)
+        }
+    }
+
+    private fun handlePaymentRequested(payload: String, eventId: String) {
         val event = objectMapper.readValue<OrderPaymentRequestedEvent>(payload)
         log.info("결제 요청 이벤트 수신 - orderId={} eventId={}", event.orderId, eventId)
         executeVanPaymentUseCase.execute(
             event = event,
-            recordConsumption = { saveConsumedEvent(PAYMENT_REQUESTED_CONSUMER, eventId) },
+            recordConsumption = { recordConsumption(eventId) },
         )
     }
 
-    @KafkaListener(
-        topics = [DomainTopics.ORDER_PAYMENT_CANCELLATION_REQUESTED],
-        groupId = PAYMENT_CANCELLATION_REQUESTED_CONSUMER,
-    )
-    fun cancelPendingPayment(
-        payload: String,
-        @Header(DomainEventHeaders.EVENT_ID) eventId: String,
-    ) {
-        if (isProcessed(PAYMENT_CANCELLATION_REQUESTED_CONSUMER, eventId)) {
+    private fun handlePaymentCancellation(payload: String, eventId: String) {
+        if (idempotency.isProcessed(eventId)) {
             log.info("결제 취소 요청 이벤트 중복 스킵 - eventId={}", eventId)
             return
         }
@@ -59,18 +64,11 @@ class OrderPaymentEventListener(
         val event = objectMapper.readValue<OrderPaymentCancellationRequestedEvent>(payload)
         log.info("결제 취소 요청 이벤트 수신 - orderId={} eventId={}", event.orderId, eventId)
         cancelPendingOrderPaymentUseCase.cancel(event)
-        saveConsumedEvent(PAYMENT_CANCELLATION_REQUESTED_CONSUMER, eventId)
+        recordConsumption(eventId)
     }
 
-    @KafkaListener(
-        topics = [DomainTopics.ORDER_PAYMENT_COMPENSATION_REQUESTED],
-        groupId = PAYMENT_COMPENSATION_REQUESTED_CONSUMER,
-    )
-    fun compensatePayment(
-        payload: String,
-        @Header(DomainEventHeaders.EVENT_ID) eventId: String,
-    ) {
-        if (isProcessed(PAYMENT_COMPENSATION_REQUESTED_CONSUMER, eventId)) {
+    private fun handlePaymentCompensation(payload: String, eventId: String) {
+        if (idempotency.isProcessed(eventId)) {
             log.info("결제 보상 요청 이벤트 중복 스킵 - eventId={}", eventId)
             return
         }
@@ -78,35 +76,15 @@ class OrderPaymentEventListener(
         val event = objectMapper.readValue<OrderPaymentCompensationRequestedEvent>(payload)
         log.info("결제 보상 요청 이벤트 수신 - orderId={} eventId={}", event.orderId, eventId)
         compensateOrderPaymentUseCase.compensate(event)
-        saveConsumedEvent(PAYMENT_COMPENSATION_REQUESTED_CONSUMER, eventId)
+        recordConsumption(eventId)
     }
 
-    private fun isProcessed(consumerName: String, eventId: String): Boolean {
-        return consumedEventRepository.existsById(processedEventId(consumerName, eventId))
-    }
-
-    private fun saveConsumedEvent(consumerName: String, eventId: String) {
-        try {
-            consumedEventRepository.save(
-                ConsumedEventJpaEntity(
-                    id = processedEventId(consumerName, eventId),
-                    consumerName = consumerName,
-                    eventId = eventId,
-                ),
-            )
-        } catch (_: DataIntegrityViolationException) {
-            throw DuplicateEventException()
-        }
-    }
-
-    private fun processedEventId(consumerName: String, eventId: String): String {
-        return "$consumerName:$eventId"
+    private fun recordConsumption(eventId: String) {
+        idempotency.recordOrThrowOnDuplicate(eventId) { throw DuplicateEventException() }
     }
 
     companion object {
         private val log = LoggerFactory.getLogger(OrderPaymentEventListener::class.java)
-        private const val PAYMENT_REQUESTED_CONSUMER = "order-payment-requested-v1"
-        private const val PAYMENT_CANCELLATION_REQUESTED_CONSUMER = "order-payment-cancellation-requested-v1"
-        private const val PAYMENT_COMPENSATION_REQUESTED_CONSUMER = "order-payment-compensation-requested-v1"
+        private const val CONSUMER_NAME = "payment-command-v1"
     }
 }
