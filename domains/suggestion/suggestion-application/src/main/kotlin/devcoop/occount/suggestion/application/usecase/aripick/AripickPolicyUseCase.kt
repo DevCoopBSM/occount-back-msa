@@ -1,6 +1,8 @@
 package devcoop.occount.suggestion.application.usecase.aripick
 
 import devcoop.occount.suggestion.application.output.AripickPolicyRepository
+import devcoop.occount.suggestion.application.shared.AripickBlockedKeywordListResponse
+import devcoop.occount.suggestion.application.shared.AripickBlockedKeywordResponse
 import devcoop.occount.suggestion.domain.aripick.AripickBlockedKeywordAlreadyExistsException
 import devcoop.occount.suggestion.domain.aripick.AripickInvalidBlockedKeywordException
 import org.springframework.dao.DataIntegrityViolationException

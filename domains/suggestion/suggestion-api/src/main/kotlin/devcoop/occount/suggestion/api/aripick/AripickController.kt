@@ -7,8 +7,8 @@ import devcoop.occount.suggestion.application.query.AripickListResponse
 import devcoop.occount.suggestion.application.query.AripickQueryService
 import devcoop.occount.suggestion.application.query.AripickStatsResponse
 import devcoop.occount.suggestion.application.shared.AripickResponse
-import devcoop.occount.suggestion.application.usecase.aripick.AripickBlockedKeywordListResponse
-import devcoop.occount.suggestion.application.usecase.aripick.AripickBlockedKeywordResponse
+import devcoop.occount.suggestion.application.shared.AripickBlockedKeywordListResponse
+import devcoop.occount.suggestion.application.shared.AripickBlockedKeywordResponse
 import devcoop.occount.suggestion.application.usecase.aripick.AripickCommandUseCase
 import devcoop.occount.suggestion.application.usecase.aripick.AripickLikeToggleResponse
 import devcoop.occount.suggestion.application.usecase.aripick.AripickPolicyUseCase
