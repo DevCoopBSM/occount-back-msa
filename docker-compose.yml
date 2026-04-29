@@ -127,6 +127,38 @@ services:
       retries: 5
       start_period: 60s
 
+  suggestion-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_MODULE: "domains:suggestion:suggestion-bootstrap"
+        APP_BUILD_DIR: "domains/suggestion/suggestion-bootstrap/build/libs"
+        APP_JAR_NAME: "suggestion-api.jar"
+    restart: unless-stopped
+    ports:
+      - "8085:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_suggestion?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true&cacheServerConfiguration=true&rewriteBatchedStatements=true&useLocalSessionState=true&elideSetAutoCommits=true&maintainTimeStats=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-bG9jYWxEZXZTZWNyZXRLZXlNdXN0QmVBdExlYXN0MzJDaGFyc0xvbmc=}
+      JWT_ACCESS_EXPIRATION_TIME: ${JWT_ACCESS_EXPIRATION_TIME:-3600000}
+      JWT_KIOSK_EXPIRATION_TIME: ${JWT_KIOSK_EXPIRATION_TIME:-86400000}
+      JWT_PREFIX: ${JWT_PREFIX:-Bearer}
+      JWT_HEADER: ${JWT_HEADER:-Authorization}
+      APP_FOOD_SAFETY: ${APP_FOOD_SAFETY}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://datadog-agent:4318/v1/traces}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v3/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   order-api:
     build:
       context: .
@@ -242,6 +274,7 @@ services:
     environment:
       MEMBER_API_URL: http://member-api:8080
       ITEM_API_URL: http://item-api:8080
+      SUGGESTION_API_URL: http://suggestion-api:8080
       ORDER_API_URL: http://order-api:8080
       PAYMENT_API_URL: http://payment-api:8080
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://datadog-agent:4318/v1/traces}
@@ -254,6 +287,8 @@ services:
       member-api:
         condition: service_healthy
       item-api:
+        condition: service_healthy
+      suggestion-api:
         condition: service_healthy
       order-api:
         condition: service_healthy

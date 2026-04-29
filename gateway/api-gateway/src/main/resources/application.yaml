@@ -37,6 +37,10 @@ spring:
               uri: ${ITEM_API_URL}
               predicates:
                 - Path=/api/v3/items/**
+            - id: suggestion-api
+              uri: ${SUGGESTION_API_URL}
+              predicates:
+                - Path=/api/v3/ari-pick/**
             - id: order-api
               uri: ${ORDER_API_URL}
               predicates:

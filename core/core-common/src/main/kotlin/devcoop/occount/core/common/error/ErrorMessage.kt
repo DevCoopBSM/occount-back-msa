@@ -22,6 +22,12 @@ enum class ErrorMessage(
     ITEM_ALREADY_EXISTS("이미 등록된 상품입니다."),
     ITEM_NOT_SYNCHRONIZED("상품이 토스와 동기화되지 않았습니다."),
     ITEM_CONCURRENT_UPDATE("다른 요청에 의해 상품이 변경되었습니다. 잠시 후 다시 시도해주세요."),
+    ARIPICK_NOT_FOUND("아리픽 제안을 찾을 수 없습니다."),
+    ARIPICK_ACCESS_DENIED("해당 아리픽 제안에 접근할 수 없습니다."),
+    ARIPICK_POLICY_VIOLATION("매점 물품 수칙과 맞지 않습니다."),
+    ARIPICK_INVALID_BLOCKED_KEYWORD("금지 키워드는 비어 있을 수 없습니다."),
+    ARIPICK_BLOCKED_KEYWORD_ALREADY_EXISTS("이미 등록된 금지 키워드입니다."),
+    ARIPICK_FOOD_SAFETY_UNAVAILABLE("식약처 연동에 실패했습니다. 잠시 후 다시 시도해주세요."),
 
 
     ORDER_NOT_FOUND("주문 정보를 찾을 수 없습니다."),

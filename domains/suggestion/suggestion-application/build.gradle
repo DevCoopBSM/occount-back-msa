@@ -1,0 +1,11 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    implementation project(':domains:suggestion:suggestion-domain')
+
+    implementation project(':core:core-common')
+    implementation 'org.springframework:spring-context'
+    implementation 'org.springframework:spring-tx'
+}

@@ -1,0 +1,61 @@
+server:
+  servlet:
+    context-path: /api/v3
+
+spring:
+  application:
+    name: suggestion-api
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true&cacheServerConfiguration=true&rewriteBatchedStatements=true&useLocalSessionState=true&elideSetAutoCommits=true&maintainTimeStats=false
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 6
+      connection-timeout: 3000
+      validation-timeout: 1000
+      initialization-fail-timeout: 60000
+      keepalive-time: 30000
+      max-lifetime: 600000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+
+jwt:
+  access-expiration-time: ${JWT_ACCESS_EXPIRATION_TIME}
+  kiosk-expiration-time: ${JWT_KIOSK_EXPIRATION_TIME}
+  prefix: ${JWT_PREFIX}
+  header: ${JWT_HEADER}
+  secret-key: ${JWT_SECRET_KEY}
+
+toss:
+  api:
+    url: ${OCCOUNT_TOSS_API_URL}
+
+app:
+  food-safety:
+    base-url: ${APP_FOOD_SAFETY}
+  stock-sync:
+    cron: ${APP_STOCK_SYNC_CRON:0 */5 * * * *}
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+  metrics:
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+        "[http.client.requests]": true
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
