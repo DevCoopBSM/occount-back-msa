@@ -36,6 +36,7 @@ def call(Map cfg) {
         }
 
         options {
+            disableConcurrentBuilds()
             timestamps()
             timeout(time: 30, unit: 'MINUTES')
         }
@@ -111,8 +112,13 @@ def call(Map cfg) {
                                 .findAll { changedList.contains(it.name) }
                                 .collect { it.task }
                                 .join(' ')
-                            sh "find /home/gradle/.gradle/caches -name '*.lock' -delete 2>/dev/null || true"
-                            sh "./gradlew ${targets} --no-daemon --parallel"
+                            def gradleHomeKey = (env.JOB_NAME ?: 'default').replaceAll(/[^A-Za-z0-9._-]/, '_')
+                            def gradleUserHome = "/home/gradle/.gradle/jobs/${gradleHomeKey}"
+                            withEnv(["GRADLE_USER_HOME=${gradleUserHome}"]) {
+                                sh "mkdir -p '${gradleUserHome}'"
+                                sh "find '${gradleUserHome}/caches' -name '*.lock' -delete 2>/dev/null || true"
+                                sh "./gradlew ${targets} --no-daemon --parallel"
+                            }
                         }
                     }
                 }
