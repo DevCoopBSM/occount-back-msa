@@ -149,7 +149,7 @@ paths:
       operationId: getPreOrderInfo
       summary: 주문 전 회원 정보 조회
       description: |
-        주문 화면 진입 시 회원 이름과 보유 포인트를 반환합니다. (AUTHENTICATED)
+        주문 화면 진입 시 회원 이름을 반환합니다. (AUTHENTICATED)
       security:
         - BearerAuth: []
       responses:
@@ -161,6 +161,27 @@ paths:
                 $ref: '#/components/schemas/UserPreOrderInfoResponse'
               example:
                 username: "홍길동"
+        "401":
+          description: 인증 실패
+
+  /api/v3/users/barcode:
+    get:
+      tags: [Member]
+      operationId: getUserBarcode
+      summary: 회원 바코드 조회
+      description: |
+        로그인한 회원의 바코드를 반환합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarcodeResponse'
+              example:
+                userBarcode: "BARCODE123"
         "401":
           description: 인증 실패
 
@@ -997,6 +1018,14 @@ components:
         username:
           type: string
           description: 회원 이름
+
+    UserBarcodeResponse:
+      type: object
+      properties:
+        userBarcode:
+          type: string
+          nullable: true
+          description: 회원 바코드
 
     # ── Item ───────────────────────────────────────
     ItemListResponse:
