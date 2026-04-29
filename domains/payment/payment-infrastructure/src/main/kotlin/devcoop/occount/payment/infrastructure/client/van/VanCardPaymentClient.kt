@@ -29,19 +29,52 @@ class VanCardPaymentClient(
         transactionId: String?,
         approvalNumber: String?,
         approvalDate: String,
+        terminalId: String?,
         amount: Int,
         kioskId: String,
     ): VanResult {
         if (approvalNumber == null) throw InvalidPaymentRequestException()
-        log.info("카드환불 요청 - 키오스크: {}, 승인번호: {}, 금액: {}원", kioskId, approvalNumber, amount)
-        return execute("카드환불") {
+        log.info("무카드 취소 요청 - 키오스크: {}, 승인번호: {}, 금액: {}원", kioskId, approvalNumber, amount)
+        val originalTerminalId = terminalId
+        val normalizedDate = normalizeOriginalTransactionDate(approvalDate)
+        val originalSequence = extractOriginalTransactionSequence(originalTerminalId)
+        val maskedApproval = maskApprovalNumber(approvalNumber)
+        log.info("무카드 취소 처리 - 승인번호(마스킹): {}", maskedApproval)
+        return execute("무카드 취소") {
             vanTerminalRegistry.get(kioskId).refund(
                 approvalNumber = approvalNumber,
-                approvalDate = approvalDate,
+                approvalDate = normalizedDate,
+                terminalSequence = originalSequence,
                 amount = amount,
             )
         }
     }
+
+    private fun normalizeOriginalTransactionDate(approvalDate: String): String {
+        val digits = approvalDate.filter { it.isDigit() }
+        if (digits.length == 6) return digits
+        if (digits.length == 8) return digits.substring(digits.length - 6)
+        throw InvalidPaymentRequestException()
+    }
+
+    private fun extractOriginalTransactionSequence(terminalId: String?): String {
+        if (terminalId == null) {
+            throw InvalidPaymentRequestException()
+        }
+        val digits = terminalId.filter { it.isDigit() }
+        if (digits.length < ORIGINAL_TRANSACTION_SEQUENCE_LENGTH) {
+            throw InvalidPaymentRequestException()
+        }
+        return digits.substring(digits.length - ORIGINAL_TRANSACTION_SEQUENCE_LENGTH)
+    }
+
+    private fun maskApprovalNumber(approvalNumber: String?): String {
+        if (approvalNumber == null) return ""
+        val visible = approvalNumber.takeLast(APPROVAL_NUMBER_VISIBLE_SUFFIX_LENGTH)
+        val stars = approvalNumber.length - APPROVAL_NUMBER_VISIBLE_SUFFIX_LENGTH
+        return ("${MASK.repeat(stars.coerceAtLeast(0))}$visible")
+    }
+
 
     override fun requestPendingApprovalCancellation(paymentKey: Long, kioskId: String) {
         vanTerminalRegistry.get(kioskId).requestPendingApprovalCancellation(paymentKey)
@@ -77,5 +110,11 @@ class VanCardPaymentClient(
             null -> throw InvalidPaymentRequestException()
             else -> throw InvalidPaymentRequestException()
         }
+    }
+
+    companion object {
+        private const val ORIGINAL_TRANSACTION_SEQUENCE_LENGTH = 4
+        private const val APPROVAL_NUMBER_VISIBLE_SUFFIX_LENGTH = 4
+        private const val MASK = "*"
     }
 }

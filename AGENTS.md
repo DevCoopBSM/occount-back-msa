@@ -100,6 +100,14 @@ For pull requests:
 - `domains/payment/payment-api/.../WalletController.kt`
 - `gateway/api-gateway/.../AuthenticationPolicy.kt` (인증 정책 변경 시)
 
+## 외부 프로토콜 전문 데이터 취급 규칙 (엄격)
+
+- VAN사 등 외부 프로토콜의 실제 전문 값(STX/ETX hex 코드, 서비스 타입 코드, 구분자, 승인 번호 등)을 소스 코드나 테스트 코드에 **하드코딩하지 않는다**.
+    - 실제 값은 환경변수(`System.getenv()`)나 외부 설정으로만 주입한다.
+    - 테스트에서도 `env()` 패턴을 사용해 CI에서 환경변수로 제공받도록 작성한다.
+    - `VanTestFixtures` 같은 테스트 픽스처 객체에 실제 프로토콜 값을 넣지 않는다. 더미 값을 사용해야 한다.
+- 위반 시 보안/비즈니스 계약상 심각한 문제가 될 수 있으므로 코드 리뷰에서 반드시 확인한다.
+
 ## Security & Configuration Tips
 - Copy `.env.example` when preparing local configuration.
 - Do not commit secrets from `.env`.

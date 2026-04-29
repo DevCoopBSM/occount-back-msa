@@ -459,4 +459,46 @@ class OrderUseCaseFlowTest {
         const val ITEM_ID = 101L
         const val KIOSK_ID = "kiosk-1"
     }
+
+    @Test
+    fun `stock failure requests payment compensation after payment completion event succeeds`() {
+        val orderRepository = FakeOrderRepository(
+            initialOrder = orderFixture(),
+        )
+        val eventPublisher = FakeEventPublisher()
+        val handleOrderPaymentEventUseCase = handleOrderPaymentEventUseCase(orderRepository, eventPublisher)
+        val handleOrderStockEventUseCase = handleOrderStockEventUseCase(orderRepository, eventPublisher)
+        val sweeper = compensationSweeper(orderRepository, eventPublisher)
+
+        handleOrderPaymentEventUseCase.applyCompletedPayment(
+            PaymentCompletedEvent(
+                orderId = ORDER_ID,
+                userId = USER_ID,
+                paymentLogId = 10L,
+                pointsUsed = 500,
+                cardAmount = 1500,
+                totalAmount = 2000,
+                transactionId = "tx-1",
+                approvalNumber = "ap-1",
+            ),
+            recordConsumption = {},
+        )
+
+        handleOrderStockEventUseCase.applyFailedStock(
+            ItemStockDecreaseFailedEvent(
+                orderId = ORDER_ID,
+                reason = "out of stock",
+            ),
+            recordConsumption = {},
+        )
+        sweeper.sweep()
+
+        val publishedEvent = eventPublisher.published.last().payload
+        val compensationEvent = assertInstanceOf(OrderPaymentCompensationRequestedEvent::class.java, publishedEvent)
+        assertEquals(10L, compensationEvent.paymentLogId)
+        assertEquals(500, compensationEvent.pointsUsed)
+        assertEquals(1500, compensationEvent.cardAmount)
+        assertEquals(OrderStatus.COMPENSATING, orderRepository.findById(ORDER_ID)!!.status)
+        assertEquals(true, orderRepository.findById(ORDER_ID)!!.paymentCompensationRequested)
+    }
 }

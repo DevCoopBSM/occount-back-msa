@@ -61,6 +61,9 @@ class CompensateOrderPaymentUseCaseTest {
         )
 
         assertEquals(1, cardPaymentPort.refundRequests.size)
+        // Verify refund request contains expected approvalDate and terminalId
+        assertEquals("20260312", cardPaymentPort.refundRequests.single().approvalDate)
+        assertEquals("267733358", cardPaymentPort.refundRequests.single().terminalId)
         assertEquals(1, chargeLogRepository.saved.size)
         assertEquals(1000, walletRepository.findByUserId(1L)?.point)
         assertIs<PaymentCompensatedEvent>(eventPublisher.published.single())
@@ -142,6 +145,7 @@ class CompensateOrderPaymentUseCaseTest {
             transactionId = "TX-1",
             approvalNumber = "APPROVAL-1",
             approvalDate = "20260312",
+            terminalId = "267733358",
         ),
     ): PaymentLog {
         return PaymentLog(
@@ -194,15 +198,15 @@ class CompensateOrderPaymentUseCaseTest {
     private class FakeCardPaymentPort(
         private val refundError: Exception? = null,
     ) : CardPaymentPort {
-        val refundRequests = mutableListOf<Pair<Int, String>>()
+        val refundRequests = mutableListOf<RefundRequest>()
 
         override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: Long?): VanResult {
             error("not used in this test")
         }
 
-        override fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int, kioskId: String): VanResult {
+        override fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, terminalId: String?, amount: Int, kioskId: String): VanResult {
             refundError?.let { throw it }
-            refundRequests += amount to kioskId
+            refundRequests += RefundRequest(transactionId, approvalNumber, approvalDate, terminalId, amount, kioskId)
             return VanResult(
                 success = true,
                 message = "ok",
@@ -226,4 +230,13 @@ class CompensateOrderPaymentUseCaseTest {
             published += payload
         }
     }
+
+    private data class RefundRequest(
+        val transactionId: String?,
+        val approvalNumber: String?,
+        val approvalDate: String,
+        val terminalId: String?,
+        val amount: Int,
+        val kioskId: String,
+    )
 }

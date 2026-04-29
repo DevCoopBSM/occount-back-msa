@@ -14,6 +14,8 @@ class VanMessageParserTest {
     private val parser = VanTestFixtures.messageParser()
     private val recordSeparator = VanTestFixtures.recordSeparatorChar
 
+    private fun env(name: String): String = System.getenv(name).orEmpty()
+
     @Test
     fun `승인 응답을 VanResult로 파싱한다`() {
         val response = buildResponse(
@@ -46,7 +48,8 @@ class VanMessageParserTest {
         assertEquals("정상승인 완료", result.message)
         assertEquals("7010", result.transaction?.messageNumber)
         assertEquals(0, result.transaction?.installmentMonths)
-        assertEquals("12345678", result.transaction?.approvalNumber)
+    assertEquals("12345678", result.transaction?.approvalNumber)
+    assertEquals("20260420", result.transaction?.approvalDate)
         assertEquals("876543210123", result.transaction?.transactionId)
         assertEquals("12345678", result.transaction?.terminalId)
         assertEquals("99887766554433", result.transaction?.merchantNumber)
@@ -55,6 +58,51 @@ class VanMessageParserTest {
         assertEquals("테스트카드", result.card?.issuerName)
         assertEquals("0007", result.card?.issuerCode)
         assertEquals("APPROVED", result.additional?.approvalStatus)
+    }
+
+    @Test
+    fun `취소 응답은 승인번호가 없어도 성공으로 파싱한다`() {
+        val cancelParser = cancelParser()
+        val response = buildResponse(
+            header = "00842102",
+            "0203",
+            "55554444****111*",
+            "1000",
+            "90",
+            "0",
+            "00",
+            "267733358",
+            "20260420",
+            "201936",
+            "876543210123",
+            "0011223344",
+            "99887766554433",
+            "0300테스트카드체크",
+            "0007테스트카드",
+            "1",
+            "00",
+            "IC신용취소",
+            "테스트포인트잔여:0",
+        )
+
+        val result = cancelParser.parsePaymentResponse(response)
+
+        assertNotNull(result)
+        assertTrue(result.success)
+        assertEquals("정상취소 완료", result.message)
+        assertEquals("20260420", result.transaction?.approvalDate)
+        assertEquals("267733358", result.transaction?.terminalId)
+        assertEquals("CANCELLED", result.additional?.approvalStatus)
+    }
+
+    private fun cancelParser(): VanMessageParser {
+        val cancelProtocolCodes = VanProtocolCodes(
+            cancelMessageType = env("VAN_PROTOCOL_CODES_CANCEL_MESSAGE_TYPE"),
+            rejectStatusPrefix = env("VAN_PROTOCOL_CODES_REJECT_STATUS_PREFIX"),
+            cardInsertKeyword = env("VAN_PROTOCOL_CODES_CARD_INSERT_KEYWORD"),
+        )
+        val cancelResponseParser = VanResponseParser(protocolSpec, cancelProtocolCodes)
+        return VanMessageParser(protocolSpec, cancelResponseParser)
     }
 
     @Test
@@ -124,3 +172,5 @@ class VanMessageParserTest {
         return (toInt() and 0xff).toChar()
     }
 }
+
+// Cancel test and helper moved into the test class to access protocolSpec and env helper

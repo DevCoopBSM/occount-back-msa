@@ -59,6 +59,7 @@ class CompensateOrderPaymentUseCase(
                     transactionId = transactionInfo.transactionId(),
                     approvalNumber = transactionInfo.approvalNumber(),
                     approvalDate = approvalDate,
+                    terminalId = transactionInfo.terminalId(),
                     amount = event.cardAmount,
                     kioskId = event.kioskId,
                 )
