@@ -234,6 +234,7 @@ class AripickCommandUseCaseTest {
     ): AripickCommandUseCase {
         return AripickCommandUseCase(
             aripickRepository = repository,
+            aripickPolicyRepository = policyRepository,
             foodSafetyRepository = foodSafetyRepository,
             aripickMapper = AripickMapper(),
             blockedKeywordMatcher = AhoCorasickKeywordMatcher(policyRepository),
