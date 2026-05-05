@@ -1,8 +1,8 @@
 package devcoop.occount.suggestion.application.usecase.aripick
 
 import devcoop.occount.suggestion.application.output.AripickRepository
-import devcoop.occount.suggestion.application.output.AripickPolicyRepository
 import devcoop.occount.suggestion.application.output.FoodSafetyRepository
+import devcoop.occount.suggestion.application.shared.AhoCorasickKeywordMatcher
 import devcoop.occount.suggestion.application.shared.AripickMapper
 import devcoop.occount.suggestion.application.shared.AripickResponse
 import devcoop.occount.suggestion.domain.aripick.AripickAccessDeniedException
@@ -17,9 +17,9 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class AripickCommandUseCase(
     private val aripickRepository: AripickRepository,
-    private val aripickPolicyRepository: AripickPolicyRepository,
     private val foodSafetyRepository: FoodSafetyRepository,
     private val aripickMapper: AripickMapper,
+    private val blockedKeywordMatcher: AhoCorasickKeywordMatcher,
 ) {
     fun create(
         request: CreateAripickRequest,
@@ -32,7 +32,7 @@ class AripickCommandUseCase(
             throw AripickPolicyViolationException()
         }
 
-        if (aripickPolicyRepository.hasBlockedKeyword(detail.name)) {
+        if (blockedKeywordMatcher.contains(detail.name)) {
             throw AripickPolicyViolationException()
         }
 

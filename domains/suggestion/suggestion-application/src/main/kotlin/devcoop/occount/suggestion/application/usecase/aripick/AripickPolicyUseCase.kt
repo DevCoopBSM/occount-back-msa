@@ -1,6 +1,7 @@
 package devcoop.occount.suggestion.application.usecase.aripick
 
 import devcoop.occount.suggestion.application.output.AripickPolicyRepository
+import devcoop.occount.suggestion.application.shared.AhoCorasickKeywordMatcher
 import devcoop.occount.suggestion.application.shared.AripickBlockedKeywordListResponse
 import devcoop.occount.suggestion.application.shared.AripickBlockedKeywordResponse
 import devcoop.occount.suggestion.domain.aripick.AripickBlockedKeywordAlreadyExistsException
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service
 @Service
 class AripickPolicyUseCase(
     private val aripickPolicyRepository: AripickPolicyRepository,
+    private val blockedKeywordMatcher: AhoCorasickKeywordMatcher,
 ) {
     fun getBlockedKeywords(): AripickBlockedKeywordListResponse {
         val keywords = aripickPolicyRepository.findBlockedKeywords()
@@ -37,6 +39,7 @@ class AripickPolicyUseCase(
         } catch (ex: DataIntegrityViolationException) {
             throw AripickBlockedKeywordAlreadyExistsException()
         }
+        blockedKeywordMatcher.refresh()
         return AripickBlockedKeywordResponse(
             keywordId = saved.getKeywordId(),
             keyword = saved.getKeyword(),
@@ -46,5 +49,6 @@ class AripickPolicyUseCase(
 
     fun unblockKeyword(keywordId: Long) {
         aripickPolicyRepository.deleteBlockedKeyword(keywordId)
+        blockedKeywordMatcher.refresh()
     }
 }
