@@ -24,20 +24,17 @@ class AripickCommandUseCaseTest {
     fun `create stores proposal with requester as proposer`() {
         val repository = FakeAripickRepository()
         val policyRepository = FakeAripickPolicyRepository()
-        val useCase = createUseCase(
-            repository,
-            policyRepository,
-            FakeFoodSafetyRepository(
-                detailsByTypeNSeq = mapOf(
-                    14116L to FoodSafetyProductDetail(14116L, "신라면 큰사발면", true),
-                ),
+        val useCase = AripickCommandUseCase(
+            aripickRepository = repository,
+            aripickPolicyRepository = policyRepository,
+            foodSafetyRepository = FakeFoodSafetyRepository(
+                detailsByTypeNSeq = mapOf(14116L to FoodSafetyProductDetail(14116L, "신라면 큰사발면", true)),
             ),
+            aripickMapper = AripickMapper(),
+            blockedKeywordMatcher = AhoCorasickKeywordMatcher(policyRepository),
         )
 
-        val result = useCase.create(
-            request = CreateAripickRequest(typeNSeq = 14116L, reason = "원함"),
-            proposerId = 7L,
-        )
+        val result = useCase.create(CreateAripickRequest(14116L, "원함"), 7L)
 
         assertEquals(1L, result.proposalId)
         assertEquals(7L, result.proposerId)
@@ -47,78 +44,85 @@ class AripickCommandUseCaseTest {
 
     @Test
     fun `create throws when food safety result is not allowed`() {
-        val useCase = createUseCase(
-            FakeAripickRepository(),
-            FakeAripickPolicyRepository(),
-            FakeFoodSafetyRepository(
-                detailsByTypeNSeq = mapOf(
-                    14116L to FoodSafetyProductDetail(14116L, "신라면 큰사발면", false),
-                ),
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(
+            aripickRepository = FakeAripickRepository(),
+            aripickPolicyRepository = policyRepository,
+            foodSafetyRepository = FakeFoodSafetyRepository(
+                detailsByTypeNSeq = mapOf(14116L to FoodSafetyProductDetail(14116L, "신라면 큰사발면", false)),
             ),
+            aripickMapper = AripickMapper(),
+            blockedKeywordMatcher = AhoCorasickKeywordMatcher(policyRepository),
         )
 
-        assertThrows(AripickPolicyViolationException::class.java) {
-            useCase.create(CreateAripickRequest(14116L, "원함"), 7L)
-        }
+        assertThrows(AripickPolicyViolationException::class.java) { useCase.create(CreateAripickRequest(14116L, "원함"), 7L) }
     }
 
     @Test
     fun `create throws when product name contains blocked keyword`() {
-        val useCase = createUseCase(
-            FakeAripickRepository(),
-            FakeAripickPolicyRepository(initialKeywords = listOf(AripickBlockedKeyword(1L, "에너지"))),
-            FakeFoodSafetyRepository(
-                detailsByTypeNSeq = mapOf(
-                    14116L to FoodSafetyProductDetail(14116L, "에너지 드링크 제로", true),
-                ),
+        val policyRepository = FakeAripickPolicyRepository(initialKeywords = listOf(AripickBlockedKeyword(1L, "에너지")))
+        val useCase = AripickCommandUseCase(
+            aripickRepository = FakeAripickRepository(),
+            aripickPolicyRepository = policyRepository,
+            foodSafetyRepository = FakeFoodSafetyRepository(
+                detailsByTypeNSeq = mapOf(14116L to FoodSafetyProductDetail(14116L, "에너지 드링크 제로", true)),
             ),
+            aripickMapper = AripickMapper(),
+            blockedKeywordMatcher = AhoCorasickKeywordMatcher(policyRepository),
         )
 
-        assertThrows(AripickPolicyViolationException::class.java) {
-            useCase.create(CreateAripickRequest(14116L, "원함"), 7L)
-        }
+        assertThrows(AripickPolicyViolationException::class.java) { useCase.create(CreateAripickRequest(14116L, "원함"), 7L) }
     }
 
     @Test
     fun `create throws when food safety service is unavailable`() {
-        val useCase = createUseCase(
-            FakeAripickRepository(),
-            FakeAripickPolicyRepository(),
-            FakeFoodSafetyRepository(throwOnDetail = AripickFoodSafetyUnavailableException()),
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(
+            aripickRepository = FakeAripickRepository(),
+            aripickPolicyRepository = policyRepository,
+            foodSafetyRepository = FakeFoodSafetyRepository(throwOnDetail = AripickFoodSafetyUnavailableException()),
+            aripickMapper = AripickMapper(),
+            blockedKeywordMatcher = AhoCorasickKeywordMatcher(policyRepository),
         )
 
-        assertThrows(AripickFoodSafetyUnavailableException::class.java) {
-            useCase.create(CreateAripickRequest(14116L, "원함"), 7L)
-        }
+        assertThrows(AripickFoodSafetyUnavailableException::class.java) { useCase.create(CreateAripickRequest(14116L, "원함"), 7L) }
     }
 
     @Test
     fun `create throws when food safety detail is missing`() {
-        val useCase = createUseCase(
-            FakeAripickRepository(),
-            FakeAripickPolicyRepository(),
-            FakeFoodSafetyRepository(detailsByTypeNSeq = emptyMap()),
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(
+            aripickRepository = FakeAripickRepository(),
+            aripickPolicyRepository = policyRepository,
+            foodSafetyRepository = FakeFoodSafetyRepository(detailsByTypeNSeq = emptyMap()),
+            aripickMapper = AripickMapper(),
+            blockedKeywordMatcher = AhoCorasickKeywordMatcher(policyRepository),
         )
 
-        assertThrows(AripickFoodSafetyUnavailableException::class.java) {
-            useCase.create(CreateAripickRequest(14116L, "원함"), 7L)
-        }
+        assertThrows(AripickFoodSafetyUnavailableException::class.java) { useCase.create(CreateAripickRequest(14116L, "원함"), 7L) }
     }
 
     @Test
     fun `approve changes status to approved`() {
         val repository = FakeAripickRepository(initialItems = listOf(aripickFixture(proposalId = 1L)))
-        val useCase = createUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(
+            aripickRepository = repository,
+            aripickPolicyRepository = policyRepository,
+            foodSafetyRepository = FakeFoodSafetyRepository(),
+            aripickMapper = AripickMapper(),
+            blockedKeywordMatcher = AhoCorasickKeywordMatcher(policyRepository),
+        )
 
         val result = useCase.approve(1L)
-
         assertEquals(AripickStatus.APPROVED, result.status)
     }
 
     @Test
     fun `approve throws when status update fails`() {
         val repository = FakeAripickRepository(initialItems = listOf(aripickFixture(1L)), statusUpdateFailIds = setOf(1L))
-        val useCase = createUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(repository, policyRepository, FakeFoodSafetyRepository(), AripickMapper(), AhoCorasickKeywordMatcher(policyRepository))
 
         assertThrows(AripickNotFoundException::class.java) { useCase.approve(1L) }
     }
@@ -126,17 +130,18 @@ class AripickCommandUseCaseTest {
     @Test
     fun `reject changes status to rejected`() {
         val repository = FakeAripickRepository(initialItems = listOf(aripickFixture(1L)))
-        val useCase = createUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(repository, policyRepository, FakeFoodSafetyRepository(), AripickMapper(), AhoCorasickKeywordMatcher(policyRepository))
 
         val result = useCase.reject(1L)
-
         assertEquals(AripickStatus.REJECTED, result.status)
     }
 
     @Test
     fun `delete throws when requester is not proposer`() {
         val repository = FakeAripickRepository(initialItems = listOf(aripickFixture(1L, proposerId = 2L)))
-        val useCase = createUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(repository, policyRepository, FakeFoodSafetyRepository(), AripickMapper(), AhoCorasickKeywordMatcher(policyRepository))
 
         assertThrows(AripickAccessDeniedException::class.java) { useCase.delete(1L, 9L) }
     }
@@ -147,7 +152,8 @@ class AripickCommandUseCaseTest {
             saveLikeIfAbsent(1L, 7L)
             saveLikeIfAbsent(1L, 8L)
         }
-        val useCase = createUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(repository, policyRepository, FakeFoodSafetyRepository(), AripickMapper(), AhoCorasickKeywordMatcher(policyRepository))
 
         useCase.delete(1L, 7L)
 
@@ -159,7 +165,8 @@ class AripickCommandUseCaseTest {
     @Test
     fun `delete as admin removes proposal regardless of proposer`() {
         val repository = FakeAripickRepository(initialItems = listOf(aripickFixture(1L, proposerId = 99L)))
-        val useCase = createUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(repository, policyRepository, FakeFoodSafetyRepository(), AripickMapper(), AhoCorasickKeywordMatcher(policyRepository))
 
         useCase.deleteAsAdmin(1L)
 
@@ -169,7 +176,8 @@ class AripickCommandUseCaseTest {
     @Test
     fun `toggle like stores like and increments count when not liked`() {
         val repository = FakeAripickRepository(initialItems = listOf(aripickFixture(1L, like = 0)))
-        val useCase = createUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(repository, policyRepository, FakeFoodSafetyRepository(), AripickMapper(), AhoCorasickKeywordMatcher(policyRepository))
 
         val result = useCase.toggleLike(1L, 7L)
 
@@ -183,7 +191,8 @@ class AripickCommandUseCaseTest {
         val repository = FakeAripickRepository(initialItems = listOf(aripickFixture(1L, like = 1))).apply {
             saveLikeIfAbsent(1L, 7L)
         }
-        val useCase = createUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(repository, policyRepository, FakeFoodSafetyRepository(), AripickMapper(), AhoCorasickKeywordMatcher(policyRepository))
 
         val result = useCase.toggleLike(1L, 7L)
 
@@ -195,7 +204,8 @@ class AripickCommandUseCaseTest {
     @Test
     fun `toggle like throws when increment count update fails`() {
         val repository = FakeAripickRepository(initialItems = listOf(aripickFixture(1L, like = 0)), increaseLikeCountFailIds = setOf(1L))
-        val useCase = createUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(repository, policyRepository, FakeFoodSafetyRepository(), AripickMapper(), AhoCorasickKeywordMatcher(policyRepository))
 
         assertThrows(AripickNotFoundException::class.java) { useCase.toggleLike(1L, 7L) }
     }
@@ -205,7 +215,8 @@ class AripickCommandUseCaseTest {
         val repository = FakeAripickRepository(initialItems = listOf(aripickFixture(1L, like = 1)), decreaseLikeCountFailIds = setOf(1L)).apply {
             saveLikeIfAbsent(1L, 7L)
         }
-        val useCase = createUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(repository, policyRepository, FakeFoodSafetyRepository(), AripickMapper(), AhoCorasickKeywordMatcher(policyRepository))
 
         assertThrows(AripickNotFoundException::class.java) { useCase.toggleLike(1L, 7L) }
     }
@@ -213,7 +224,8 @@ class AripickCommandUseCaseTest {
     @Test
     fun `pending changes status to pending`() {
         val repository = FakeAripickRepository(initialItems = listOf(aripickFixture(1L, status = AripickStatus.APPROVED)))
-        val useCase = createUseCase(repository, FakeAripickPolicyRepository(), FakeFoodSafetyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(repository, policyRepository, FakeFoodSafetyRepository(), AripickMapper(), AhoCorasickKeywordMatcher(policyRepository))
 
         val result = useCase.pending(1L)
 
@@ -222,22 +234,15 @@ class AripickCommandUseCaseTest {
 
     @Test
     fun `command throws when proposal does not exist`() {
-        val useCase = createUseCase(FakeAripickRepository(), FakeAripickPolicyRepository(), FakeFoodSafetyRepository())
-
-        assertThrows(AripickNotFoundException::class.java) { useCase.approve(100L) }
-    }
-
-    private fun createUseCase(
-        repository: FakeAripickRepository,
-        policyRepository: FakeAripickPolicyRepository,
-        foodSafetyRepository: FakeFoodSafetyRepository,
-    ): AripickCommandUseCase {
-        return AripickCommandUseCase(
-            aripickRepository = repository,
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickCommandUseCase(
+            aripickRepository = FakeAripickRepository(),
             aripickPolicyRepository = policyRepository,
-            foodSafetyRepository = foodSafetyRepository,
+            foodSafetyRepository = FakeFoodSafetyRepository(),
             aripickMapper = AripickMapper(),
             blockedKeywordMatcher = AhoCorasickKeywordMatcher(policyRepository),
         )
+
+        assertThrows(AripickNotFoundException::class.java) { useCase.approve(100L) }
     }
 }
