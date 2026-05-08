@@ -8,6 +8,7 @@ import devcoop.occount.payment.domain.payment.CardType
  */
 data class VanRawResponse(
     private val protocolCodes: VanProtocolCodes,
+    private val recordSeparator: Char,
     val serviceType: String?,
     val typeCode: String?,
     val cardNumber: String?,
@@ -41,8 +42,8 @@ data class VanRawResponse(
     }
 
     fun getApprovalInfo(): Pair<String?, String?> {
-        val statusAndApproval = status?.split('\u001e') // Record Separator
-        val icCreditAndApproval = icCredit?.split('\u001e')
+        val statusAndApproval = status?.split(recordSeparator)
+        val icCreditAndApproval = icCredit?.split(recordSeparator)
         return Pair(
             statusAndApproval?.firstOrNull() ?: status,
             icCreditAndApproval?.getOrNull(1)?.takeIf { it.isNotBlank() }
@@ -66,8 +67,8 @@ data class VanRawResponse(
     }
 
     fun getRejectionReason(): String {
-        return icCredit?.split('\u001e')?.getOrNull(1)
-            ?: status?.split('\u001e')?.getOrNull(1)
+        return icCredit?.split(recordSeparator)?.getOrNull(1)
+            ?: status?.split(recordSeparator)?.getOrNull(1)
             ?: "알 수 없는 거절 사유"
     }
 }

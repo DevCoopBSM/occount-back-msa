@@ -1,8 +1,8 @@
 package devcoop.occount.member.api.user
 
 import devcoop.occount.core.common.auth.RequestAuthPrincipalResolver
-import devcoop.occount.member.application.usecase.query.UserPreOrderInfoResponse
-import devcoop.occount.member.application.usecase.query.UserQueryService
+import devcoop.occount.member.application.query.UserPreOrderInfoResponse
+import devcoop.occount.member.application.query.UserQueryService
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping

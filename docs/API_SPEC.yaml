@@ -31,6 +31,8 @@ tags:
     description: 회원 정보 조회
   - name: Item
     description: 상품 조회 및 관리
+  - name: AriPick
+    description: 아리픽 제안 등록/조회/승인/거절/좋아요
   - name: Order
     description: 주문 생성 및 취소
   - name: Wallet
@@ -114,10 +116,10 @@ paths:
             schema:
               $ref: '#/components/schemas/MemberRegisterRequest'
             example:
-              userCiNumber: "CI1234567890"
-              userName: "홍길동"
-              userPhone: "010-1234-5678"
-              userEmail: "hong@example.com"
+              user_ci_number: "CI1234567890"
+              username: "홍길동"
+              user_phone: "010-1234-5678"
+              user_email: "hong@example.com"
               password: "pass1234"
       responses:
         "201":
@@ -179,8 +181,8 @@ paths:
             schema:
               $ref: '#/components/schemas/KioskLoginRequest'
             example:
-              userBarcode: "20240001"
-              userPin: "1234"
+              user_barcode: "20240001"
+              user_pin: "1234"
       responses:
         "201":
           description: 로그인 성공
@@ -220,7 +222,6 @@ paths:
                 $ref: '#/components/schemas/UserPreOrderInfoResponse'
               example:
                 username: "홍길동"
-                point: 3500
         "401":
           description: 인증 실패
 
@@ -304,6 +305,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ItemLookupListResponse'
+
+  /api/v3/items/search:
+    get:
+      tags: [Item]
+      operationId: searchItems
+      summary: 상품명 풀텍스트 검색
+      description: |
+        MySQL ngram FULLTEXT 인덱스로 상품명을 검색합니다. 활성 상품만 relevance 내림차순으로 반환합니다. (PERMIT_ALL)
+
+        - 빈/공백 쿼리는 빈 배열을 반환합니다.
+        - boolean-mode 메타문자(`+ - > < ( ) ~ * " @`)는 sanitize됩니다.
+        - ngram_token_size(기본 2) 미만 길이의 쿼리는 결과가 없습니다.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 검색어
+          schema:
+            type: string
+          example: "초코"
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemListResponse'
 
   /api/v3/items/without-barcode:
     get:
@@ -402,6 +430,330 @@ paths:
           description: 상품을 찾을 수 없음
 
   # ───────────────────────────────────────────────
+  # AriPick
+  # ───────────────────────────────────────────────
+  /api/v3/ari-pick:
+    get:
+      tags: [AriPick]
+      operationId: getAripickList
+      summary: 아리픽 제안 목록 조회
+      description: 제안 목록을 조회합니다. (PERMIT_ALL)
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickListResponse'
+
+    post:
+      tags: [AriPick]
+      operationId: createAripick
+      summary: 아리픽 제안 등록
+      description: 로그인 사용자가 식약처 typeNSeq 기반으로 제안을 등록합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAripickRequest'
+      responses:
+        "201":
+          description: 등록 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickResponse'
+        "400":
+          description: 매점 물품 수칙 위반
+        "503":
+          description: 식약처 연동 실패
+        "401":
+          description: 인증 실패
+
+  /api/v3/ari-pick/foods:
+    get:
+      tags: [AriPick]
+      operationId: searchAripickFoods
+      summary: 아리픽 식품 검색
+      description: 키워드로 식약처 제품명을 검색합니다. (PERMIT_ALL)
+      parameters:
+        - name: keyword
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 검색 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickFoodSearchResponse'
+        "503":
+          description: 식약처 연동 실패
+
+  /api/v3/ari-pick/blocked-keywords:
+    get:
+      tags: [AriPick]
+      operationId: getAripickBlockedKeywords
+      summary: 아리픽 금지 키워드 목록
+      description: 관리자가 등록된 금지 키워드를 조회합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickBlockedKeywordListResponse'
+        "403":
+          description: 관리자 권한 없음
+
+    post:
+      tags: [AriPick]
+      operationId: createAripickBlockedKeyword
+      summary: 아리픽 금지 키워드 등록
+      description: 관리자가 금지 키워드를 등록합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAripickBlockedKeywordRequest'
+      responses:
+        "201":
+          description: 등록 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickBlockedKeywordResponse'
+        "400":
+          description: 금지 키워드가 비어 있음
+        "409":
+          description: 이미 등록된 금지 키워드
+        "403":
+          description: 관리자 권한 없음
+
+  /api/v3/ari-pick/blocked-keywords/{keywordId}:
+    delete:
+      tags: [AriPick]
+      operationId: deleteAripickBlockedKeyword
+      summary: 아리픽 금지 키워드 삭제
+      description: 관리자가 금지 키워드를 삭제합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: keywordId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: 삭제 성공
+        "403":
+          description: 관리자 권한 없음
+
+  /api/v3/ari-pick/{proposalId}:
+    get:
+      tags: [AriPick]
+      operationId: getAripick
+      summary: 아리픽 제안 단일 조회
+      description: proposalId로 단일 제안을 조회합니다. (PERMIT_ALL)
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickResponse'
+        "404":
+          description: 제안을 찾을 수 없음
+
+    delete:
+      tags: [AriPick]
+      operationId: deleteAripickByUser
+      summary: 아리픽 제안 삭제 (작성자)
+      description: 로그인 사용자가 본인 제안을 삭제합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: 삭제 성공
+        "401":
+          description: 인증 실패
+        "403":
+          description: 본인 제안이 아님
+        "404":
+          description: 제안을 찾을 수 없음
+
+  /api/v3/ari-pick/{proposalId}/approve:
+    patch:
+      tags: [AriPick]
+      operationId: approveAripick
+      summary: 아리픽 제안 승인
+      description: 제안을 승인 상태로 변경합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 승인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickResponse'
+        "403":
+          description: 관리자 권한 없음
+        "404":
+          description: 제안을 찾을 수 없음
+
+  /api/v3/ari-pick/{proposalId}/reject:
+    patch:
+      tags: [AriPick]
+      operationId: rejectAripick
+      summary: 아리픽 제안 거절
+      description: 제안을 거절 상태로 변경합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 거절 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickResponse'
+        "403":
+          description: 관리자 권한 없음
+        "404":
+          description: 제안을 찾을 수 없음
+
+  /api/v3/ari-pick/{proposalId}/pending:
+    patch:
+      tags: [AriPick]
+      operationId: pendingAripick
+      summary: 아리픽 제안 PENDING 변경
+      description: 제안을 PENDING 상태로 변경합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 변경 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickResponse'
+        "403":
+          description: 관리자 권한 없음
+        "404":
+          description: 제안을 찾을 수 없음
+
+  /api/v3/ari-pick/{proposalId}/admin:
+    delete:
+      tags: [AriPick]
+      operationId: deleteAripickByAdmin
+      summary: 아리픽 제안 삭제 (관리자)
+      description: 관리자가 제안을 삭제합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: 삭제 성공
+        "403":
+          description: 관리자 권한 없음
+        "404":
+          description: 제안을 찾을 수 없음
+
+  /api/v3/ari-pick/{proposalId}/like:
+    post:
+      tags: [AriPick]
+      operationId: toggleAripickLike
+      summary: 아리픽 좋아요 토글
+      description: 좋아요를 토글합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 토글 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickLikeToggleResponse'
+        "401":
+          description: 인증 실패
+        "404":
+          description: 제안을 찾을 수 없음
+
+  /api/v3/ari-pick/stats:
+    get:
+      tags: [AriPick]
+      operationId: getAripickStats
+      summary: 아리픽 통계 조회
+      description: 아리픽 제안 통계를 조회합니다. (PERMIT_ALL)
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AripickStatsResponse'
+
+  # ───────────────────────────────────────────────
   # Order
   # ───────────────────────────────────────────────
   /api/v3/orders:
@@ -412,7 +764,7 @@ paths:
       description: |
         주문을 생성합니다. (OPTIONAL_AUTH)
 
-        - `X-Kiosk-Id` 헤더는 항상 필수입니다.
+        - `X-Kiosk-Id` 헤더가 없으면 기본값 `1`을 사용합니다.
         - 토큰이 있으면 회원 주문, 없으면 비회원 주문으로 처리합니다.
         - 요청 즉시 `PROCESSING` 상태로 응답하며, 실제 처리는 비동기로 수행됩니다.
         - 상품 검증, 가격 확정, 재고 차감은 비동기로 처리됩니다.
@@ -422,11 +774,12 @@ paths:
       parameters:
         - name: X-Kiosk-Id
           in: header
-          required: true
-          description: 키오스크 식별자
+          required: false
+          description: 키오스크 식별자. 없으면 `1`
           schema:
             type: string
-          example: "KIOSK-001"
+            default: "1"
+          example: "1"
       security:
         - {}
         - BearerAuth: []
@@ -438,7 +791,7 @@ paths:
               $ref: '#/components/schemas/OrderRequest'
             example:
               items:
-                - itemId: 1
+                - item_id: 1
                   quantity: 2
       responses:
         "202":
@@ -448,9 +801,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrderResponse'
               example:
-                orderId: "550e8400-e29b-41d4-a716-446655440000"
+                order_id: 1001
                 status: "PROCESSING"
-                failureReason: null
+                failure_reason: null
         "400":
           description: 요청 형식 오류
           content:
@@ -477,8 +830,9 @@ paths:
           required: true
           description: 주문 ID
           schema:
-            type: string
-          example: "550e8400-e29b-41d4-a716-446655440000"
+            type: integer
+            format: int64
+          example: 1001
       security:
         - {}
       responses:
@@ -489,9 +843,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrderResponse'
               example:
-                orderId: "550e8400-e29b-41d4-a716-446655440000"
+                order_id: 1001
                 status: "COMPLETED"
-                failureReason: null
+                failure_reason: null
         "404":
           description: 주문을 찾을 수 없음
 
@@ -504,7 +858,9 @@ paths:
         Server-Sent Events(SSE) 방식으로 주문 상태 변경을 실시간 수신합니다. (PERMIT_ALL)
 
         - 연결 즉시 현재 주문 상태를 전송합니다.
-        - 주문이 최종 상태(`COMPLETED`, `FAILED`, `CANCELLED`, `COMPENSATION_FAILED`, `TIMED_OUT`)에 도달하면 서버가 연결을 종료합니다.
+        - 각 메시지는 `event: <event_type>` 형식으로 전달됩니다.
+        - 이벤트 타입은 `order_accepted`, `payment_requested`, `completed`, `failed`, `cancel_requested`, `cancelled`, `timed_out` 중 하나입니다.
+        - 주문이 최종 상태(`completed`, `failed`, `cancelled`, `timed_out`)에 도달하면 서버가 연결을 종료합니다.
         - 주문 생성 직후 SSE 연결을 맺어 비동기 처리 결과를 수신하는 용도로 사용합니다.
       parameters:
         - name: orderId
@@ -512,8 +868,9 @@ paths:
           required: true
           description: 주문 ID
           schema:
-            type: string
-          example: "550e8400-e29b-41d4-a716-446655440000"
+            type: integer
+            format: int64
+          example: 1001
       security:
         - {}
       responses:
@@ -522,11 +879,42 @@ paths:
           content:
             text/event-stream:
               schema:
-                $ref: '#/components/schemas/OrderResponse'
-              example:
-                orderId: "550e8400-e29b-41d4-a716-446655440000"
-                status: "COMPLETED"
-                failureReason: null
+                type: string
+                description: |
+                  SSE 메시지는 아래 형식으로 전달됩니다.
+
+                  - `event`: 이벤트 타입
+                  - `data`: 이벤트 데이터 (JSON). 정상 이벤트는 `{}`, 실패 이벤트는 `{"failure_reason": "..."}` 포함
+              examples:
+                accepted:
+                  summary: 주문 접수 직후
+                  value: |
+                    event: order_accepted
+                    data: {}
+
+                paymentRequested:
+                  summary: 결제 요청 단계
+                  value: |
+                    event: payment_requested
+                    data: {}
+
+                completed:
+                  summary: 주문 완료
+                  value: |
+                    event: completed
+                    data: {}
+
+                failed:
+                  summary: 주문 실패
+                  value: |
+                    event: failed
+                    data: {"failure_reason": "재고 부족"}
+
+                cancelled:
+                  summary: 주문 취소 완료
+                  value: |
+                    event: cancelled
+                    data: {}
         "404":
           description: 주문을 찾을 수 없음
 
@@ -538,7 +926,7 @@ paths:
       description: |
         주문을 취소합니다. (OPTIONAL_AUTH)
 
-        - `X-Kiosk-Id` 헤더는 항상 필수입니다.
+        - `X-Kiosk-Id` 헤더가 없으면 기본값 `1`을 사용합니다.
         - 주문을 생성한 키오스크와 동일한 `X-Kiosk-Id` 여야 취소가 허용됩니다.
         - 회원/비회원 구분 없이 키오스크 ID만으로 소유권을 검증합니다.
       parameters:
@@ -547,15 +935,17 @@ paths:
           required: true
           description: 취소할 주문 ID
           schema:
-            type: string
-          example: "550e8400-e29b-41d4-a716-446655440000"
+            type: integer
+            format: int64
+          example: 1001
         - name: X-Kiosk-Id
           in: header
-          required: true
-          description: 키오스크 식별자
+          required: false
+          description: 키오스크 식별자. 없으면 `1`
           schema:
             type: string
-          example: "KIOSK-001"
+            default: "1"
+          example: "1"
       security:
         - {}
         - BearerAuth: []
@@ -567,9 +957,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrderResponse'
               example:
-                orderId: "550e8400-e29b-41d4-a716-446655440000"
+                order_id: 1001
                 status: "CANCEL_REQUESTED"
-                failureReason: "사용자에 의해 주문이 취소되었습니다"
+                failure_reason: "사용자에 의해 주문이 취소되었습니다"
         "401":
           description: 잘못된 토큰
         "403":
@@ -599,26 +989,6 @@ paths:
                 $ref: '#/components/schemas/WalletPointResponse'
               example:
                 point: 3500
-        "401":
-          description: 인증 실패
-
-  /api/v3/wallet/charges:
-    get:
-      tags: [Wallet]
-      operationId: getChargeHistory
-      summary: 포인트 충전 내역 조회
-      description: 로그인한 회원의 전체 포인트 충전/차감 내역을 반환합니다. (AUTHENTICATED)
-      security:
-        - BearerAuth: []
-      responses:
-        "200":
-          description: 조회 성공
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ChargeLogResult'
         "401":
           description: 인증 실패
 
@@ -660,20 +1030,20 @@ components:
 
     MemberRegisterRequest:
       type: object
-      required: [userCiNumber, userName, userEmail, password]
+      required: [user_ci_number, username, user_email, password]
       properties:
-        userCiNumber:
+        user_ci_number:
           type: string
           description: 학생 CI 번호
-        userName:
+        username:
           type: string
           maxLength: 55
           description: 이름
-        userPhone:
+        user_phone:
           type: string
           nullable: true
           description: 전화번호
-        userEmail:
+        user_email:
           type: string
           format: email
           description: 이메일
@@ -695,12 +1065,12 @@ components:
 
     KioskLoginRequest:
       type: object
-      required: [userBarcode, userPin]
+      required: [user_barcode, user_pin]
       properties:
-        userBarcode:
+        user_barcode:
           type: string
           description: 학생증 바코드
-        userPin:
+        user_pin:
           type: string
           description: PIN 번호
 
@@ -711,9 +1081,6 @@ components:
         username:
           type: string
           description: 회원 이름
-        point:
-          type: integer
-          description: 보유 포인트
 
     # ── Item ───────────────────────────────────────
     ItemListResponse:
@@ -727,7 +1094,7 @@ components:
     ItemResponse:
       type: object
       properties:
-        itemId:
+        item_id:
           type: integer
           format: int64
         name:
@@ -737,6 +1104,9 @@ components:
           description: 상품 카테고리
         price:
           type: integer
+        quantity:
+          type: integer
+          description: 재고 수량
         barcode:
           type: string
           nullable: true
@@ -752,7 +1122,7 @@ components:
     ItemLookupResponse:
       type: object
       properties:
-        itemId:
+        item_id:
           type: integer
           format: int64
         name:
@@ -762,7 +1132,7 @@ components:
           nullable: true
         price:
           type: integer
-        isActive:
+        is_active:
           type: boolean
           description: 판매 활성 여부
 
@@ -807,6 +1177,122 @@ components:
         quantity:
           type: integer
 
+    # ── AriPick ───────────────────────────────────
+    CreateAripickRequest:
+      type: object
+      required: [type_n_seq, reason]
+      properties:
+        type_n_seq:
+          type: integer
+          format: int64
+        reason:
+          type: string
+
+    AripickFoodSearchResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AripickFoodSearchItemResponse'
+
+    AripickFoodSearchItemResponse:
+      type: object
+      properties:
+        type_n_seq:
+          type: integer
+          format: int64
+        name:
+          type: string
+        company:
+          type: string
+        kcal_info:
+          type: string
+
+    CreateAripickBlockedKeywordRequest:
+      type: object
+      required: [keyword]
+      properties:
+        keyword:
+          type: string
+
+    AripickBlockedKeywordResponse:
+      type: object
+      properties:
+        keyword_id:
+          type: integer
+          format: int64
+        keyword:
+          type: string
+        registered_date:
+          type: string
+          format: date
+
+    AripickBlockedKeywordListResponse:
+      type: object
+      properties:
+        keywords:
+          type: array
+          items:
+            $ref: '#/components/schemas/AripickBlockedKeywordResponse'
+
+    AripickListResponse:
+      type: object
+      properties:
+        aripick_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AripickResponse'
+
+    AripickResponse:
+      type: object
+      properties:
+        proposal_id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        reason:
+          type: string
+        proposer_id:
+          type: integer
+          format: int64
+        proposal_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+        like_count:
+          type: integer
+
+    AripickLikeToggleResponse:
+      type: object
+      properties:
+        proposal_id:
+          type: integer
+          format: int64
+        liked:
+          type: boolean
+        like_count:
+          type: integer
+
+    AripickStatsResponse:
+      type: object
+      properties:
+        total_proposals:
+          type: integer
+          format: int64
+        approved:
+          type: integer
+          format: int64
+        pending:
+          type: integer
+          format: int64
+        rejected:
+          type: integer
+          format: int64
+
     # ── Order ──────────────────────────────────────
     OrderRequest:
       type: object
@@ -820,9 +1306,9 @@ components:
 
     OrderItemRequest:
       type: object
-      required: [itemId, quantity]
+      required: [item_id, quantity]
       properties:
-        itemId:
+        item_id:
           type: integer
           format: int64
         quantity:
@@ -832,12 +1318,13 @@ components:
     OrderResponse:
       type: object
       properties:
-        orderId:
-          type: string
-          description: 주문 UUID
+        order_id:
+          type: integer
+          format: int64
+          description: 주문 ID
         status:
           $ref: '#/components/schemas/OrderStatus'
-        failureReason:
+        failure_reason:
           type: string
           nullable: true
           description: 실패/취소 사유
@@ -877,33 +1364,6 @@ components:
         point:
           type: integer
           description: 현재 포인트 잔액
-
-    ChargeLogResult:
-      type: object
-      properties:
-        chargeId:
-          type: integer
-          format: int64
-        userId:
-          type: integer
-          format: int64
-        chargeDate:
-          type: string
-          format: date-time
-        chargeAmount:
-          type: integer
-          description: 변동 포인트량 (음수면 차감)
-        paymentId:
-          type: integer
-          format: int64
-          nullable: true
-        beforePoint:
-          type: integer
-        afterPoint:
-          type: integer
-        reason:
-          type: string
-          nullable: true
 
     # ── Common ─────────────────────────────────────
     ErrorResponse:

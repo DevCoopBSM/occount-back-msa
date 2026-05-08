@@ -75,6 +75,7 @@ class VanResponseParser(
 
         return VanRawResponse(
             protocolCodes = protocolCodes,
+            recordSeparator = protocolSpec.recordSeparatorChar,
             serviceType = serviceType,
             typeCode = getField(fields, 1),
             cardNumber = getField(fields, 2),

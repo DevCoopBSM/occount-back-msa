@@ -14,7 +14,7 @@ class PaymentFacade(
     private val cardOnlyPaymentUseCase: CardOnlyPaymentUseCase,
     private val getWalletPointQueryService: GetWalletPointQueryService,
 ) {
-    fun execute(userId: Long?, kioskId: String, details: PaymentDetails, paymentKey: String? = null): PaymentResponse {
+    fun execute(userId: Long?, kioskId: String, details: PaymentDetails, paymentKey: Long? = null): PaymentResponse {
         if (userId == null) {
             return cardOnlyPaymentUseCase.execute(null, kioskId, details, paymentKey)
         }

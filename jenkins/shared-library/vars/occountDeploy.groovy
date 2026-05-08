@@ -17,6 +17,7 @@ def call(Map cfg) {
         [path: 'gateway/',         task: ':gateway:api-gateway:bootJar',              name: 'api-gateway',  dir: 'gateway/api-gateway',              yamlKey: 'apiGateway'],
         [path: 'domains/member/',  task: ':domains:member:member-bootstrap:bootJar',  name: 'member-api',   dir: 'domains/member/member-bootstrap',   yamlKey: 'memberApi'],
         [path: 'domains/item/',    task: ':domains:item:item-bootstrap:bootJar',      name: 'item-api',     dir: 'domains/item/item-bootstrap',        yamlKey: 'itemApi'],
+        [path: 'domains/suggestion/', task: ':domains:suggestion:suggestion-bootstrap:bootJar', name: 'suggestion-api', dir: 'domains/suggestion/suggestion-bootstrap', yamlKey: 'suggestionApi'],
         [path: 'domains/order/',   task: ':domains:order:order-bootstrap:bootJar',    name: 'order-api',    dir: 'domains/order/order-bootstrap',      yamlKey: 'orderApi'],
         [path: 'domains/payment/', task: ':domains:payment:payment-bootstrap:bootJar',name: 'payment-api',  dir: 'domains/payment/payment-bootstrap',  yamlKey: 'paymentApi'],
     ]
@@ -24,7 +25,7 @@ def call(Map cfg) {
     def TRIGGER_ALL_PATHS = [
         'build.gradle', 'build.gradle.kts',
         'settings.gradle', 'settings.gradle.kts',
-        'gradle.properties', 'gradle/', 'buildSrc/',
+        'gradle.properties', 'gradle/', 'buildSrc/', 'modules/',
     ]
 
     pipeline {
@@ -35,6 +36,7 @@ def call(Map cfg) {
         }
 
         options {
+            disableConcurrentBuilds()
             timestamps()
             timeout(time: 30, unit: 'MINUTES')
         }
@@ -110,8 +112,13 @@ def call(Map cfg) {
                                 .findAll { changedList.contains(it.name) }
                                 .collect { it.task }
                                 .join(' ')
-                            sh "find /home/gradle/.gradle/caches -name '*.lock' -delete 2>/dev/null || true"
-                            sh "./gradlew ${targets} --no-daemon --parallel"
+                            def gradleHomeKey = (env.JOB_NAME ?: 'default').replaceAll(/[^A-Za-z0-9._-]/, '_')
+                            def gradleUserHome = "/home/gradle/.gradle/jobs/${gradleHomeKey}"
+                            withEnv(["GRADLE_USER_HOME=${gradleUserHome}"]) {
+                                sh "mkdir -p '${gradleUserHome}'"
+                                sh "find '${gradleUserHome}/caches' -name '*.lock' -delete 2>/dev/null || true"
+                                sh "./gradlew ${targets} --no-daemon --parallel"
+                            }
                         }
                     }
                 }
@@ -127,8 +134,7 @@ def call(Map cfg) {
 
                         // fat jar + Dockerfile을 서비스 디렉토리로 복사
                         container('gradle') {
-                            for (int i = 0; i < svcsToBuild.size(); i++) {
-                                def svc = svcsToBuild[i]
+                            svcsToBuild.each { svc ->
                                 def jarFile = sh(
                                     script: "ls ${env.WORKSPACE}/${svc.dir}/build/libs/*.jar 2>/dev/null | grep -v plain | tail -1",
                                     returnStdout: true
@@ -139,26 +145,24 @@ def call(Map cfg) {
                             }
                         }
 
-                        // 각 서비스 Dockerfile 기반으로 병렬 빌드
-                        def parallelStages = [:]
-                        for (int i = 0; i < svcsToBuild.size(); i++) {
-                            def svc = svcsToBuild[i]
-                            parallelStages["${svc.name}"] = {
-                                container('kaniko') {
-                                    sh """
-                                        /kaniko/executor \\
-                                            --context=dir://${env.WORKSPACE}/${svc.dir} \\
-                                            --dockerfile=${env.WORKSPACE}/${svc.dir}/Dockerfile \\
-                                            --destination=${env.IMAGE_PREFIX}/${svc.name}:${imageTag} \\
-                                            --build-arg BASE_IMAGE=${env.HARBOR_URL}/base/eclipse-temurin:21-jre-alpine \\
-                                            --snapshot-mode=redo \\
-                                            --skip-tls-verify \\
-                                            --skip-tls-verify-pull
-                                    """
-                                }
+                        // kaniko는 컨테이너당 단일 프로세스만 지원한다.
+                        // 같은 컨테이너에서 parallel 로 띄우면 root fs 스냅샷이
+                        // 서로의 쓰기와 충돌해 "archive/tar: write too long" 으로 실패하므로 순차 실행한다.
+                        container('kaniko') {
+                            svcsToBuild.each { svc ->
+                                sh """
+                                    /kaniko/executor \\
+                                        --context=dir://${env.WORKSPACE}/${svc.dir} \\
+                                        --dockerfile=${env.WORKSPACE}/${svc.dir}/Dockerfile \\
+                                        --destination=${env.IMAGE_PREFIX}/${svc.name}:${imageTag} \\
+                                        --build-arg BASE_IMAGE=${env.HARBOR_URL}/base/eclipse-temurin:21-jre-alpine \\
+                                        --snapshot-mode=redo \\
+                                        --single-snapshot \\
+                                        --skip-tls-verify \\
+                                        --skip-tls-verify-pull
+                                """
                             }
                         }
-                        parallel parallelStages
                     }
                 }
             }

@@ -1,0 +1,21 @@
+case	variant	service	run	label	commit	startup_seconds	first_request_seconds	second_request_seconds	third_request_seconds	business_warmup_ms	servlet_warmup_ms	jpa_warmup_ms	java_opts
+before	default	member-api	1	warmup 이전 / 기본	97057405fee9886240b8f388f19c4e70e670f70b	6.805	0.219039	0.005928	0.004534				
+before	default	member-api	2	warmup 이전 / 기본	97057405fee9886240b8f388f19c4e70e670f70b	6.176	0.132083	0.010486	0.005429				
+before	default	member-api	3	warmup 이전 / 기본	97057405fee9886240b8f388f19c4e70e670f70b	5.727	0.199843	0.008595	0.005069				
+before	default	member-api	4	warmup 이전 / 기본	97057405fee9886240b8f388f19c4e70e670f70b	5.888	0.125012	0.008454	0.004221				
+before	default	member-api	5	warmup 이전 / 기본	97057405fee9886240b8f388f19c4e70e670f70b	5.507	0.249441	0.006354	0.004087				
+before	threshold_on	member-api	1	warmup 이전 / JIT 임계치 하향	97057405fee9886240b8f388f19c4e70e670f70b	6.277	0.223810	0.007599	0.010663				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	member-api	2	warmup 이전 / JIT 임계치 하향	97057405fee9886240b8f388f19c4e70e670f70b	7.712	0.230660	0.009184	0.007749				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	member-api	3	warmup 이전 / JIT 임계치 하향	97057405fee9886240b8f388f19c4e70e670f70b	10.35	0.173392	0.005472	0.004346				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	member-api	4	warmup 이전 / JIT 임계치 하향	97057405fee9886240b8f388f19c4e70e670f70b	7.832	0.173772	0.005593	0.004728				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+before	threshold_on	member-api	5	warmup 이전 / JIT 임계치 하향	97057405fee9886240b8f388f19c4e70e670f70b	6.405	0.150828	0.009773	0.004630				-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+current_warmup	default	member-api	1	현재 warmup / 기본	7299aa6a592885d353c5dc1fd6f5f4817eec1965	5.936	0.116150	0.005519	0.004558	149	189		
+current_warmup	default	member-api	2	현재 warmup / 기본	7299aa6a592885d353c5dc1fd6f5f4817eec1965	5.463	0.125985	0.006298	0.004485	188	131		
+current_warmup	default	member-api	3	현재 warmup / 기본	7299aa6a592885d353c5dc1fd6f5f4817eec1965	14.272	0.243456	0.004802	0.003624	1589	169		
+current_warmup	default	member-api	4	현재 warmup / 기본	7299aa6a592885d353c5dc1fd6f5f4817eec1965	5.857	0.125769	0.005118	0.003634	169	138		
+current_warmup	default	member-api	5	현재 warmup / 기본	7299aa6a592885d353c5dc1fd6f5f4817eec1965	5.329	0.163023	0.007421	0.004583	140	138		
+current_warmup	threshold_on	member-api	1	현재 warmup / JIT 임계치 하향	7299aa6a592885d353c5dc1fd6f5f4817eec1965	7.38	0.171188	0.007056	0.005198	334	231		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+current_warmup	threshold_on	member-api	2	현재 warmup / JIT 임계치 하향	7299aa6a592885d353c5dc1fd6f5f4817eec1965	6.823	0.196977	0.007618	0.003661	173	177		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+current_warmup	threshold_on	member-api	3	현재 warmup / JIT 임계치 하향	7299aa6a592885d353c5dc1fd6f5f4817eec1965	7.146	0.144050	0.012512	0.007131	238	172		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+current_warmup	threshold_on	member-api	4	현재 warmup / JIT 임계치 하향	7299aa6a592885d353c5dc1fd6f5f4817eec1965	9.75	0.151256	0.005522	0.004006	439	360		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150
+current_warmup	threshold_on	member-api	5	현재 warmup / JIT 임계치 하향	7299aa6a592885d353c5dc1fd6f5f4817eec1965	6.987	0.131286	0.005604	0.003716	250	269		-XX:Tier3InvocationThreshold=10 -XX:Tier4InvocationThreshold=150

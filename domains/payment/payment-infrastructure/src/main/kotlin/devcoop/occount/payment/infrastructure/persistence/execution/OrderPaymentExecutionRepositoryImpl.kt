@@ -4,16 +4,17 @@ import devcoop.occount.payment.application.output.OrderPaymentCancellationReques
 import devcoop.occount.payment.application.output.OrderPaymentExecutionRepository
 import devcoop.occount.payment.application.output.OrderPaymentExecutionStartResult
 import devcoop.occount.payment.application.output.OrderPaymentExecutionState
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 @Repository
 class OrderPaymentExecutionRepositoryImpl(
     private val persistenceRepository: OrderPaymentExecutionPersistenceRepository,
 ) : OrderPaymentExecutionRepository {
-    @Transactional
-    override fun startProcessing(orderId: String): OrderPaymentExecutionStartResult {
-        val execution = persistenceRepository.findByOrderIdForUpdate(orderId)
+    override fun startProcessing(orderId: Long): OrderPaymentExecutionStartResult {
+        val execution = persistenceRepository.findById(orderId).orElse(null)
         if (execution == null) {
             persistenceRepository.save(
                 OrderPaymentExecutionJpaEntity(
@@ -36,7 +37,7 @@ class OrderPaymentExecutionRepositoryImpl(
     }
 
     @Transactional
-    override fun requestCancellation(orderId: String): OrderPaymentCancellationRequestResult {
+    override fun requestCancellation(orderId: Long): OrderPaymentCancellationRequestResult {
         val execution = persistenceRepository.findByOrderIdForUpdate(orderId)
         if (execution == null) {
             persistenceRepository.save(
@@ -64,33 +65,39 @@ class OrderPaymentExecutionRepositoryImpl(
     }
 
     @Transactional(readOnly = true)
-    override fun isCancellationRequested(orderId: String): Boolean {
+    override fun isCancellationRequested(orderId: Long): Boolean {
         return persistenceRepository.findById(orderId)
             .map(OrderPaymentExecutionJpaEntity::isCancellationRequested)
             .orElse(false)
     }
 
-    @Transactional
-    override fun markCompleted(orderId: String) {
+    override fun markCompleted(orderId: Long) {
         upsertState(orderId, OrderPaymentExecutionState.COMPLETED, false)
     }
 
-    @Transactional
-    override fun markFailed(orderId: String) {
+    override fun markFailed(orderId: Long) {
         upsertState(orderId, OrderPaymentExecutionState.FAILED, false)
     }
 
-    @Transactional
-    override fun markCancelled(orderId: String) {
+    override fun markCancelled(orderId: Long) {
         upsertState(orderId, OrderPaymentExecutionState.CANCELLED, true)
     }
 
+    @Transactional(readOnly = true)
+    override fun findStuckInProcessing(updatedBefore: LocalDateTime, limit: Int): List<Long> {
+        return persistenceRepository.findStuckOrderIds(
+            state = OrderPaymentExecutionState.PROCESSING,
+            updatedBefore = updatedBefore,
+            pageable = PageRequest.of(0, limit),
+        )
+    }
+
     private fun upsertState(
-        orderId: String,
+        orderId: Long,
         state: OrderPaymentExecutionState,
         cancellationRequested: Boolean,
     ) {
-        val execution = persistenceRepository.findByOrderIdForUpdate(orderId)
+        val execution = persistenceRepository.findById(orderId).orElse(null)
         if (execution == null) {
             persistenceRepository.save(
                 OrderPaymentExecutionJpaEntity(

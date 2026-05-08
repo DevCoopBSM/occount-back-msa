@@ -26,7 +26,7 @@ class OrderMutationExecutor(
     }
 
     fun updateOrder(
-        orderId: String,
+        orderId: Long,
         update: (OrderAggregate) -> OrderAggregate,
         afterUpdate: (OrderAggregate) -> Unit = {},
     ): OrderAggregate {
@@ -68,7 +68,7 @@ class OrderMutationExecutor(
      * @return 업데이트된 주문. 이미 처리된 이벤트(중복)면 null 반환.
      */
     fun updateOrderIdempotently(
-        orderId: String,
+        orderId: Long,
         recordConsumption: () -> Unit,
         update: (OrderAggregate) -> OrderAggregate,
     ): OrderAggregate? {

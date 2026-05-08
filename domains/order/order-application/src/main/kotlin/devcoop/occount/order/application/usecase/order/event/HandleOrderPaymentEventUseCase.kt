@@ -1,9 +1,9 @@
 package devcoop.occount.order.application.usecase.order.event
 
-import devcoop.occount.core.common.event.OrderPaymentCompensatedEvent
-import devcoop.occount.core.common.event.OrderPaymentCompensationFailedEvent
-import devcoop.occount.core.common.event.OrderPaymentCompletedEvent
-import devcoop.occount.core.common.event.OrderPaymentFailedEvent
+import devcoop.occount.core.common.event.PaymentCompensatedEvent
+import devcoop.occount.core.common.event.PaymentCompensationFailedEvent
+import devcoop.occount.core.common.event.PaymentCompletedEvent
+import devcoop.occount.core.common.event.PaymentFailedEvent
 import devcoop.occount.order.application.support.OrderFailureReasonSanitizer
 import devcoop.occount.order.application.support.OrderLifecycleProcessor
 import devcoop.occount.order.application.support.OrderMutationExecutor
@@ -16,7 +16,7 @@ class HandleOrderPaymentEventUseCase(
     private val orderMutationExecutor: OrderMutationExecutor,
     private val orderLifecycleProcessor: OrderLifecycleProcessor,
 ) {
-    fun applyCompletedPayment(event: OrderPaymentCompletedEvent, recordConsumption: () -> Unit) {
+    fun applyCompletedPayment(event: PaymentCompletedEvent, recordConsumption: () -> Unit) {
         val updated = orderMutationExecutor.updateOrderIdempotently(
             orderId = event.orderId,
             recordConsumption = recordConsumption,
@@ -37,7 +37,7 @@ class HandleOrderPaymentEventUseCase(
         orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 
-    fun applyFailedPayment(event: OrderPaymentFailedEvent, recordConsumption: () -> Unit) {
+    fun applyFailedPayment(event: PaymentFailedEvent, recordConsumption: () -> Unit) {
         val updated = orderMutationExecutor.updateOrderIdempotently(
             orderId = event.orderId,
             recordConsumption = recordConsumption,
@@ -52,7 +52,7 @@ class HandleOrderPaymentEventUseCase(
         orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 
-    fun applyCompensatedPayment(event: OrderPaymentCompensatedEvent, recordConsumption: () -> Unit) {
+    fun applyCompensatedPayment(event: PaymentCompensatedEvent, recordConsumption: () -> Unit) {
         val updated = orderMutationExecutor.updateOrderIdempotently(
             orderId = event.orderId,
             recordConsumption = recordConsumption,
@@ -64,7 +64,7 @@ class HandleOrderPaymentEventUseCase(
         orderLifecycleProcessor.processAfterOrderStateChange(updated)
     }
 
-    fun applyPaymentCompensationFailure(event: OrderPaymentCompensationFailedEvent, recordConsumption: () -> Unit) {
+    fun applyPaymentCompensationFailure(event: PaymentCompensationFailedEvent, recordConsumption: () -> Unit) {
         val updated = orderMutationExecutor.updateOrderIdempotently(
             orderId = event.orderId,
             recordConsumption = recordConsumption,

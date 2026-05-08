@@ -45,3 +45,6 @@ out/
 **/*.env
 .DS_Store
 .claude
+
+### benchmark artifacts ###
+bench-jars/

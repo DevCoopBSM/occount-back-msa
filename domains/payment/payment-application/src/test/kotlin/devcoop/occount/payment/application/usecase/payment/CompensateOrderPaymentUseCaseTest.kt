@@ -1,8 +1,8 @@
 package devcoop.occount.payment.application.usecase.payment
 
 import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.core.common.event.OrderPaymentCompensatedEvent
-import devcoop.occount.core.common.event.OrderPaymentCompensationFailedEvent
+import devcoop.occount.core.common.event.PaymentCompensatedEvent
+import devcoop.occount.core.common.event.PaymentCompensationFailedEvent
 import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
 import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.dto.response.VanResult
@@ -20,6 +20,7 @@ import devcoop.occount.payment.domain.wallet.ChargeLog
 import devcoop.occount.payment.domain.wallet.ChargeReason
 import devcoop.occount.payment.domain.wallet.PointTransaction
 import devcoop.occount.payment.domain.wallet.Wallet
+import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -50,7 +51,7 @@ class CompensateOrderPaymentUseCaseTest {
 
         useCase.compensate(
             OrderPaymentCompensationRequestedEvent(
-                orderId = "order-1",
+                orderId = 1L,
                 kioskId = "kiosk-1",
                 userId = 1L,
                 paymentLogId = 10L,
@@ -62,7 +63,7 @@ class CompensateOrderPaymentUseCaseTest {
         assertEquals(1, cardPaymentPort.refundRequests.size)
         assertEquals(1, chargeLogRepository.saved.size)
         assertEquals(1000, walletRepository.findByUserId(1L)?.point)
-        assertIs<OrderPaymentCompensatedEvent>(eventPublisher.published.single())
+        assertIs<PaymentCompensatedEvent>(eventPublisher.published.single())
         assertEquals(RefundState.COMPLETED, paymentLogRepository.require(10L).getRefundState())
         assertEquals(RefundState.COMPLETED, paymentLogRepository.require(10L).getCardRefundState())
         assertEquals(RefundState.COMPLETED, paymentLogRepository.require(10L).getPointRefundState())
@@ -87,7 +88,7 @@ class CompensateOrderPaymentUseCaseTest {
 
         useCase.compensate(
             OrderPaymentCompensationRequestedEvent(
-                orderId = "order-1",
+                orderId = 1L,
                 kioskId = "kiosk-1",
                 userId = null,
                 paymentLogId = 10L,
@@ -96,7 +97,7 @@ class CompensateOrderPaymentUseCaseTest {
             ),
         )
 
-        assertIs<OrderPaymentCompensationFailedEvent>(eventPublisher.published.single())
+        assertIs<PaymentCompensationFailedEvent>(eventPublisher.published.single())
         assertEquals(RefundState.REQUESTED, paymentLogRepository.require(10L).getRefundState())
     }
 
@@ -119,7 +120,7 @@ class CompensateOrderPaymentUseCaseTest {
         assertFailsWith<PaymentFailedException> {
             useCase.compensate(
                 OrderPaymentCompensationRequestedEvent(
-                    orderId = "order-1",
+                    orderId = 1L,
                     kioskId = "kiosk-1",
                     userId = null,
                     paymentLogId = 10L,
@@ -160,7 +161,7 @@ class CompensateOrderPaymentUseCaseTest {
 
         override fun findById(paymentId: Long): PaymentLog? = paymentLogs[paymentId]
         override fun findByUserId(userId: Long): List<PaymentLog> = paymentLogs.values.filter { it.getUserId() == userId }
-        override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: java.time.LocalDateTime, endDate: java.time.LocalDateTime): List<PaymentLog> = paymentLogs.values.toList()
+        override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<PaymentLog> = paymentLogs.values.toList()
         override fun findByPaymentType(paymentType: PaymentType): List<PaymentLog> = paymentLogs.values.filter { it.getPaymentType() == paymentType }
         override fun save(paymentLog: PaymentLog): PaymentLog {
             paymentLogs[paymentLog.getPaymentId()] = paymentLog
@@ -178,7 +179,6 @@ class CompensateOrderPaymentUseCaseTest {
     private class FakeChargeLogRepository : ChargeLogRepository {
         val saved = mutableListOf<ChargeLog>()
 
-        override fun findByUserId(userId: Long): List<ChargeLog> = saved.filter { it.userId == userId }
         override fun findByPaymentId(paymentId: Long): ChargeLog? = saved.firstOrNull { it.paymentId == paymentId }
         override fun save(chargeLog: ChargeLog): ChargeLog {
             saved += chargeLog
@@ -196,7 +196,7 @@ class CompensateOrderPaymentUseCaseTest {
     ) : CardPaymentPort {
         val refundRequests = mutableListOf<Pair<Int, String>>()
 
-        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: String?): VanResult {
+        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: Long?): VanResult {
             error("not used in this test")
         }
 
@@ -214,7 +214,7 @@ class CompensateOrderPaymentUseCaseTest {
             )
         }
 
-        override fun requestPendingApprovalCancellation(paymentKey: String, kioskId: String) {
+        override fun requestPendingApprovalCancellation(paymentKey: Long, kioskId: String) {
             error("not used in this test")
         }
     }

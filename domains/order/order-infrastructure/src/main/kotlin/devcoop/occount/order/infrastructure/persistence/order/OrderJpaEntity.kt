@@ -7,6 +7,8 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
@@ -17,8 +19,9 @@ import java.time.Instant
 @Table(name = "orders")
 class OrderJpaEntity(
     @Id
-    @field:Column(name = "order_id", nullable = false, length = 36)
-    private var orderId: String = "",
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @field:Column(name = "order_id", nullable = false)
+    private var orderId: Long = 0L,
     @field:Column(name = "user_id", nullable = true)
     private var userId: Long? = null,
     @field:OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true)

@@ -10,7 +10,7 @@ data class MemberRegisterRequest(
 
     @field:NotBlank(message = "유저 이름은 비어있을 수 없습니다.")
     @field:Size(max = 55, message = "유저 이름은 55자 이하만 가능합니다.")
-    val userName: String,
+    val username: String,
 
     val userPhone: String?,
 

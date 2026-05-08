@@ -62,4 +62,83 @@ class AuthenticationPolicyTest {
             policy.resolveAccess(HttpMethod.GET, "/api/v3/orders/order-1/stream"),
         )
     }
+
+    @Test
+    fun `ari pick list path is public`() {
+        assertEquals(AuthenticationRule.Access.PERMIT_ALL, policy.resolveAccess(HttpMethod.GET, "/api/v3/ari-pick"))
+    }
+
+    @Test
+    fun `ari pick detail path is public`() {
+        assertEquals(AuthenticationRule.Access.PERMIT_ALL, policy.resolveAccess(HttpMethod.GET, "/api/v3/ari-pick/1"))
+    }
+
+    @Test
+    fun `ari pick stats path is public`() {
+        assertEquals(AuthenticationRule.Access.PERMIT_ALL, policy.resolveAccess(HttpMethod.GET, "/api/v3/ari-pick/stats"))
+    }
+
+    @Test
+    fun `ari pick foods search path is public`() {
+        assertEquals(AuthenticationRule.Access.PERMIT_ALL, policy.resolveAccess(HttpMethod.GET, "/api/v3/ari-pick/foods"))
+    }
+
+    @Test
+    fun `ari pick creation requires authentication`() {
+        assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.POST, "/api/v3/ari-pick"))
+    }
+
+    @Test
+    fun `ari pick user delete requires authentication`() {
+        assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.DELETE, "/api/v3/ari-pick/1"))
+    }
+
+    @Test
+    fun `ari pick like requires authentication`() {
+        assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.POST, "/api/v3/ari-pick/1/like"))
+    }
+
+    @Test
+    fun `ari pick approve requires admin`() {
+        assertEquals(AuthenticationRule.Access.ADMIN_ONLY, policy.resolveAccess(HttpMethod.PATCH, "/api/v3/ari-pick/1/approve"))
+    }
+
+    @Test
+    fun `ari pick reject requires admin`() {
+        assertEquals(AuthenticationRule.Access.ADMIN_ONLY, policy.resolveAccess(HttpMethod.PATCH, "/api/v3/ari-pick/1/reject"))
+    }
+
+    @Test
+    fun `ari pick pending requires admin`() {
+        assertEquals(AuthenticationRule.Access.ADMIN_ONLY, policy.resolveAccess(HttpMethod.PATCH, "/api/v3/ari-pick/1/pending"))
+    }
+
+    @Test
+    fun `ari pick admin delete requires admin`() {
+        assertEquals(AuthenticationRule.Access.ADMIN_ONLY, policy.resolveAccess(HttpMethod.DELETE, "/api/v3/ari-pick/1/admin"))
+    }
+
+    @Test
+    fun `ari pick blocked keywords list requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/ari-pick/blocked-keywords"),
+        )
+    }
+
+    @Test
+    fun `ari pick blocked keywords create requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.POST, "/api/v3/ari-pick/blocked-keywords"),
+        )
+    }
+
+    @Test
+    fun `ari pick blocked keywords delete requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.DELETE, "/api/v3/ari-pick/blocked-keywords/1"),
+        )
+    }
 }

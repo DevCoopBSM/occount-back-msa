@@ -1,0 +1,115 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    command:
+      - --skip-name-resolve
+      - --performance-schema=OFF
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    volumes:
+      - warmup-bench-mysql-data:/var/lib/mysql
+      - ${CHECKOUT_DIR:?set CHECKOUT_DIR}/docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  item-api:
+    build:
+      context: ${CHECKOUT_DIR:?set CHECKOUT_DIR}
+      dockerfile: Dockerfile
+      args:
+        APP_MODULE: "domains:item:item-bootstrap"
+        APP_BUILD_DIR: "domains/item/item-bootstrap/build/libs"
+        APP_JAR_NAME: "item-api.jar"
+    restart: unless-stopped
+    ports:
+      - "${ITEM_API_PORT:-18084}:8080"
+    environment:
+      JAVA_OPTS: ${JAVA_OPTS:-}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_item?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true&cacheServerConfiguration=true&rewriteBatchedStatements=true&useLocalSessionState=true&elideSetAutoCommits=true&maintainTimeStats=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_SECRET_KEY: df93043843653badaf156d8de9fc7706b80412cbcb7c1b37213d4e64b1c11ab1
+      JWT_ACCESS_EXPIRATION_TIME: 3600000
+      JWT_KIOSK_EXPIRATION_TIME: 86400000
+      JWT_PREFIX: Bearer
+      JWT_HEADER: Authorization
+      OCCOUNT_TOSS_API_URL: ""
+      OTEL_SDK_DISABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://127.0.0.1:4318"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v3/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  member-api:
+    build:
+      context: ${CHECKOUT_DIR:?set CHECKOUT_DIR}
+      dockerfile: Dockerfile
+      args:
+        APP_MODULE: "domains:member:member-bootstrap"
+        APP_BUILD_DIR: "domains/member/member-bootstrap/build/libs"
+        APP_JAR_NAME: "member-api.jar"
+    restart: unless-stopped
+    ports:
+      - "${MEMBER_API_PORT:-18083}:8080"
+    environment:
+      JAVA_OPTS: ${JAVA_OPTS:-}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_member?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true&cacheServerConfiguration=true&rewriteBatchedStatements=true&useLocalSessionState=true&elideSetAutoCommits=true&maintainTimeStats=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_SECRET_KEY: df93043843653badaf156d8de9fc7706b80412cbcb7c1b37213d4e64b1c11ab1
+      JWT_ACCESS_EXPIRATION_TIME: 3600000
+      JWT_KIOSK_EXPIRATION_TIME: 86400000
+      JWT_PREFIX: Bearer
+      JWT_HEADER: Authorization
+      DEFAULT_PIN: "000000"
+      OTEL_SDK_DISABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://127.0.0.1:4318"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v3/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  warmup-bench-mysql-data:

@@ -15,6 +15,17 @@ interface ItemPersistenceRepository : JpaRepository<ItemJpaEntity, Long> {
     fun findAllByItemInfoBarcodeIsNullAndIsActiveTrue(): MutableList<ItemJpaEntity>
     fun findByItemInfoBarcode(barcode: String): ItemJpaEntity?
 
+    @Query(
+        value = """
+            SELECT i.* FROM item i
+            WHERE i.is_active = TRUE
+              AND MATCH(i.name) AGAINST (:query IN BOOLEAN MODE)
+            ORDER BY MATCH(i.name) AGAINST (:query IN BOOLEAN MODE) DESC
+        """,
+        nativeQuery = true,
+    )
+    fun searchByNameFulltext(@Param("query") query: String): List<ItemJpaEntity>
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
         """

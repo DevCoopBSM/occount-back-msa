@@ -1,112 +1,83 @@
 package devcoop.occount.member.domain.user
 
-import org.junit.jupiter.api.Assertions.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 @DisplayName("User 도메인 단위 테스트")
 class UserTest {
-
-    private fun createFullUser(id: Long = 0L) = User(
-        id = id,
-        userInfo = UserInfo(
-            username = "홍길동",
-            phone = "010-1234-5678",
-            userType = UserType.STUDENT,
-            cooperativeNumber = "COOP001",
-            userBarcode = "BARCODE123",
-        ),
-        accountInfo = AccountInfo(
-            email = "test@test.com",
-            password = "encodedPassword",
-            role = Role.ROLE_USER,
-            pin = "encodedPin",
-        ),
-        userSensitiveInfo = UserSensitiveInfo(ciNumber = "CI123456"),
-    )
-
     @Test
-    @DisplayName("보조 생성자로 User를 생성하면 UserType이 STUDENT, Role이 ROLE_USER로 기본 설정된다")
-    fun `secondary constructor sets default userType and role`() {
-        val user = User(
+    @DisplayName("회원 등록 시 기본 유저 타입과 권한을 가진다")
+    fun `register creates member with default type and role`() {
+        val user = User.register(
             userCiNumber = "CI123",
             username = "홍길동",
             phone = "010-1234-5678",
             email = "test@test.com",
-            encodedPassword = "encodedPassword",
-            encodedPin = "encodedPin",
+            encodedPassword = "encoded:password1234",
+            encodedPin = "encoded:000000",
         )
 
         assertEquals(UserType.STUDENT, user.getUserType())
         assertEquals(Role.ROLE_USER, user.getRole())
-    }
-
-    @Test
-    @DisplayName("보조 생성자로 생성된 User는 바코드와 조합원 번호가 null이다")
-    fun `secondary constructor sets barcode and cooperativeNumber to null`() {
-        val user = User(
-            userCiNumber = "CI123",
-            username = "홍길동",
-            phone = null,
-            email = "test@test.com",
-            encodedPassword = "encodedPassword",
-            encodedPin = "encodedPin",
-        )
-
         assertNull(user.getUserBarcode())
         assertNull(user.getCooperativeNumber())
     }
 
     @Test
-    @DisplayName("id가 명시되지 않으면 기본값 0으로 초기화된다")
-    fun `default id is zero when not provided`() {
-        val user = createFullUser()
+    @DisplayName("회원 로그인 비밀번호가 일치하면 true를 반환한다")
+    fun `matchesPassword returns true for matching password`() {
+        val user = userFixture()
 
-        assertEquals(0L, user.getId())
+        val result = user.matchesPassword("password1234", ::matchesEncodedValue)
+
+        assertTrue(result)
     }
 
     @Test
-    @DisplayName("주 생성자로 생성된 User는 모든 필드를 올바르게 반환한다")
-    fun `primary constructor exposes all fields correctly`() {
-        val user = createFullUser(id = 42L)
+    @DisplayName("회원 로그인 비밀번호가 다르면 false를 반환한다")
+    fun `matchesPassword returns false for mismatched password`() {
+        val user = userFixture()
 
-        assertEquals(42L, user.getId())
-        assertEquals("홍길동", user.getUsername())
-        assertEquals("010-1234-5678", user.getPhone())
-        assertEquals("test@test.com", user.getEmail())
-        assertEquals("encodedPassword", user.getPassword())
-        assertEquals("encodedPin", user.getUserPin())
-        assertEquals("CI123456", user.getCiNumber())
-        assertEquals("BARCODE123", user.getUserBarcode())
-        assertEquals("COOP001", user.getCooperativeNumber())
-        assertEquals(Role.ROLE_USER, user.getRole())
-        assertEquals(UserType.STUDENT, user.getUserType())
+        val result = user.matchesPassword("wrong-password", ::matchesEncodedValue)
+
+        assertFalse(result)
     }
 
     @Test
-    @DisplayName("전화번호가 null일 때 getPhone()이 null을 반환한다")
-    fun `getPhone returns null when phone is null`() {
-        val user = User(
+    @DisplayName("키오스크 핀번호가 일치하면 true를 반환한다")
+    fun `matchesPin returns true for matching pin`() {
+        val user = userFixture()
+
+        val result = user.matchesPin("123456", ::matchesEncodedValue)
+
+        assertTrue(result)
+    }
+
+    @Test
+    @DisplayName("키오스크 핀번호가 다르면 false를 반환한다")
+    fun `matchesPin returns false for mismatched pin`() {
+        val user = userFixture()
+
+        val result = user.matchesPin("654321", ::matchesEncodedValue)
+
+        assertFalse(result)
+    }
+
+    private fun userFixture(): User =
+        User.register(
             userCiNumber = "CI123",
             username = "홍길동",
-            phone = null,
+            phone = "010-1234-5678",
             email = "test@test.com",
-            encodedPassword = "encodedPassword",
-            encodedPin = "encodedPin",
-        )
+            encodedPassword = "encoded:password1234",
+            encodedPin = "encoded:123456",
+        ).withBarcode("BARCODE123").copy(id = 1L)
 
-        assertNull(user.getPhone())
-    }
-
-    @Test
-    @DisplayName("CI번호가 null일 때 getCiNumber()가 null을 반환한다")
-    fun `getCiNumber returns null when ciNumber is null`() {
-        val user = User(
-            userInfo = UserInfo("홍길동", null, UserType.STUDENT, null, null),
-            accountInfo = AccountInfo("test@test.com", "pw", Role.ROLE_USER, "pin"),
-            userSensitiveInfo = UserSensitiveInfo(ciNumber = null),
-        )
-
-        assertNull(user.getCiNumber())
+    private fun matchesEncodedValue(raw: String, encoded: String): Boolean {
+        return encoded == "encoded:$raw"
     }
 }

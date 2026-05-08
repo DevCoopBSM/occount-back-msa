@@ -33,9 +33,9 @@ class RegisterUserUseCase(
 
         val user = try {
             userRepository.save(
-                User(
+                User.register(
                     userCiNumber = request.userCiNumber,
-                    username = request.userName,
+                    username = request.username,
                     phone = request.userPhone,
                     email = request.userEmail,
                     encodedPassword = passwordEncoder.encode(request.password)!!,

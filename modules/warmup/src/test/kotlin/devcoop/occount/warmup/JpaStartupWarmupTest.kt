@@ -14,7 +14,7 @@ import org.springframework.boot.DefaultApplicationArguments
 
 class JpaStartupWarmupTest {
     @Test
-    fun `run warms every discovered entity across multiple rounds`() {
+    fun `run warms every discovered entity across configured rounds`() {
         val entityManagerFactory = mock(EntityManagerFactory::class.java)
         val entityManager = mock(EntityManager::class.java)
         val metamodel = mock(Metamodel::class.java)
@@ -33,7 +33,8 @@ class JpaStartupWarmupTest {
         `when`(query.setMaxResults(1)).thenReturn(query)
         `when`(query.resultList).thenReturn(emptyList<Any>())
 
-        JpaStartupWarmup(entityManagerFactory).run(DefaultApplicationArguments())
+        val properties = StartupWarmupProperties().apply { jpaRepeat = 3 }
+        JpaStartupWarmup(entityManagerFactory, properties).run(DefaultApplicationArguments())
 
         verify(entityManagerFactory, times(3)).createEntityManager()
         verify(entityManager, times(3)).createQuery("select e from FirstEntity e")

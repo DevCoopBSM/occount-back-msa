@@ -8,5 +8,7 @@ dependencies {
     implementation project(':domains:order:order-domain')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    testImplementation 'tools.jackson.core:jackson-databind'
+    testImplementation 'tools.jackson.module:jackson-module-kotlin'
 }

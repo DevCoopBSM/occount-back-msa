@@ -8,6 +8,8 @@ bootJar {
 
 dependencies {
     implementation project(':domains:item:item-api')
+    implementation project(':domains:item:item-application')
+    implementation project(':domains:item:item-domain')
     implementation project(':domains:item:item-infrastructure')
     implementation project(':modules:kafka')
     implementation project(':modules:observability')

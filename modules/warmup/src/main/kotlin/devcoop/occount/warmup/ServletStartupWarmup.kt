@@ -1,27 +1,16 @@
 package devcoop.occount.warmup
 
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext
 import org.springframework.context.event.EventListener
 import org.springframework.core.env.Environment
-import org.springframework.stereotype.Component
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import kotlin.system.measureTimeMillis
 
-@Component
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-@ConditionalOnProperty(
-    prefix = "app.startup-warmup",
-    name = ["enabled", "servlet-enabled"],
-    havingValue = "true",
-    matchIfMissing = true,
-)
 class ServletStartupWarmup(
     private val applicationContext: ServletWebServerApplicationContext,
     private val environment: Environment,
@@ -29,80 +18,66 @@ class ServletStartupWarmup(
 ) {
     @EventListener(ApplicationReadyEvent::class)
     fun warmup() {
-        val port = applicationContext.webServer?.port ?: return
+        val port = applicationContext.webServer?.port ?: -1
         if (port <= 0) {
+            log.info("Servlet startup warmup skipped (no active web server port)")
             return
         }
 
-        val target = ServletWarmupTarget.resolve(port, environment, properties)
-        val repeatCount = properties.servletRepeat.coerceIn(1, 10)
+        val rounds = properties.httpRepeat.coerceAtLeast(1)
+        val endpoints = properties.httpEndpoints
+            .takeIf { it.isNotEmpty() }
+            ?: listOf(HttpWarmupTargets.defaultEndpoint(environment, properties))
 
+        val baseUri = HttpWarmupTargets.resolveBase(port, environment)
         val client = HttpClient.newBuilder()
-            .connectTimeout(properties.servletTimeout)
+            .connectTimeout(properties.httpTimeout)
             .build()
+        val targets = endpoints.map { it to URI.create("$baseUri${it.path}") }
 
         val elapsed = measureTimeMillis {
-            repeat(repeatCount) { i ->
-                val request = HttpRequest.newBuilder(target)
-                    .GET()
-                    .timeout(properties.servletTimeout)
-                    .build()
-
-                runCatching {
-                    client.send(request, HttpResponse.BodyHandlers.discarding())
-                }.onSuccess { response ->
-                    if (response.statusCode() >= 500) {
+            repeat(rounds) { round ->
+                for ((endpoint, uri) in targets) {
+                    val request = buildRequest(endpoint, uri)
+                    runCatching {
+                        client.send(request, HttpResponse.BodyHandlers.discarding())
+                    }.onSuccess { response ->
+                        if (response.statusCode() >= 500) {
+                            log.warn(
+                                "Servlet startup warmup [{}/{}] returned status {} for {} {}",
+                                round + 1, rounds, response.statusCode(), endpoint.method, uri,
+                            )
+                        }
+                    }.onFailure { exception ->
                         log.warn(
-                            "Servlet startup warmup [{}/{}] returned status {} for {}",
-                            i + 1, repeatCount, response.statusCode(), target,
+                            "Servlet startup warmup [{}/{}] failed for {} {}",
+                            round + 1, rounds, endpoint.method, uri, exception,
                         )
                     }
-                }.onFailure { exception ->
-                    log.warn(
-                        "Servlet startup warmup [{}/{}] failed for {}",
-                        i + 1, repeatCount, target, exception,
-                    )
                 }
             }
         }
 
         log.info(
-            "Servlet startup warmup completed ({} rounds) in {} ms for {}",
-            repeatCount, elapsed, target,
+            "Servlet startup warmup completed ({} rounds, {} endpoints) in {} ms",
+            rounds, endpoints.size, elapsed,
         )
+    }
+
+    private fun buildRequest(endpoint: WarmupEndpoint, uri: URI): HttpRequest {
+        val builder = HttpRequest.newBuilder(uri).timeout(properties.httpTimeout)
+        endpoint.headers.forEach { (name, value) -> builder.header(name, value) }
+        val method = endpoint.method.uppercase()
+        val body = HttpRequest.BodyPublishers.ofString(endpoint.body.orEmpty())
+        return when (method) {
+            "POST" -> builder.setHeader("Content-Type", endpoint.contentType).POST(body).build()
+            "PUT" -> builder.setHeader("Content-Type", endpoint.contentType).PUT(body).build()
+            "PATCH" -> builder.setHeader("Content-Type", endpoint.contentType).method("PATCH", body).build()
+            else -> builder.GET().build()
+        }
     }
 
     companion object {
         private val log = LoggerFactory.getLogger(ServletStartupWarmup::class.java)
-    }
-}
-
-internal object ServletWarmupTarget {
-    fun resolve(
-        port: Int,
-        environment: Environment,
-        properties: StartupWarmupProperties,
-    ): URI {
-        val scheme = if (environment.getProperty("server.ssl.enabled", Boolean::class.java, false)) "https" else "http"
-        val configuredPath = properties.servletPath
-            ?.takeIf { it.isNotBlank() }
-            ?.let(::normalizePath)
-        val path = configuredPath ?: defaultPath(environment)
-        return URI.create("$scheme://127.0.0.1:$port$path")
-    }
-
-    private fun defaultPath(environment: Environment): String {
-        val contextPath = normalizePath(environment.getProperty("server.servlet.context-path"))
-        val actuatorBasePath = normalizePath(environment.getProperty("management.endpoints.web.base-path") ?: "/actuator")
-        return "$contextPath$actuatorBasePath/health/ping"
-    }
-
-    private fun normalizePath(path: String?): String {
-        val value = path?.trim().orEmpty()
-        if (value.isEmpty() || value == "/") {
-            return ""
-        }
-
-        return (if (value.startsWith("/")) value else "/$value").removeSuffix("/")
     }
 }

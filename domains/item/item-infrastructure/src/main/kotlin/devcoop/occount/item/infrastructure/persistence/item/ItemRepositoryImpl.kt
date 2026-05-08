@@ -29,6 +29,14 @@ class ItemRepositoryImpl(
             .map(ItemPersistenceMapper::toDomain)
     }
 
+    override fun searchByName(query: String): List<Item> {
+        val sanitized = query.trim().replace(BOOLEAN_MODE_METACHARS, " ")
+        if (sanitized.isBlank()) return emptyList()
+
+        return itemPersistenceRepository.searchByNameFulltext("\"$sanitized\"")
+            .map(ItemPersistenceMapper::toDomain)
+    }
+
     override fun findById(id: Long): Item? {
         return itemPersistenceRepository.findById(id)
             .map(ItemPersistenceMapper::toDomain)
@@ -122,5 +130,9 @@ class ItemRepositoryImpl(
             .orElseThrow {
                 IllegalStateException("Persisted item not found. itemId=$itemId")
             }
+    }
+
+    companion object {
+        private val BOOLEAN_MODE_METACHARS = Regex("""[+\-><()~*"@]""")
     }
 }

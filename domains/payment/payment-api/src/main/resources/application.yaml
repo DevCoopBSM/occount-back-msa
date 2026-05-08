@@ -5,6 +5,8 @@ server:
 spring:
   application:
     name: payment-api
+  jackson:
+    property-naming-strategy: SNAKE_CASE
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true&cacheServerConfiguration=true&rewriteBatchedStatements=true&useLocalSessionState=true&elideSetAutoCommits=true&maintainTimeStats=false
     username: ${DB_USER}
@@ -35,17 +37,17 @@ van:
   api:
     terminals:
       1:
-        host: ${VAN_API_HOST_1:}
-        port: ${VAN_API_PORT_1:0}
+        host: ${VAN_API_HOST_1}
+        port: ${VAN_API_PORT_1}
       2:
-        host: ${VAN_API_HOST_2:}
-        port: ${VAN_API_PORT_2:0}
+        host: ${VAN_API_HOST_2}
+        port: ${VAN_API_PORT_2}
       3:
-        host: ${VAN_API_HOST_3:}
-        port: ${VAN_API_PORT_3:0}
+        host: ${VAN_API_HOST_3}
+        port: ${VAN_API_PORT_3}
       4:
-        host: ${VAN_API_HOST_4:}
-        port: ${VAN_API_PORT_4:0}
+        host: ${VAN_API_HOST_4}
+        port: ${VAN_API_PORT_4}
     protocol:
       stx: ${VAN_API_PROTOCOL_STX}
       etx: ${VAN_API_PROTOCOL_ETX}
@@ -70,15 +72,20 @@ van:
       card-insert-keyword: ${VAN_PROTOCOL_CODES_CARD_INSERT_KEYWORD}
 member:
   read-api:
-    url: ${MEMBER_API_URL:http://localhost:8081/api/v3}
+    url: ${MEMBER_API_URL}
+
+app:
+  startup-warmup:
+    http-endpoints:
+      - path: /api/v3/wallet/point
+        method: GET
+        headers:
+          X-Authenticated-User-Id: "0"
 
 management:
   tracing:
     sampling:
       probability: 1.0
-  otlp:
-    tracing:
-      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}
   metrics:
     distribution:
       percentiles-histogram:

@@ -1,0 +1,16 @@
+plugins {
+    id 'java-library'
+    id 'org.jetbrains.kotlin.plugin.jpa'
+}
+
+dependencies {
+    implementation project(':core:core-common')
+    implementation project(':domains:suggestion:suggestion-domain')
+    implementation project(':domains:suggestion:suggestion-application')
+    implementation project(':modules:db')
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'tools.jackson.module:jackson-module-kotlin'
+}

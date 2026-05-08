@@ -56,6 +56,23 @@ data class Item(
         return stock.hasQuantity(quantity)
     }
 
+    fun withId(id: Long): Item = copy(itemId = id)
+    fun incrementCatalogVersion(): Item = copy(catalogVersion = catalogVersion + 1)
+    fun incrementStockVersion(): Item = copy(stockVersion = stockVersion + 1)
+
+    companion object {
+        fun create(
+            name: String,
+            category: Category,
+            price: Int,
+            barcode: String?,
+            quantity: Int,
+        ): Item = Item(
+            itemInfo = ItemInfo(name = name, category = category, price = price, barcode = barcode),
+            stock = Stock(quantity),
+        )
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Item) return false

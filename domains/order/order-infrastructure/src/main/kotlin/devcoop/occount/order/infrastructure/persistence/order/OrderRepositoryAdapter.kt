@@ -5,6 +5,7 @@ import devcoop.occount.order.application.output.PersistedOrder
 import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderStatus
 import devcoop.occount.order.domain.order.isFinalForClient
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -15,11 +16,11 @@ class OrderRepositoryAdapter(
 ) : OrderRepository {
 
     @Transactional(readOnly = true)
-    override fun findById(orderId: String): OrderAggregate? =
+    override fun findById(orderId: Long): OrderAggregate? =
         orderJpaRepository.findById(orderId).orElse(null)?.let(OrderPersistenceMapper::toDomain)
 
     @Transactional(readOnly = true)
-    override fun findPersistedById(orderId: String): PersistedOrder? =
+    override fun findPersistedById(orderId: Long): PersistedOrder? =
         orderJpaRepository.findById(orderId).orElse(null)?.let { entity ->
             PersistedOrder(
                 order = OrderPersistenceMapper.toDomain(entity),
@@ -37,8 +38,12 @@ class OrderRepositoryAdapter(
         return OrderPersistenceMapper.toDomain(orderJpaRepository.save(entity))
     }
 
-    override fun findExpiredNonFinalOrderIds(now: Instant): List<String> {
+    override fun findExpiredNonFinalOrderIds(now: Instant): List<Long> {
         val finalStatuses = OrderStatus.entries.filter { it.isFinalForClient() }
         return orderJpaRepository.findExpiredNonFinalOrderIds(now, finalStatuses)
     }
+
+    @Transactional(readOnly = true)
+    override fun findOrderIdsRequiringCompensation(limit: Int): List<Long> =
+        orderJpaRepository.findOrderIdsRequiringCompensation(PageRequest.ofSize(limit))
 }

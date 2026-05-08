@@ -18,7 +18,7 @@ class ItemQueryService(
     }
 
     fun getItemCategories(): ItemCategoryListResponse {
-        return ItemCategoryListResponse(Category.entries)
+        return ItemCategoryListResponse(categories = Category.entries)
     }
 
     fun getItemsWithoutBarcode(): ItemLookupListResponse {
@@ -30,6 +30,17 @@ class ItemQueryService(
     fun getItemsByIds(ids: List<Long>): ItemLookupListResponse {
         return ItemLookupListResponse(
             items = itemRepository.findAllByItemIds(ids).map(ItemMapper::toLookupResponse),
+        )
+    }
+
+    fun searchItems(query: String): ItemListResponse {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty()) {
+            return ItemListResponse(items = emptyList())
+        }
+
+        return ItemListResponse(
+            items = itemRepository.searchByName(trimmed).map(ItemMapper::toResponse),
         )
     }
 

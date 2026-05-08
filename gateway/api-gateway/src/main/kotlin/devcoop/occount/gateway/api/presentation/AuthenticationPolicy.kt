@@ -14,6 +14,20 @@ class AuthenticationPolicy {
         rule(HttpMethod.GET, "/api/v3/items/categories").permitAll()
         rule(HttpMethod.GET, "/api/v3/items/{barcode}").permitAll()
         rule(HttpMethod.GET, "/api/v3/items").permitAll()
+        rule(HttpMethod.GET, "/api/v3/ari-pick").permitAll()
+        rule(HttpMethod.GET, "/api/v3/ari-pick/stats").permitAll()
+        rule(HttpMethod.GET, "/api/v3/ari-pick/foods").permitAll()
+        rule(HttpMethod.GET, "/api/v3/ari-pick/blocked-keywords").adminOnly()
+        rule(HttpMethod.POST, "/api/v3/ari-pick/blocked-keywords").adminOnly()
+        rule(HttpMethod.DELETE, "/api/v3/ari-pick/blocked-keywords/{keywordId}").adminOnly()
+        rule(HttpMethod.GET, "/api/v3/ari-pick/{proposalId}").permitAll()
+        rule(HttpMethod.PATCH, "/api/v3/ari-pick/{proposalId}/approve").adminOnly()
+        rule(HttpMethod.PATCH, "/api/v3/ari-pick/{proposalId}/reject").adminOnly()
+        rule(HttpMethod.PATCH, "/api/v3/ari-pick/{proposalId}/pending").adminOnly()
+        rule(HttpMethod.DELETE, "/api/v3/ari-pick/{proposalId}/admin").adminOnly()
+        rule(HttpMethod.POST, "/api/v3/ari-pick").authenticated()
+        rule(HttpMethod.DELETE, "/api/v3/ari-pick/{proposalId}").authenticated()
+        rule(HttpMethod.POST, "/api/v3/ari-pick/{proposalId}/like").authenticated()
 
         rule("/api/v3/users/**").authenticated()
         rule(HttpMethod.POST, "/api/v3/orders").optionalAuth()
@@ -25,7 +39,6 @@ class AuthenticationPolicy {
         rule("/api/v3/wallet/**").authenticated()
 
         rule(HttpMethod.POST, "/api/v3/items").adminOnly()
-        rule(HttpMethod.POST, "/api/v3/items/sync").adminOnly()
         rule(HttpMethod.PUT, "/api/v3/items/{id}").adminOnly()
         rule(HttpMethod.DELETE, "/api/v3/items/{id}").adminOnly()
     }

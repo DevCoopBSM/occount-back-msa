@@ -9,6 +9,7 @@ object ItemMapper {
             name = item.getName(),
             category = item.getCategory(),
             price = item.getPrice(),
+            quantity = item.getQuantity(),
             barcode = item.getBarcode(),
         )
     }

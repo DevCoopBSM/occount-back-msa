@@ -86,7 +86,7 @@ class MixedPaymentUseCaseTest {
     private class FakeCardPaymentPort : CardPaymentPort {
         val approvedAmounts = mutableListOf<Int>()
 
-        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: String?): VanResult {
+        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: Long?): VanResult {
             approvedAmounts += amount
             return VanResult(
                 success = true,
@@ -127,7 +127,7 @@ class MixedPaymentUseCaseTest {
             error("not used in this test")
         }
 
-        override fun requestPendingApprovalCancellation(paymentKey: String, kioskId: String) {
+        override fun requestPendingApprovalCancellation(paymentKey: Long, kioskId: String) {
             error("not used in this test")
         }
     }

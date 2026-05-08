@@ -2,6 +2,8 @@ package devcoop.occount.payment.infrastructure.client.van
 
 import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.dto.response.VanResult
+import io.micrometer.tracing.Span
+import io.micrometer.tracing.Tracer
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
@@ -12,33 +14,46 @@ class VanTerminalClient(
     private val messageBuilder: VanMessageBuilder,
     private val messageParser: VanMessageParser,
     private val protocolSpec: VanProtocolSpec,
+    private val tracer: Tracer? = null,
 ) {
     private val log = LoggerFactory.getLogger(VanTerminalClient::class.java)
     private val socketConnection = VanSocketConnection(terminal.host, terminal.port)
     private val transactionInProgress = AtomicBoolean(false)
     private val cancellationRequested = AtomicBoolean(false)
     private val currentTransactionType = AtomicReference(TransactionType.NONE)
-    private val currentPaymentKey = AtomicReference<String?>(null)
+    private val currentPaymentKey = AtomicReference<Long?>(null)
     private val approvalPhase = AtomicReference(ApprovalPhase.IDLE)
 
-    fun approve(amount: Int, items: List<ItemCommand>, paymentKey: String? = null): VanResult {
-        return executeTransaction(
-            actionName = "카드결제",
-            transactionType = TransactionType.APPROVE,
-            requestMessage = messageBuilder.buildPaymentMessage(amount, items),
+    fun approve(amount: Int, items: List<ItemCommand>, paymentKey: Long? = null): VanResult {
+        return tracedTransaction(
+            spanName = "van.approve",
             paymentKey = paymentKey,
-        )
+            amount = amount,
+        ) {
+            executeTransaction(
+                actionName = "카드결제",
+                transactionType = TransactionType.APPROVE,
+                requestMessage = messageBuilder.buildPaymentMessage(amount, items),
+                paymentKey = paymentKey,
+            )
+        }
     }
 
     fun refund(approvalNumber: String, approvalDate: String, amount: Int): VanResult {
-        return executeTransaction(
-            actionName = "카드환불",
-            transactionType = TransactionType.REFUND,
-            requestMessage = messageBuilder.buildRefundMessage(amount, approvalDate, approvalNumber),
-        )
+        return tracedTransaction(
+            spanName = "van.refund",
+            paymentKey = null,
+            amount = amount,
+        ) {
+            executeTransaction(
+                actionName = "카드환불",
+                transactionType = TransactionType.REFUND,
+                requestMessage = messageBuilder.buildRefundMessage(amount, approvalDate, approvalNumber),
+            )
+        }
     }
 
-    fun requestPendingApprovalCancellation(paymentKey: String) {
+    fun requestPendingApprovalCancellation(paymentKey: Long) {
         if (!transactionInProgress.get() || currentTransactionType.get() != TransactionType.APPROVE) {
             log.info("결제 대기 취소 요청 무시 - 진행 중인 승인 거래 없음 orderId={}", paymentKey)
             return
@@ -64,11 +79,36 @@ class VanTerminalClient(
         sendTerminalCloseRequest(paymentKey)
     }
 
+    private inline fun tracedTransaction(
+        spanName: String,
+        paymentKey: Long?,
+        amount: Int,
+        block: () -> VanResult,
+    ): VanResult {
+        val tracer = this.tracer ?: return block()
+        val span: Span = tracer.nextSpan().name(spanName).start()
+        paymentKey?.let { span.tag("payment.key", it.toString()) }
+        span.tag("payment.amount", amount.toString())
+        return try {
+            tracer.withSpan(span).use {
+                val result = block()
+                span.tag("payment.success", result.success.toString())
+                result.errorCode?.let { span.tag("payment.error_code", it) }
+                result
+            }
+        } catch (ex: Exception) {
+            span.error(ex)
+            throw ex
+        } finally {
+            span.end()
+        }
+    }
+
     private fun executeTransaction(
         actionName: String,
         transactionType: TransactionType,
         requestMessage: ByteArray,
-        paymentKey: String? = null,
+        paymentKey: Long? = null,
     ): VanResult {
         if (!transactionInProgress.compareAndSet(false, true)) {
             return VanResult(
@@ -99,10 +139,12 @@ class VanTerminalClient(
     }
 
     private fun doExecuteTransaction(actionName: String, requestMessage: ByteArray): VanResult {
-        val connected = if (currentTransactionType.get() == TransactionType.APPROVE) {
-            socketConnection.refreshConnection()
-        } else {
-            socketConnection.ensureConnected()
+        val connected = traceStep("van.connect") {
+            if (currentTransactionType.get() == TransactionType.APPROVE) {
+                socketConnection.refreshConnection()
+            } else {
+                socketConnection.ensureConnected()
+            }
         }
 
         if (!connected) {
@@ -110,16 +152,33 @@ class VanTerminalClient(
         }
 
         return try {
-            socketConnection.logMessage("발신", requestMessage)
-            socketConnection.send(requestMessage)
-            waitForResponse(actionName)
+            traceStep("van.send") {
+                socketConnection.logMessage("발신", requestMessage)
+                socketConnection.send(requestMessage)
+            }
+            traceStep("van.wait_response") {
+                waitForResponse(actionName, requestMessage)
+            }
         } catch (e: IOException) {
             log.error("{} 요청 처리 중 소켓 오류 발생: {}", actionName, e.message, e)
             connectionFailedResult()
         }
     }
 
-    private fun waitForResponse(actionName: String): VanResult {
+    private inline fun <T> traceStep(spanName: String, block: () -> T): T {
+        val tracer = this.tracer ?: return block()
+        val span = tracer.nextSpan().name(spanName).start()
+        return try {
+            tracer.withSpan(span).use { block() }
+        } catch (ex: Exception) {
+            span.error(ex)
+            throw ex
+        } finally {
+            span.end()
+        }
+    }
+
+    private fun waitForResponse(actionName: String, requestMessage: ByteArray): VanResult {
         val deadline = System.nanoTime() + protocolSpec.transactionTimeoutNanos
         var lastStxResponse: ByteArray? = null
         var approvalCandidate: VanResult? = null
@@ -140,6 +199,11 @@ class VanTerminalClient(
                 log.error("{} 응답 수신 중 오류 발생: {}", actionName, e.message, e)
                 if (!socketConnection.reconnect()) {
                     continue
+                }
+                if (approvalCandidate == null) {
+                    log.info("재연결 후 요청 재전송 - actionName={}", actionName)
+                    socketConnection.logMessage("발신", requestMessage)
+                    socketConnection.send(requestMessage)
                 }
                 continue
             }
@@ -191,6 +255,8 @@ class VanTerminalClient(
                         if (parsed != null) {
                             return parsed
                         }
+                        log.error("DLE 수신 후 응답 파싱 실패 - 비정상 응답")
+                        return abnormalResponseResult()
                     }
 
                     responseHex == protocolSpec.formFeedHex -> {
@@ -229,7 +295,7 @@ class VanTerminalClient(
         return result
     }
 
-    private fun sendTerminalCloseRequest(paymentKey: String): Boolean {
+    private fun sendTerminalCloseRequest(paymentKey: Long): Boolean {
         return runCatching {
             val closeMessage = messageBuilder.buildTerminalCloseMessage()
             socketConnection.logMessage("발신", closeMessage)
@@ -279,6 +345,18 @@ class VanTerminalClient(
             success = false,
             message = "연결 실패",
             errorCode = "CONNECTION_FAILED",
+            transaction = null,
+            card = null,
+            additional = null,
+            rawResponse = null,
+        )
+    }
+
+    private fun abnormalResponseResult(): VanResult {
+        return VanResult(
+            success = false,
+            message = "비정상적인 단말기 응답",
+            errorCode = "ABNORMAL_RESPONSE",
             transaction = null,
             card = null,
             additional = null,

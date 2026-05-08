@@ -2,12 +2,9 @@ package devcoop.occount.kafka.outbox
 
 import devcoop.occount.core.common.event.DomainEventHeaders
 import devcoop.occount.db.outbox.OutboxEventRepository
-import io.opentelemetry.api.trace.Span
-import io.opentelemetry.api.trace.SpanContext
-import io.opentelemetry.api.trace.TraceFlags
-import io.opentelemetry.api.trace.TraceState
-import io.opentelemetry.context.Context
-import io.opentelemetry.context.Scope
+import io.micrometer.tracing.CurrentTraceContext
+import io.micrometer.tracing.Tracer
+
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.internals.RecordHeader
 import org.slf4j.LoggerFactory
@@ -21,6 +18,7 @@ import java.nio.charset.StandardCharsets
 class OutboxRelay(
     private val outboxEventRepository: OutboxEventRepository,
     private val kafkaTemplate: KafkaTemplate<String, String>,
+    private val tracer: Tracer,
 ) {
     @Scheduled(fixedDelay = 50)
     fun relay() {
@@ -58,22 +56,18 @@ class OutboxRelay(
             }
     }
 
-    private fun restoreTraceContext(traceparent: String?): Scope? {
+    private fun restoreTraceContext(traceparent: String?): CurrentTraceContext.Scope? {
         if (traceparent == null) return null
         val parts = traceparent.split("-")
         if (parts.size < 4) return null
 
-        val spanContext = SpanContext.createFromRemoteParent(
-            parts[1],
-            parts[2],
-            TraceFlags.fromHex(parts[3], 0),
-            TraceState.getDefault(),
-        )
-        if (!spanContext.isValid) return null
+        val traceContext = tracer.traceContextBuilder()
+            .traceId(parts[1])
+            .spanId(parts[2])
+            .sampled(parts[3] == "01")
+            .build()
 
-        return Span.wrap(spanContext)
-            .storeInContext(Context.root())
-            .makeCurrent()
+        return tracer.currentTraceContext().newScope(traceContext)
     }
 
     companion object {

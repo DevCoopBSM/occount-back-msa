@@ -11,6 +11,8 @@ interface ItemRepository {
 
     fun findAllByItemIds(itemIds: List<Long>): List<Item>
 
+    fun searchByName(query: String): List<Item>
+
     fun findById(id: Long): Item?
 
     fun findByBarcode(barcode: String): Item?

@@ -3,13 +3,14 @@ package devcoop.occount.order.application.support
 import devcoop.occount.core.common.event.DomainEventTypes
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.core.common.event.OrderItemPayload
+import devcoop.occount.core.common.event.ItemStockPayload
 import devcoop.occount.core.common.event.OrderPaymentPayload
 import devcoop.occount.core.common.event.OrderPaymentRequestedEvent
 import devcoop.occount.order.application.exception.OrderConcurrencyException
 import devcoop.occount.order.application.exception.OrderNotFoundException
 import devcoop.occount.order.application.exception.OrderTransactionFailedException
 import devcoop.occount.order.application.output.OrderRepository
+import devcoop.occount.order.application.output.OrderStatusNotifier
 import devcoop.occount.order.application.output.TransactionPort
 import devcoop.occount.order.domain.order.OrderAggregate
 import org.slf4j.LoggerFactory
@@ -20,10 +21,13 @@ class OrderPaymentRequestScheduler(
     private val orderRepository: OrderRepository,
     private val eventPublisher: EventPublisher,
     private val transactionPort: TransactionPort,
+    private val orderStatusNotifier: OrderStatusNotifier,
+    private val orderStreamEventMapper: OrderStreamEventMapper,
 ) {
-    fun schedulePaymentRequestIfEligible(orderId: String) {
+    fun schedulePaymentRequestIfEligible(orderId: Long) {
         repeat(OrderRetryPolicy.MAX_RETRY_COUNT) { attempt ->
             try {
+                var requestedOrder: OrderAggregate? = null
                 transactionPort.executeInNewTransaction {
                     val persistedOrder = orderRepository.findPersistedById(orderId)
                         ?: throw OrderNotFoundException()
@@ -37,8 +41,10 @@ class OrderPaymentRequestScheduler(
                         order.copy(paymentRequested = true),
                         persistedOrder.persistenceVersion,
                     )
+                    requestedOrder = updatedOrder
                     publishPaymentRequested(updatedOrder, attempt)
                 }
+                notifyPaymentRequested(requestedOrder)
                 return
             } catch (ex: OrderConcurrencyException) {
                 log.warn("결제 요청 스케줄링 중 낙관적 락 충돌 - 주문={} 시도={}", orderId, attempt)
@@ -50,11 +56,22 @@ class OrderPaymentRequestScheduler(
         }
     }
 
+    private fun notifyPaymentRequested(order: OrderAggregate?) {
+        if (order == null) {
+            return
+        }
+        try {
+            orderStatusNotifier.notify(orderStreamEventMapper.toStreamEvent(order))
+        } catch (_: Exception) {
+            // SSE 알림 실패는 주문 처리에 영향을 주지 않음
+        }
+    }
+
     private fun publishPaymentRequested(order: OrderAggregate, attempt: Int) {
         log.info("결제 요청 이벤트 발행 - 주문={} 시도={}", order.orderId, attempt)
         eventPublisher.publish(
             topic = DomainTopics.ORDER_PAYMENT_REQUESTED,
-            key = order.orderId,
+            key = order.orderId.toString(),
             eventType = DomainEventTypes.ORDER_PAYMENT_REQUESTED,
             payload = OrderPaymentRequestedEvent(
                 orderId = order.orderId,
@@ -64,7 +81,7 @@ class OrderPaymentRequestScheduler(
                     totalAmount = order.payment.totalAmount,
                 ),
                 items = order.lines.map { line ->
-                    OrderItemPayload(
+                    ItemStockPayload(
                         itemId = line.itemId,
                         itemName = line.itemNameSnapshot,
                         itemPrice = line.unitPrice,

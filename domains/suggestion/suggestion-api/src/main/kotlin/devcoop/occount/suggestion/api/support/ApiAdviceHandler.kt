@@ -1,0 +1,69 @@
+package devcoop.occount.suggestion.api.support
+
+import devcoop.occount.core.common.error.ErrorResponse
+import devcoop.occount.core.common.error.ErrorMessage
+import devcoop.occount.core.common.exception.BusinessBaseException
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.validation.FieldError
+import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.RestControllerAdvice
+
+@RestControllerAdvice
+class ApiAdviceHandler {
+    @ExceptionHandler(MethodArgumentNotValidException::class)
+    fun handleValidationException(e: MethodArgumentNotValidException): ResponseEntity<Map<String, String>> {
+        val errors = e.bindingResult.allErrors.associate {
+            val field = if (it is FieldError) it.field else "global"
+            val message = it.defaultMessage ?: "Invalid value"
+            field to message
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors)
+    }
+
+    @ExceptionHandler(BusinessBaseException::class)
+    fun handleBusinessBaseException(e: BusinessBaseException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(resolveStatus(e.errorMessage))
+            .body(ErrorResponse.of(e.errorMessage))
+    }
+
+    private fun resolveStatus(errorMessage: ErrorMessage): HttpStatus {
+        return when (errorMessage) {
+            ErrorMessage.INVALID_TOKEN,
+            ErrorMessage.EXPIRED_TOKEN,
+            ErrorMessage.INVALID_PASSWORD,
+            ErrorMessage.INVALID_PIN,
+            -> HttpStatus.UNAUTHORIZED
+
+            ErrorMessage.USER_NOT_FOUND,
+            ErrorMessage.ITEM_NOT_FOUND,
+            ErrorMessage.ARIPICK_NOT_FOUND,
+            ErrorMessage.ITEM_NOT_SYNCHRONIZED,
+            ErrorMessage.PAYMENT_LOG_NOT_FOUND,
+            -> HttpStatus.NOT_FOUND
+
+            ErrorMessage.USER_ALREADY_EXISTS,
+            ErrorMessage.ITEM_ALREADY_EXISTS,
+            ErrorMessage.TRANSACTION_IN_PROGRESS,
+            ErrorMessage.ITEM_CONCURRENT_UPDATE,
+            ErrorMessage.ARIPICK_BLOCKED_KEYWORD_ALREADY_EXISTS,
+            -> HttpStatus.CONFLICT
+
+            ErrorMessage.PAYMENT_TIMEOUT -> HttpStatus.REQUEST_TIMEOUT
+
+            ErrorMessage.PAYMENT_LOG_SAVE_FAILED,
+            ErrorMessage.CHARGE_LOG_SAVE_FAILED,
+            -> HttpStatus.INTERNAL_SERVER_ERROR
+
+            ErrorMessage.ARIPICK_FOOD_SAFETY_UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE
+
+            ErrorMessage.ACCESS_DENIED,
+            ErrorMessage.ARIPICK_ACCESS_DENIED,
+            -> HttpStatus.FORBIDDEN
+
+            else -> HttpStatus.BAD_REQUEST
+        }
+    }
+}

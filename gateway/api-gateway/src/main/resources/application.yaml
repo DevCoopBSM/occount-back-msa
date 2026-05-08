@@ -21,6 +21,13 @@ spring:
                 exposedHeaders:
                   - Authorization
                 allowCredentials: true
+          httpclient:
+            connect-timeout: 1000
+            response-timeout: 5s
+            pool:
+              type: fixed
+              max-connections: 100
+              acquire-timeout: 30000
           routes:
             - id: member-api
               uri: ${MEMBER_API_URL}
@@ -30,10 +37,16 @@ spring:
               uri: ${ITEM_API_URL}
               predicates:
                 - Path=/api/v3/items/**
+            - id: suggestion-api
+              uri: ${SUGGESTION_API_URL}
+              predicates:
+                - Path=/api/v3/ari-pick/**
             - id: order-api
               uri: ${ORDER_API_URL}
               predicates:
                 - Path=/api/v3/orders/**
+              metadata:
+                response-timeout: 35000
             - id: wallet-api
               uri: ${PAYMENT_API_URL}
               predicates:
@@ -46,13 +59,23 @@ jwt:
   header: ${JWT_HEADER}
   secret-key: ${JWT_SECRET_KEY}
 
+app:
+  startup-warmup:
+    http-endpoints:
+      - path: /api/v3/auth/login
+        method: POST
+        body: '{"email":"warmup@warmup.invalid","password":"x"}'
+      - path: /api/v3/items
+        method: GET
+      - path: /api/v3/orders/00000000-0000-0000-0000-000000000000
+        method: GET
+      - path: /api/v3/wallet/balance
+        method: GET
+
 management:
   tracing:
     sampling:
       probability: 1.0
-  otlp:
-    tracing:
-      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}
   metrics:
     distribution:
       percentiles-histogram:

@@ -8,11 +8,6 @@ import org.springframework.stereotype.Repository
 class ChargeLogRepositoryImpl(
     private val persistenceRepository: ChargeLogPersistenceRepository,
 ) : ChargeLogRepository {
-    override fun findByUserId(userId: Long): List<ChargeLog> {
-        return persistenceRepository.findByUserId(userId)
-            .map(ChargeLogPersistenceMapper::toDomain)
-    }
-
     override fun findByPaymentId(paymentId: Long): ChargeLog? {
         return persistenceRepository.findByPaymentId(paymentId)
             ?.let(ChargeLogPersistenceMapper::toDomain)

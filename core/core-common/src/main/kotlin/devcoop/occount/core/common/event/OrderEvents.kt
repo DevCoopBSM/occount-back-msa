@@ -1,7 +1,7 @@
 package devcoop.occount.core.common.event
 
 data class OrderRequestedEvent(
-    val orderId: String,
+    val orderId: Long,
     val userId: Long?,
     val kioskId: String,
     val items: List<OrderRequestedItemPayload>,
@@ -13,15 +13,15 @@ data class OrderRequestedItemPayload(
 )
 
 data class OrderPaymentRequestedEvent(
-    val orderId: String,
+    val orderId: Long,
     val kioskId: String,
     val userId: Long?,
     val payment: OrderPaymentPayload,
-    val items: List<OrderItemPayload>,
+    val items: List<ItemStockPayload>,
 )
 
 data class OrderPaymentCancellationRequestedEvent(
-    val orderId: String,
+    val orderId: Long,
     val kioskId: String,
     val userId: Long?,
 )
@@ -30,7 +30,7 @@ data class OrderPaymentPayload(
     val totalAmount: Int,
 )
 
-data class OrderItemPayload(
+data class ItemStockPayload(
     val itemId: Long,
     val itemName: String,
     val itemPrice: Int,
@@ -38,8 +38,8 @@ data class OrderItemPayload(
     val totalPrice: Int,
 )
 
-data class OrderPaymentCompletedEvent(
-    val orderId: String,
+data class PaymentCompletedEvent(
+    val orderId: Long,
     val userId: Long?,
     val paymentLogId: Long,
     val pointsUsed: Int,
@@ -49,25 +49,25 @@ data class OrderPaymentCompletedEvent(
     val approvalNumber: String?,
 )
 
-data class OrderPaymentFailedEvent(
-    val orderId: String,
+data class PaymentFailedEvent(
+    val orderId: Long,
     val userId: Long?,
     val reason: String,
 )
 
-data class OrderStockCompletedEvent(
-    val orderId: String,
-    val items: List<OrderItemPayload>,
+data class ItemStockDecreasedEvent(
+    val orderId: Long,
+    val items: List<ItemStockPayload>,
     val totalAmount: Int,
 )
 
-data class OrderStockFailedEvent(
-    val orderId: String,
+data class ItemStockDecreaseFailedEvent(
+    val orderId: Long,
     val reason: String,
 )
 
 data class OrderPaymentCompensationRequestedEvent(
-    val orderId: String,
+    val orderId: Long,
     val kioskId: String,
     val userId: Long?,
     val paymentLogId: Long?,
@@ -75,32 +75,32 @@ data class OrderPaymentCompensationRequestedEvent(
     val cardAmount: Int,
 )
 
-data class OrderPaymentCompensatedEvent(
-    val orderId: String,
+data class PaymentCompensatedEvent(
+    val orderId: Long,
     val userId: Long?,
 )
 
-data class OrderPaymentCompensationFailedEvent(
-    val orderId: String,
+data class PaymentCompensationFailedEvent(
+    val orderId: Long,
     val userId: Long?,
     val reason: String,
 )
 
 data class OrderStockCompensationRequestedEvent(
-    val orderId: String,
-    val items: List<OrderStockCompensationItemPayload>,
+    val orderId: Long,
+    val items: List<ItemStockCompensationPayload>,
 )
 
-data class OrderStockCompensationItemPayload(
+data class ItemStockCompensationPayload(
     val itemId: Long,
     val quantity: Int,
 )
 
-data class OrderStockCompensatedEvent(
-    val orderId: String,
+data class ItemStockCompensatedEvent(
+    val orderId: Long,
 )
 
-data class OrderStockCompensationFailedEvent(
-    val orderId: String,
+data class ItemStockCompensationFailedEvent(
+    val orderId: Long,
     val reason: String,
 )

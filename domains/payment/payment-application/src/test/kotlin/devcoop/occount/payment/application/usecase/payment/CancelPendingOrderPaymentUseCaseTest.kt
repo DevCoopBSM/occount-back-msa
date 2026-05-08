@@ -7,6 +7,7 @@ import devcoop.occount.payment.application.output.CardPaymentPort
 import devcoop.occount.payment.application.output.OrderPaymentCancellationRequestResult
 import devcoop.occount.payment.application.output.OrderPaymentExecutionRepository
 import devcoop.occount.payment.application.output.OrderPaymentExecutionStartResult
+import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -19,9 +20,9 @@ class CancelPendingOrderPaymentUseCaseTest {
         )
         val useCase = CancelPendingOrderPaymentUseCase(cardPaymentPort, executionRepository)
 
-        useCase.cancel(OrderPaymentCancellationRequestedEvent(orderId = "order-1", kioskId = "kiosk-1", userId = 1L))
+        useCase.cancel(OrderPaymentCancellationRequestedEvent(orderId = 1L, kioskId = "kiosk-1", userId = 1L))
 
-        assertEquals("order-1", cardPaymentPort.cancelRequestedPaymentKey)
+        assertEquals(1L, cardPaymentPort.cancelRequestedPaymentKey)
     }
 
     @Test
@@ -32,16 +33,16 @@ class CancelPendingOrderPaymentUseCaseTest {
         )
         val useCase = CancelPendingOrderPaymentUseCase(cardPaymentPort, executionRepository)
 
-        useCase.cancel(OrderPaymentCancellationRequestedEvent(orderId = "order-1", kioskId = "kiosk-1", userId = 1L))
+        useCase.cancel(OrderPaymentCancellationRequestedEvent(orderId = 1L, kioskId = "kiosk-1", userId = 1L))
 
         assertEquals(null, cardPaymentPort.cancelRequestedPaymentKey)
-        assertEquals("order-1", executionRepository.lastCancellationOrderId)
+        assertEquals(1L, executionRepository.lastCancellationOrderId)
     }
 
     private class FakeCardPaymentPort : CardPaymentPort {
-        var cancelRequestedPaymentKey: String? = null
+        var cancelRequestedPaymentKey: Long? = null
 
-        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: String?): VanResult {
+        override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: Long?): VanResult {
             error("not used in this test")
         }
 
@@ -49,7 +50,7 @@ class CancelPendingOrderPaymentUseCaseTest {
             error("not used in this test")
         }
 
-        override fun requestPendingApprovalCancellation(paymentKey: String, kioskId: String) {
+        override fun requestPendingApprovalCancellation(paymentKey: Long, kioskId: String) {
             cancelRequestedPaymentKey = paymentKey
         }
     }
@@ -57,18 +58,19 @@ class CancelPendingOrderPaymentUseCaseTest {
     private class FakeOrderPaymentExecutionRepository(
         private val cancellationRequestResult: OrderPaymentCancellationRequestResult,
     ) : OrderPaymentExecutionRepository {
-        var lastCancellationOrderId: String? = null
+        var lastCancellationOrderId: Long? = null
 
-        override fun startProcessing(orderId: String): OrderPaymentExecutionStartResult = OrderPaymentExecutionStartResult.STARTED
+        override fun startProcessing(orderId: Long): OrderPaymentExecutionStartResult = OrderPaymentExecutionStartResult.STARTED
 
-        override fun requestCancellation(orderId: String): OrderPaymentCancellationRequestResult {
+        override fun requestCancellation(orderId: Long): OrderPaymentCancellationRequestResult {
             lastCancellationOrderId = orderId
             return cancellationRequestResult
         }
 
-        override fun isCancellationRequested(orderId: String): Boolean = false
-        override fun markCompleted(orderId: String) = Unit
-        override fun markFailed(orderId: String) = Unit
-        override fun markCancelled(orderId: String) = Unit
+        override fun isCancellationRequested(orderId: Long): Boolean = false
+        override fun markCompleted(orderId: Long) = Unit
+        override fun markFailed(orderId: Long) = Unit
+        override fun markCancelled(orderId: Long) = Unit
+        override fun findStuckInProcessing(updatedBefore: LocalDateTime, limit: Int): List<Long> = emptyList()
     }
 }

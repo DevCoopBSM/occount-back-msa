@@ -5,7 +5,7 @@ import java.time.Duration
 
 @ConfigurationProperties("management.otlp.tracing")
 class LegacyOtlpTracingProperties {
-    var endpoint: String? = null
+    var endpoint: String = "http://datadog.datadog.svc.cluster.local:4318"
     var connectTimeout: Duration? = null
     var timeout: Duration? = null
     var compression: String? = null
