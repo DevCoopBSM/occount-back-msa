@@ -13,6 +13,11 @@ enum class ErrorMessage(
     USER_ALREADY_EXISTS("이미 존재하는 유저입니다."),
     INVALID_PASSWORD("비밀번호가 일치하지 않습니다."),
 
+    OTP_NOT_FOUND("발송된 인증번호가 없습니다. 이메일 인증을 먼저 요청해주세요."),
+    OTP_EXPIRED("인증번호가 만료되었습니다. 다시 요청해주세요."),
+    OTP_MISMATCH("인증번호가 일치하지 않습니다."),
+    EMAIL_NOT_VERIFIED("이메일 인증이 완료되지 않았습니다."),
+
 
     INVALID_PIN("핀번호가 틀렸습니다."),
 
