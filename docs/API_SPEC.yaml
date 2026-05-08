@@ -40,6 +40,67 @@ paths:
   # ───────────────────────────────────────────────
   # Auth
   # ───────────────────────────────────────────────
+  /api/v3/auth/email/send-otp:
+    post:
+      tags: [Auth]
+      operationId: sendEmailOtp
+      summary: 이메일 인증번호 발송
+      description: 입력된 이메일로 6자리 OTP 인증번호를 발송합니다. 유효시간은 5분입니다. (PERMIT_ALL)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmailOtpRequest'
+            example:
+              email: "hong@example.com"
+      responses:
+        "204":
+          description: 인증번호 발송 성공
+        "400":
+          description: 요청 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/auth/email/verify-otp:
+    post:
+      tags: [Auth]
+      operationId: verifyEmailOtp
+      summary: 이메일 인증번호 확인
+      description: 발송된 OTP 인증번호를 검증합니다. 성공 시 해당 이메일로 회원가입이 가능합니다. (PERMIT_ALL)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailOtpRequest'
+            example:
+              email: "hong@example.com"
+              otpCode: "384921"
+      responses:
+        "204":
+          description: 인증번호 확인 성공
+        "400":
+          description: 요청 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: 인증번호 불일치 또는 만료
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: 발송된 인증번호 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/v3/auth/register:
     post:
       tags: [Auth]
@@ -574,6 +635,29 @@ components:
 
   schemas:
     # ── Auth ──────────────────────────────────────
+    SendEmailOtpRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          description: 인증번호를 받을 이메일
+
+    VerifyEmailOtpRequest:
+      type: object
+      required: [email, otpCode]
+      properties:
+        email:
+          type: string
+          format: email
+          description: 인증번호를 받은 이메일
+        otpCode:
+          type: string
+          minLength: 6
+          maxLength: 6
+          description: 6자리 인증번호
+
     MemberRegisterRequest:
       type: object
       required: [userCiNumber, userName, userEmail, password]
