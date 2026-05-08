@@ -1,8 +1,12 @@
 package devcoop.occount.member.api.auth
 
+import devcoop.occount.member.api.auth.dto.SendEmailOtpRequest
+import devcoop.occount.member.api.auth.dto.VerifyEmailOtpRequest
 import devcoop.occount.member.application.usecase.login.KioskLoginRequest
 import devcoop.occount.member.application.usecase.login.LoginUserUseCase
 import devcoop.occount.member.application.usecase.login.MemberLoginRequest
+import devcoop.occount.member.application.usecase.otp.SendEmailOtpUseCase
+import devcoop.occount.member.application.usecase.otp.VerifyEmailOtpUseCase
 import devcoop.occount.member.application.usecase.register.MemberRegisterRequest
 import devcoop.occount.member.application.usecase.register.RegisterUserUseCase
 import jakarta.servlet.http.HttpServletResponse
@@ -21,7 +25,21 @@ import org.springframework.web.bind.annotation.RestController
 class AuthController(
     private val loginUserUseCase: LoginUserUseCase,
     private val registerUserUseCase: RegisterUserUseCase,
+    private val sendEmailOtpUseCase: SendEmailOtpUseCase,
+    private val verifyEmailOtpUseCase: VerifyEmailOtpUseCase,
 ) {
+    @PostMapping("/email/send-otp")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun sendEmailOtp(@Valid @RequestBody request: SendEmailOtpRequest) {
+        sendEmailOtpUseCase.send(request.email)
+    }
+
+    @PostMapping("/email/verify-otp")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun verifyEmailOtp(@Valid @RequestBody request: VerifyEmailOtpRequest) {
+        verifyEmailOtpUseCase.verify(request.email, request.otpCode)
+    }
+
     @PostMapping("/register")
     fun register(@Valid @RequestBody request: MemberRegisterRequest): ResponseEntity<Void> {
         registerUserUseCase.register(request)
