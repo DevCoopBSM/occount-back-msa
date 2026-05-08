@@ -1,11 +1,15 @@
 package devcoop.occount.member.api.auth
 
 import devcoop.occount.member.api.support.FakeEventPublisher
+import devcoop.occount.member.api.support.FakeEmailOtpRepository
 import devcoop.occount.member.api.support.FakePasswordEncoder
 import devcoop.occount.member.api.support.FakeTokenGenerator
 import devcoop.occount.member.api.support.FakeUserRepository
 import devcoop.occount.member.api.support.mockMvc
 import devcoop.occount.member.api.support.userFixture
+import devcoop.occount.member.api.support.testSendEmailOtpUseCase
+import devcoop.occount.member.api.support.testVerifyEmailOtpUseCase
+import devcoop.occount.member.api.support.verifiedEmailOtp
 import devcoop.occount.member.application.usecase.login.LoginUserUseCase
 import devcoop.occount.member.application.usecase.register.RegisterUserUseCase
 import org.junit.jupiter.api.DisplayName
@@ -22,6 +26,12 @@ class AuthControllerTest {
     @Test
     @DisplayName("회원가입 요청이 성공하면 201 Created를 반환한다")
     fun `register returns 201 Created on success`() {
+        val emailOtpRepository = FakeEmailOtpRepository(
+            initialOtpsByEmail = mapOf(
+                "test@test.com" to verifiedEmailOtp("test@test.com"),
+            ),
+        )
+
         val mockMvc = mockMvc(
             AuthController(
                 loginUserUseCase = LoginUserUseCase(
@@ -33,8 +43,11 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
+                    emailOtpRepository = emailOtpRepository,
                     defaultPin = "000000",
                 ),
+                sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
+                verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
             ),
         )
 
@@ -58,6 +71,12 @@ class AuthControllerTest {
     @Test
     @DisplayName("회원가입 요청이 유효하지 않으면 400과 필드 에러를 반환한다")
     fun `register returns 400 when request is invalid`() {
+        val emailOtpRepository = FakeEmailOtpRepository(
+            initialOtpsByEmail = mapOf(
+                "test@test.com" to verifiedEmailOtp("test@test.com"),
+            ),
+        )
+
         val mockMvc = mockMvc(
             AuthController(
                 loginUserUseCase = LoginUserUseCase(
@@ -69,8 +88,11 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
+                    emailOtpRepository = emailOtpRepository,
                     defaultPin = "000000",
                 ),
+                sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
+                verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
             ),
         )
 
@@ -96,6 +118,12 @@ class AuthControllerTest {
     @Test
     @DisplayName("멤버 로그인 성공 시 Authorization 헤더에 Bearer 토큰이 설정된다")
     fun `memberLogin sets Authorization header with Bearer token`() {
+        val emailOtpRepository = FakeEmailOtpRepository(
+            initialOtpsByEmail = mapOf(
+                "test@test.com" to verifiedEmailOtp("test@test.com"),
+            ),
+        )
+
         val mockMvc = mockMvc(
             AuthController(
                 loginUserUseCase = LoginUserUseCase(
@@ -107,8 +135,11 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
+                    emailOtpRepository = emailOtpRepository,
                     defaultPin = "000000",
                 ),
+                sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
+                verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
             ),
         )
 
@@ -130,6 +161,12 @@ class AuthControllerTest {
     @Test
     @DisplayName("멤버 로그인 비밀번호가 틀리면 401을 반환한다")
     fun `memberLogin returns 401 when password is invalid`() {
+        val emailOtpRepository = FakeEmailOtpRepository(
+            initialOtpsByEmail = mapOf(
+                "test@test.com" to verifiedEmailOtp("test@test.com"),
+            ),
+        )
+
         val mockMvc = mockMvc(
             AuthController(
                 loginUserUseCase = LoginUserUseCase(
@@ -141,8 +178,11 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
+                    emailOtpRepository = emailOtpRepository,
                     defaultPin = "000000",
                 ),
+                sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
+                verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
             ),
         )
 
@@ -164,6 +204,12 @@ class AuthControllerTest {
     @Test
     @DisplayName("키오스크 로그인 비밀번호가 틀리면 401을 반환한다")
     fun `kioskLogin returns 401 when pin is invalid`() {
+        val emailOtpRepository = FakeEmailOtpRepository(
+            initialOtpsByEmail = mapOf(
+                "test@test.com" to verifiedEmailOtp("test@test.com"),
+            ),
+        )
+
         val mockMvc = mockMvc(
             AuthController(
                 loginUserUseCase = LoginUserUseCase(
@@ -175,8 +221,11 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
+                    emailOtpRepository = emailOtpRepository,
                     defaultPin = "000000",
                 ),
+                sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
+                verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
             ),
         )
 
