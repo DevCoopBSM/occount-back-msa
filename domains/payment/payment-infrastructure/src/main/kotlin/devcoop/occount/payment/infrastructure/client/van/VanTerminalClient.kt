@@ -39,7 +39,12 @@ class VanTerminalClient(
         }
     }
 
-    fun refund(approvalNumber: String, approvalDate: String, amount: Int): VanResult {
+    fun refund(
+        approvalNumber: String,
+        approvalDate: String,
+        amount: Int,
+        items: List<ItemCommand>,
+    ): VanResult {
         return tracedTransaction(
             spanName = "van.refund",
             paymentKey = null,
@@ -48,7 +53,7 @@ class VanTerminalClient(
             executeTransaction(
                 actionName = "카드환불",
                 transactionType = TransactionType.REFUND,
-                requestMessage = messageBuilder.buildRefundMessage(amount, approvalDate, approvalNumber),
+                requestMessage = messageBuilder.buildRefundMessage(amount, approvalDate, approvalNumber, items),
             )
         }
     }

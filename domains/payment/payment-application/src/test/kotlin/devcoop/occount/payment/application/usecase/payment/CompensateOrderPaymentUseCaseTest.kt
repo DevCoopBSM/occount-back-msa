@@ -1,6 +1,7 @@
 package devcoop.occount.payment.application.usecase.payment
 
 import devcoop.occount.core.common.event.EventPublisher
+import devcoop.occount.core.common.event.ItemStockPayload
 import devcoop.occount.core.common.event.PaymentCompensatedEvent
 import devcoop.occount.core.common.event.PaymentCompensationFailedEvent
 import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
@@ -67,6 +68,75 @@ class CompensateOrderPaymentUseCaseTest {
         assertEquals(RefundState.COMPLETED, paymentLogRepository.require(10L).getRefundState())
         assertEquals(RefundState.COMPLETED, paymentLogRepository.require(10L).getCardRefundState())
         assertEquals(RefundState.COMPLETED, paymentLogRepository.require(10L).getPointRefundState())
+    }
+
+    @Test
+    fun `compensate forwards order items to card refund for terminal receipt`() {
+        val paymentLogRepository = FakePaymentLogRepository(
+            paymentLog(
+                paymentId = 10L,
+                paymentType = PaymentType.CARD,
+            ),
+        )
+        val cardPaymentPort = FakeCardPaymentPort()
+        val useCase = CompensateOrderPaymentUseCase(
+            paymentLogRepository = paymentLogRepository,
+            cardPaymentPort = cardPaymentPort,
+            refundWalletPointsUseCase = RefundWalletPointsUseCase(FakeWalletRepository(), FakeChargeLogRepository()),
+            eventPublisher = FakeEventPublisher(),
+        )
+
+        useCase.compensate(
+            OrderPaymentCompensationRequestedEvent(
+                orderId = 1L,
+                kioskId = "kiosk-1",
+                userId = null,
+                paymentLogId = 10L,
+                pointsUsed = 0,
+                cardAmount = 4500,
+                items = listOf(
+                    ItemStockPayload(itemId = 100L, itemName = "커피", itemPrice = 3000, quantity = 1, totalPrice = 3000),
+                    ItemStockPayload(itemId = 101L, itemName = "쿠키", itemPrice = 1500, quantity = 1, totalPrice = 1500),
+                ),
+            ),
+        )
+
+        val forwarded = cardPaymentPort.refundRequests.single().items
+        assertEquals(2, forwarded.size)
+        assertEquals(ItemCommand(name = "커피", price = 3000, quantity = 1, total = 3000), forwarded[0])
+        assertEquals(ItemCommand(name = "쿠키", price = 1500, quantity = 1, total = 1500), forwarded[1])
+    }
+
+    @Test
+    fun `compensate succeeds when legacy event omits items field`() {
+        val paymentLogRepository = FakePaymentLogRepository(
+            paymentLog(
+                paymentId = 10L,
+                paymentType = PaymentType.CARD,
+            ),
+        )
+        val cardPaymentPort = FakeCardPaymentPort()
+        val useCase = CompensateOrderPaymentUseCase(
+            paymentLogRepository = paymentLogRepository,
+            cardPaymentPort = cardPaymentPort,
+            refundWalletPointsUseCase = RefundWalletPointsUseCase(FakeWalletRepository(), FakeChargeLogRepository()),
+            eventPublisher = FakeEventPublisher(),
+        )
+
+        useCase.compensate(
+            OrderPaymentCompensationRequestedEvent(
+                orderId = 1L,
+                kioskId = "kiosk-1",
+                userId = null,
+                paymentLogId = 10L,
+                pointsUsed = 0,
+                cardAmount = 1500,
+            ),
+        )
+
+        val call = cardPaymentPort.refundRequests.single()
+        assertEquals(emptyList(), call.items, "구버전 페이로드(items 미포함)에서도 빈 리스트로 전달되어야 함")
+        assertEquals(RefundState.COMPLETED, paymentLogRepository.require(10L).getCardRefundState())
     }
 
     @Test
@@ -194,15 +264,22 @@ class CompensateOrderPaymentUseCaseTest {
     private class FakeCardPaymentPort(
         private val refundError: Exception? = null,
     ) : CardPaymentPort {
-        val refundRequests = mutableListOf<Pair<Int, String>>()
+        val refundRequests = mutableListOf<RefundCall>()
 
         override fun approve(amount: Int, items: List<ItemCommand>, kioskId: String, paymentKey: Long?): VanResult {
             error("not used in this test")
         }
 
-        override fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int, kioskId: String): VanResult {
+        override fun refund(
+            transactionId: String?,
+            approvalNumber: String?,
+            approvalDate: String,
+            amount: Int,
+            items: List<ItemCommand>,
+            kioskId: String,
+        ): VanResult {
             refundError?.let { throw it }
-            refundRequests += amount to kioskId
+            refundRequests += RefundCall(amount = amount, kioskId = kioskId, items = items)
             return VanResult(
                 success = true,
                 message = "ok",
@@ -217,6 +294,8 @@ class CompensateOrderPaymentUseCaseTest {
         override fun requestPendingApprovalCancellation(paymentKey: Long, kioskId: String) {
             error("not used in this test")
         }
+
+        data class RefundCall(val amount: Int, val kioskId: String, val items: List<ItemCommand>)
     }
 
     private class FakeEventPublisher : EventPublisher {

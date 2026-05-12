@@ -7,6 +7,7 @@ import devcoop.occount.core.common.event.PaymentCompensatedEvent
 import devcoop.occount.core.common.event.PaymentCompensationFailedEvent
 import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
 import devcoop.occount.core.common.exception.BusinessBaseException
+import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.exception.InvalidPaymentRequestException
 import devcoop.occount.payment.application.exception.PaymentCancelledException
 import devcoop.occount.payment.application.exception.PaymentFailedException
@@ -60,6 +61,7 @@ class CompensateOrderPaymentUseCase(
                     approvalNumber = transactionInfo.approvalNumber(),
                     approvalDate = approvalDate,
                     amount = event.cardAmount,
+                    items = event.items.map(ItemCommand::from),
                     kioskId = event.kioskId,
                 )
 
