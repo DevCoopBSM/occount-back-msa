@@ -3,8 +3,9 @@ package devcoop.occount.order.application.support
 import devcoop.occount.core.common.event.DomainEventTypes
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
 import devcoop.occount.core.common.event.ItemStockCompensationPayload
+import devcoop.occount.core.common.event.ItemStockPayload
+import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
 import devcoop.occount.core.common.event.OrderStockCompensationRequestedEvent
 import devcoop.occount.order.application.exception.OrderNotFoundException
 import devcoop.occount.order.application.output.OrderRepository
@@ -71,6 +72,15 @@ class OrderCompensationScheduler(
                 paymentLogId = order.paymentResult.paymentLogId,
                 pointsUsed = order.paymentResult.pointsUsed,
                 cardAmount = order.paymentResult.cardAmount,
+                items = order.lines.map { line ->
+                    ItemStockPayload(
+                        itemId = line.itemId,
+                        itemName = line.itemNameSnapshot,
+                        itemPrice = line.unitPrice,
+                        quantity = line.quantity,
+                        totalPrice = line.totalPrice,
+                    )
+                },
             ),
         )
     }

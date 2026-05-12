@@ -73,6 +73,7 @@ data class OrderPaymentCompensationRequestedEvent(
     val paymentLogId: Long?,
     val pointsUsed: Int,
     val cardAmount: Int,
+    val items: List<ItemStockPayload> = emptyList(),
 )
 
 data class PaymentCompensatedEvent(
