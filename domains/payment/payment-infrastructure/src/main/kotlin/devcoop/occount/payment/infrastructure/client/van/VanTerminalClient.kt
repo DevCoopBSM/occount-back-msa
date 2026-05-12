@@ -29,6 +29,7 @@ class VanTerminalClient(
             spanName = "van.approve",
             paymentKey = paymentKey,
             amount = amount,
+            itemsCount = items.size,
         ) {
             executeTransaction(
                 actionName = "카드결제",
@@ -49,6 +50,7 @@ class VanTerminalClient(
             spanName = "van.refund",
             paymentKey = null,
             amount = amount,
+            itemsCount = items.size,
         ) {
             executeTransaction(
                 actionName = "카드환불",
@@ -88,12 +90,14 @@ class VanTerminalClient(
         spanName: String,
         paymentKey: Long?,
         amount: Int,
+        itemsCount: Int,
         block: () -> VanResult,
     ): VanResult {
         val tracer = this.tracer ?: return block()
         val span: Span = tracer.nextSpan().name(spanName).start()
         paymentKey?.let { span.tag("payment.key", it.toString()) }
         span.tag("payment.amount", amount.toString())
+        span.tag("payment.items_count", itemsCount.toString())
         return try {
             tracer.withSpan(span).use {
                 val result = block()
