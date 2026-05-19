@@ -38,6 +38,7 @@ class CompensateOrderPaymentUseCase(
                 ?: throw PaymentLogNotFoundException()
 
             if (paymentLog.getRefundState() == RefundState.COMPLETED) {
+                runCatching { recordConsumption() }
                 publishCompensated(event)
                 return
             }

@@ -6,7 +6,8 @@ import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.output.EmailSender
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.support.TransactionTemplate
 import java.security.SecureRandom
 import java.time.Instant
 
@@ -14,32 +15,36 @@ import java.time.Instant
 class SendEmailOtpUseCase(
     private val emailOtpRepository: EmailOtpRepository,
     private val emailSender: EmailSender,
+    transactionManager: PlatformTransactionManager,
 ) {
     private val secureRandom = SecureRandom()
+    private val transactionTemplate = TransactionTemplate(transactionManager)
 
-    @Transactional
     fun send(email: String) {
-        val existing = emailOtpRepository.findByEmailForUpdate(email)
-        if (existing != null && existing.isRecentlySent()) {
-            throw OtpRateLimitException()
-        }
+        val otpCode = transactionTemplate.execute {
+            val existing = emailOtpRepository.findByEmailForUpdate(email)
+            if (existing != null && existing.isRecentlySent()) {
+                throw OtpRateLimitException()
+            }
 
-        val otpCode = generateOtpCode()
-        val now = Instant.now()
+            val code = generateOtpCode()
+            val now = Instant.now()
 
-        try {
-            emailOtpRepository.save(
-                EmailOtp(
-                    email = email,
-                    otpCode = otpCode,
-                    expiresAt = now.plusSeconds(EmailOtp.OTP_TTL_SECONDS),
-                    createdAt = now,
+            try {
+                emailOtpRepository.save(
+                    EmailOtp(
+                        email = email,
+                        otpCode = code,
+                        expiresAt = now.plusSeconds(EmailOtp.OTP_TTL_SECONDS),
+                        createdAt = now,
+                    )
                 )
-            )
-        } catch (_: DataIntegrityViolationException) {
-            // 동시 요청이 먼저 저장한 경우 rate limit으로 처리
-            throw OtpRateLimitException()
-        }
+            } catch (_: DataIntegrityViolationException) {
+                throw OtpRateLimitException()
+            }
+
+            code
+        }!!
 
         emailSender.sendOtp(to = email, otpCode = otpCode)
     }
