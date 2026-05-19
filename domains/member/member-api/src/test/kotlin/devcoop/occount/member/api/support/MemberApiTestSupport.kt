@@ -102,6 +102,8 @@ class FakeEmailOtpRepository(
 
     override fun findByEmail(email: String): EmailOtp? = otpsByEmail[email]
 
+    override fun findByEmailForUpdate(email: String): EmailOtp? = otpsByEmail[email]
+
     override fun findValidByEmail(email: String): EmailOtp? =
         otpsByEmail[email]?.takeIf { !it.isExpired() }
 

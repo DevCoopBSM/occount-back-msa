@@ -18,6 +18,10 @@ class EmailOtpRepositoryImpl(
         return emailOtpJpaRepository.findByEmail(email)?.toDomain()
     }
 
+    override fun findByEmailForUpdate(email: String): EmailOtp? {
+        return emailOtpJpaRepository.findByEmailForUpdate(email)?.toDomain()
+    }
+
     override fun findValidByEmail(email: String): EmailOtp? {
         return emailOtpJpaRepository.findByEmailAndExpiresAtAfter(email, Instant.now())?.toDomain()
     }

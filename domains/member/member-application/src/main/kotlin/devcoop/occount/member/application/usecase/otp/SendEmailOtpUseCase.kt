@@ -18,7 +18,7 @@ class SendEmailOtpUseCase(
 
     @Transactional
     fun send(email: String) {
-        val existing = emailOtpRepository.findByEmail(email)
+        val existing = emailOtpRepository.findByEmailForUpdate(email)
         if (existing != null && existing.isRecentlySent()) {
             throw OtpRateLimitException()
         }
