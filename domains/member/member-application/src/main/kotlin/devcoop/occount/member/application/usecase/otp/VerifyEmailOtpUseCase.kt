@@ -14,7 +14,7 @@ class VerifyEmailOtpUseCase(
 ) {
     @Transactional
     fun verify(email: String, otpCode: String) {
-        val emailOtp = emailOtpRepository.findByEmail(email)
+        val emailOtp = emailOtpRepository.findByEmailForUpdate(email)
             ?: throw OtpNotFoundException()
 
         if (emailOtp.isExpired()) {

@@ -56,27 +56,15 @@ class OrderPaymentEventListener(
     }
 
     private fun handlePaymentCancellation(payload: String, eventId: String) {
-        if (idempotency.isProcessed(eventId)) {
-            log.info("결제 취소 요청 이벤트 중복 스킵 - eventId={}", eventId)
-            return
-        }
-
         val event = objectMapper.readValue<OrderPaymentCancellationRequestedEvent>(payload)
         log.info("결제 취소 요청 이벤트 수신 - orderId={} eventId={}", event.orderId, eventId)
-        recordConsumption(eventId)
-        cancelPendingOrderPaymentUseCase.cancel(event)
+        cancelPendingOrderPaymentUseCase.cancel(event) { recordConsumption(eventId) }
     }
 
     private fun handlePaymentCompensation(payload: String, eventId: String) {
-        if (idempotency.isProcessed(eventId)) {
-            log.info("결제 보상 요청 이벤트 중복 스킵 - eventId={}", eventId)
-            return
-        }
-
         val event = objectMapper.readValue<OrderPaymentCompensationRequestedEvent>(payload)
         log.info("결제 보상 요청 이벤트 수신 - orderId={} eventId={}", event.orderId, eventId)
-        recordConsumption(eventId)
-        compensateOrderPaymentUseCase.compensate(event)
+        compensateOrderPaymentUseCase.compensate(event) { recordConsumption(eventId) }
     }
 
     private fun recordConsumption(eventId: String) {

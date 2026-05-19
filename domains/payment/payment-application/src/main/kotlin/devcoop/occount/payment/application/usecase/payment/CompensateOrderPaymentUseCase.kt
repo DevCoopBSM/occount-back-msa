@@ -28,7 +28,7 @@ class CompensateOrderPaymentUseCase(
     private val refundWalletPointsUseCase: RefundWalletPointsUseCase,
     private val eventPublisher: EventPublisher,
 ) {
-    fun compensate(event: OrderPaymentCompensationRequestedEvent) {
+    fun compensate(event: OrderPaymentCompensationRequestedEvent, recordConsumption: () -> Unit = {}) {
         val requiresCardRefund = event.cardAmount > 0
         val requiresPointRefund = event.pointsUsed > 0
 
@@ -41,6 +41,8 @@ class CompensateOrderPaymentUseCase(
                 publishCompensated(event)
                 return
             }
+
+            recordConsumption()
 
             paymentLog.requestRefund(event.orderId.toString())
             if (requiresCardRefund) {

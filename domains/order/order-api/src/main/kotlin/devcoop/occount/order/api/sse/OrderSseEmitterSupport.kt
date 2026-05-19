@@ -13,14 +13,13 @@ interface OrderSseEmitterSupport {
 
 @Component
 class DefaultOrderSseEmitterSupport : OrderSseEmitterSupport {
-    override fun create(): SseEmitter = SseEmitter(0L)
+    override fun create(): SseEmitter = SseEmitter(SSE_TIMEOUT_MS)
 
     override fun emit(emitter: SseEmitter, event: OrderStreamEvent) {
         try {
-            val data = if (event.failureReason != null) {
-                mapOf("failureReason" to event.failureReason)
-            } else {
-                emptyMap<String, Any>()
+            val data = buildMap<String, Any?> {
+                put("orderId", event.orderId)
+                event.failureReason?.let { put("failureReason", it) }
             }
             emitter.send(
                 SseEmitter.event()
@@ -30,5 +29,9 @@ class DefaultOrderSseEmitterSupport : OrderSseEmitterSupport {
         } catch (e: IOException) {
             emitter.completeWithError(e)
         }
+    }
+
+    companion object {
+        private const val SSE_TIMEOUT_MS = 60 * 60 * 1000L
     }
 }

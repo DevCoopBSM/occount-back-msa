@@ -12,10 +12,11 @@ class CancelPendingOrderPaymentUseCase(
     private val cardPaymentPort: CardPaymentPort,
     private val orderPaymentExecutionRepository: OrderPaymentExecutionRepository,
 ) {
-    fun cancel(event: OrderPaymentCancellationRequestedEvent) {
+    fun cancel(event: OrderPaymentCancellationRequestedEvent, recordConsumption: () -> Unit = {}) {
         log.info("결제 대기 취소 요청 처리 - 주문={}", event.orderId)
-        if (orderPaymentExecutionRepository.requestCancellation(event.orderId) ==
-            OrderPaymentCancellationRequestResult.TERMINAL_CANCELLATION_REQUIRED) {
+        val result = orderPaymentExecutionRepository.requestCancellation(event.orderId)
+        recordConsumption()
+        if (result == OrderPaymentCancellationRequestResult.TERMINAL_CANCELLATION_REQUIRED) {
             cardPaymentPort.requestPendingApprovalCancellation(event.orderId, event.kioskId)
         }
     }
