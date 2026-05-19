@@ -63,8 +63,8 @@ class OrderPaymentEventListener(
 
         val event = objectMapper.readValue<OrderPaymentCancellationRequestedEvent>(payload)
         log.info("결제 취소 요청 이벤트 수신 - orderId={} eventId={}", event.orderId, eventId)
-        cancelPendingOrderPaymentUseCase.cancel(event)
         recordConsumption(eventId)
+        cancelPendingOrderPaymentUseCase.cancel(event)
     }
 
     private fun handlePaymentCompensation(payload: String, eventId: String) {
@@ -75,8 +75,8 @@ class OrderPaymentEventListener(
 
         val event = objectMapper.readValue<OrderPaymentCompensationRequestedEvent>(payload)
         log.info("결제 보상 요청 이벤트 수신 - orderId={} eventId={}", event.orderId, eventId)
-        compensateOrderPaymentUseCase.compensate(event)
         recordConsumption(eventId)
+        compensateOrderPaymentUseCase.compensate(event)
     }
 
     private fun recordConsumption(eventId: String) {
