@@ -14,7 +14,7 @@ import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import tools.jackson.module.kotlin.jacksonMapperBuilder
-import java.time.LocalDateTime
+import java.time.Instant
 
 private val sharedPasswordEncoder = FakePasswordEncoder()
 
@@ -102,6 +102,9 @@ class FakeEmailOtpRepository(
 
     override fun findByEmail(email: String): EmailOtp? = otpsByEmail[email]
 
+    override fun findValidByEmail(email: String): EmailOtp? =
+        otpsByEmail[email]?.takeIf { !it.isExpired() }
+
     override fun deleteByEmail(email: String) {
         otpsByEmail.remove(email)
     }
@@ -111,7 +114,7 @@ fun verifiedEmailOtp(email: String, otpCode: String = "123456"): EmailOtp =
     EmailOtp(
         email = email,
         otpCode = otpCode,
-        expiresAt = LocalDateTime.now().plusMinutes(5),
+        expiresAt = Instant.now().plusSeconds(EmailOtp.OTP_TTL_SECONDS),
         verified = true,
     )
 

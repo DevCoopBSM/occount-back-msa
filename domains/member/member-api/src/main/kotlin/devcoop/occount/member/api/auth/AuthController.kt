@@ -47,7 +47,7 @@ class AuthController(
     }
 
     @PostMapping("/login")
-    @ResponseStatus(HttpStatus.CREATED)
+    @ResponseStatus(HttpStatus.OK)
     fun login(
         @Valid @RequestBody request: MemberLoginRequest,
         response: HttpServletResponse,
@@ -57,7 +57,7 @@ class AuthController(
     }
 
     @PostMapping("/kiosk/login")
-    @ResponseStatus(HttpStatus.CREATED)
+    @ResponseStatus(HttpStatus.OK)
     fun login(
         @Valid @RequestBody request: KioskLoginRequest,
         response: HttpServletResponse,

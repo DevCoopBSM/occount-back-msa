@@ -37,8 +37,11 @@ class ApiAdviceHandler {
             ErrorMessage.INVALID_PIN,
             ErrorMessage.OTP_EXPIRED,
             ErrorMessage.OTP_MISMATCH,
+            ErrorMessage.OTP_LOCKED,
             ErrorMessage.EMAIL_NOT_VERIFIED,
             -> HttpStatus.UNAUTHORIZED
+
+            ErrorMessage.OTP_RATE_LIMITED -> HttpStatus.TOO_MANY_REQUESTS
 
             ErrorMessage.USER_NOT_FOUND,
             ErrorMessage.ITEM_NOT_FOUND,

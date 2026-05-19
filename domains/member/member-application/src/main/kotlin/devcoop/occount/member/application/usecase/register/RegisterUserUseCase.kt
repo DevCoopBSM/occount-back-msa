@@ -26,7 +26,7 @@ class RegisterUserUseCase(
 ) {
     @Transactional
     fun register(request: MemberRegisterRequest) {
-        val emailOtp = emailOtpRepository.findByEmail(request.userEmail)
+        val emailOtp = emailOtpRepository.findValidByEmail(request.userEmail)
         if (emailOtp == null || !emailOtp.verified) {
             throw EmailNotVerifiedException()
         }

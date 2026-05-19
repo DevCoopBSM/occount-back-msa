@@ -3,6 +3,7 @@ package devcoop.occount.member.infrastructure.otp
 import devcoop.occount.member.application.otp.EmailOtp
 import devcoop.occount.member.application.output.EmailOtpRepository
 import org.springframework.stereotype.Repository
+import java.time.Instant
 
 @Repository
 class EmailOtpRepositoryImpl(
@@ -17,6 +18,10 @@ class EmailOtpRepositoryImpl(
         return emailOtpJpaRepository.findByEmail(email)?.toDomain()
     }
 
+    override fun findValidByEmail(email: String): EmailOtp? {
+        return emailOtpJpaRepository.findByEmailAndExpiresAtAfter(email, Instant.now())?.toDomain()
+    }
+
     override fun deleteByEmail(email: String) {
         emailOtpJpaRepository.deleteByEmail(email)
     }
@@ -26,6 +31,8 @@ class EmailOtpRepositoryImpl(
         otpCode = otpCode,
         expiresAt = expiresAt,
         verified = verified,
+        failCount = failCount,
+        createdAt = createdAt,
     )
 
     private fun EmailOtpJpaEntity.toDomain() = EmailOtp(
@@ -33,5 +40,7 @@ class EmailOtpRepositoryImpl(
         otpCode = otpCode,
         expiresAt = expiresAt,
         verified = verified,
+        failCount = failCount,
+        createdAt = createdAt,
     )
 }
