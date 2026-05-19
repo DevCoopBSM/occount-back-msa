@@ -24,6 +24,136 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @DisplayName("AuthController 웹 테스트")
 class AuthControllerTest {
     @Test
+    @DisplayName("이메일 OTP 발송 요청이 성공하면 204 No Content를 반환한다")
+    fun `sendEmailOtp returns 204 on success`() {
+        val emailOtpRepository = FakeEmailOtpRepository()
+
+        val mockMvc = mockMvc(
+            AuthController(
+                loginUserUseCase = LoginUserUseCase(
+                    userRepository = FakeUserRepository(),
+                    tokenGenerator = FakeTokenGenerator(),
+                    passwordEncoder = FakePasswordEncoder(),
+                ),
+                registerUserUseCase = RegisterUserUseCase(
+                    userRepository = FakeUserRepository(),
+                    eventPublisher = FakeEventPublisher(),
+                    passwordEncoder = FakePasswordEncoder(),
+                    emailOtpRepository = emailOtpRepository,
+                    defaultPin = "000000",
+                ),
+                sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
+                verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+            ),
+        )
+
+        mockMvc.perform(
+            post("/auth/email/send-otp")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"email": "test@test.com"}"""),
+        ).andExpect(status().isNoContent)
+    }
+
+    @Test
+    @DisplayName("이메일 OTP 발송 요청이 유효하지 않으면 400을 반환한다")
+    fun `sendEmailOtp returns 400 when email is invalid`() {
+        val emailOtpRepository = FakeEmailOtpRepository()
+
+        val mockMvc = mockMvc(
+            AuthController(
+                loginUserUseCase = LoginUserUseCase(
+                    userRepository = FakeUserRepository(),
+                    tokenGenerator = FakeTokenGenerator(),
+                    passwordEncoder = FakePasswordEncoder(),
+                ),
+                registerUserUseCase = RegisterUserUseCase(
+                    userRepository = FakeUserRepository(),
+                    eventPublisher = FakeEventPublisher(),
+                    passwordEncoder = FakePasswordEncoder(),
+                    emailOtpRepository = emailOtpRepository,
+                    defaultPin = "000000",
+                ),
+                sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
+                verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+            ),
+        )
+
+        mockMvc.perform(
+            post("/auth/email/send-otp")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"email": "not-an-email"}"""),
+        ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.email").value("올바른 이메일 형식이어야 합니다."))
+    }
+
+    @Test
+    @DisplayName("이메일 OTP 인증 요청이 성공하면 204 No Content를 반환한다")
+    fun `verifyEmailOtp returns 204 on success`() {
+        val emailOtpRepository = FakeEmailOtpRepository(
+            initialOtpsByEmail = mapOf(
+                "test@test.com" to verifiedEmailOtp("test@test.com", otpCode = "654321").copy(verified = false),
+            ),
+        )
+
+        val mockMvc = mockMvc(
+            AuthController(
+                loginUserUseCase = LoginUserUseCase(
+                    userRepository = FakeUserRepository(),
+                    tokenGenerator = FakeTokenGenerator(),
+                    passwordEncoder = FakePasswordEncoder(),
+                ),
+                registerUserUseCase = RegisterUserUseCase(
+                    userRepository = FakeUserRepository(),
+                    eventPublisher = FakeEventPublisher(),
+                    passwordEncoder = FakePasswordEncoder(),
+                    emailOtpRepository = emailOtpRepository,
+                    defaultPin = "000000",
+                ),
+                sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
+                verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+            ),
+        )
+
+        mockMvc.perform(
+            post("/auth/email/verify-otp")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"email": "test@test.com", "otpCode": "654321"}"""),
+        ).andExpect(status().isNoContent)
+    }
+
+    @Test
+    @DisplayName("이메일 OTP 인증 요청이 유효하지 않으면 400을 반환한다")
+    fun `verifyEmailOtp returns 400 when request is invalid`() {
+        val emailOtpRepository = FakeEmailOtpRepository()
+
+        val mockMvc = mockMvc(
+            AuthController(
+                loginUserUseCase = LoginUserUseCase(
+                    userRepository = FakeUserRepository(),
+                    tokenGenerator = FakeTokenGenerator(),
+                    passwordEncoder = FakePasswordEncoder(),
+                ),
+                registerUserUseCase = RegisterUserUseCase(
+                    userRepository = FakeUserRepository(),
+                    eventPublisher = FakeEventPublisher(),
+                    passwordEncoder = FakePasswordEncoder(),
+                    emailOtpRepository = emailOtpRepository,
+                    defaultPin = "000000",
+                ),
+                sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
+                verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+            ),
+        )
+
+        mockMvc.perform(
+            post("/auth/email/verify-otp")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"email": "not-an-email", "otpCode": "12"}"""),
+        ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.email").value("올바른 이메일 형식이어야 합니다."))
+            .andExpect(jsonPath("$.otpCode").value("인증번호는 6자리여야 합니다."))
+    }
+    @Test
     @DisplayName("회원가입 요청이 성공하면 201 Created를 반환한다")
     fun `register returns 201 Created on success`() {
         val emailOtpRepository = FakeEmailOtpRepository(
