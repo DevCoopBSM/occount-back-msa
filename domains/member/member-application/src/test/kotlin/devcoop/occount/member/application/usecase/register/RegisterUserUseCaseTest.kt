@@ -2,10 +2,12 @@ package devcoop.occount.member.application.usecase.register
 
 import devcoop.occount.member.application.event.MemberRegisteredEvent
 import devcoop.occount.member.application.exception.UserAlreadyExistsException
+import devcoop.occount.member.application.support.FakeEmailOtpRepository
 import devcoop.occount.member.application.support.FakeEventPublisher
 import devcoop.occount.member.application.support.FakePasswordEncoder
 import devcoop.occount.member.application.support.FakeUserRepository
 import devcoop.occount.member.application.support.duplicateUserSaveException
+import devcoop.occount.member.application.support.verifiedEmailOtp
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
@@ -29,10 +31,16 @@ class RegisterUserUseCaseTest {
     fun `register saves user and publishes MemberRegisteredEvent`() {
         val userRepository = FakeUserRepository()
         val eventPublisher = FakeEventPublisher()
+        val emailOtpRepository = FakeEmailOtpRepository(
+            initialOtpsByEmail = mapOf(
+                request.userEmail to verifiedEmailOtp(email = request.userEmail),
+            ),
+        )
         val registerUserUseCase = RegisterUserUseCase(
             userRepository = userRepository,
             eventPublisher = eventPublisher,
             passwordEncoder = FakePasswordEncoder(),
+            emailOtpRepository = emailOtpRepository,
             defaultPin = defaultPin,
         )
 
@@ -49,10 +57,16 @@ class RegisterUserUseCaseTest {
     @Test
     @DisplayName("이메일 중복으로 DataIntegrityViolationException 발생 시 UserAlreadyExistsException으로 변환된다")
     fun `register throws UserAlreadyExistsException when email already exists`() {
+        val emailOtpRepository = FakeEmailOtpRepository(
+            initialOtpsByEmail = mapOf(
+                request.userEmail to verifiedEmailOtp(email = request.userEmail),
+            ),
+        )
         val registerUserUseCase = RegisterUserUseCase(
             userRepository = FakeUserRepository(saveException = duplicateUserSaveException()),
             eventPublisher = FakeEventPublisher(),
             passwordEncoder = FakePasswordEncoder(),
+            emailOtpRepository = emailOtpRepository,
             defaultPin = defaultPin,
         )
 

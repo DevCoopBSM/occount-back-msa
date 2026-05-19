@@ -35,12 +35,19 @@ class ApiAdviceHandler {
             ErrorMessage.EXPIRED_TOKEN,
             ErrorMessage.INVALID_PASSWORD,
             ErrorMessage.INVALID_PIN,
+            ErrorMessage.OTP_EXPIRED,
+            ErrorMessage.OTP_MISMATCH,
+            ErrorMessage.OTP_LOCKED,
+            ErrorMessage.EMAIL_NOT_VERIFIED,
             -> HttpStatus.UNAUTHORIZED
+
+            ErrorMessage.OTP_RATE_LIMITED -> HttpStatus.TOO_MANY_REQUESTS
 
             ErrorMessage.USER_NOT_FOUND,
             ErrorMessage.ITEM_NOT_FOUND,
             ErrorMessage.ITEM_NOT_SYNCHRONIZED,
             ErrorMessage.PAYMENT_LOG_NOT_FOUND,
+            ErrorMessage.OTP_NOT_FOUND,
             -> HttpStatus.NOT_FOUND
 
             ErrorMessage.USER_ALREADY_EXISTS,
