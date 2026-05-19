@@ -25,13 +25,15 @@ class SendEmailOtpUseCase(
         }
 
         val otpCode = generateOtpCode()
+        val now = Instant.now()
 
         try {
             emailOtpRepository.save(
                 EmailOtp(
                     email = email,
                     otpCode = otpCode,
-                    expiresAt = Instant.now().plusSeconds(EmailOtp.OTP_TTL_SECONDS),
+                    expiresAt = now.plusSeconds(EmailOtp.OTP_TTL_SECONDS),
+                    createdAt = now,
                 )
             )
         } catch (_: DataIntegrityViolationException) {

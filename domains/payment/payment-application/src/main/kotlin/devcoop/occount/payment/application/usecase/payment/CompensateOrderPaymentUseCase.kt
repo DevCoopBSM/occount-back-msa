@@ -42,8 +42,6 @@ class CompensateOrderPaymentUseCase(
                 return
             }
 
-            recordConsumption()
-
             paymentLog.requestRefund(event.orderId.toString())
             if (requiresCardRefund) {
                 paymentLog.requestCardRefund()
@@ -89,6 +87,7 @@ class CompensateOrderPaymentUseCase(
                 requiresPointRefund = requiresPointRefund,
             )
             paymentLogRepository.save(paymentLog)
+            recordConsumption()
             publishCompensated(event)
         } catch (ex: BusinessBaseException) {
             if (ex.isRetryableCompensationError()) {

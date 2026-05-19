@@ -42,7 +42,10 @@ class OrderPaymentEventListener(
             DomainEventTypes.ORDER_PAYMENT_REQUESTED -> handlePaymentRequested(payload, eventId)
             DomainEventTypes.ORDER_PAYMENT_CANCELLATION_REQUESTED -> handlePaymentCancellation(payload, eventId)
             DomainEventTypes.ORDER_PAYMENT_COMPENSATION_REQUESTED -> handlePaymentCompensation(payload, eventId)
-            else -> log.warn("알 수 없는 결제 커맨드 eventType={} eventId={}", eventType, eventId)
+            else -> {
+                log.warn("알 수 없는 결제 커맨드 eventType={} eventId={}", eventType, eventId)
+                throw IllegalStateException("Unknown payment command eventType=$eventType")
+            }
         }
     }
 

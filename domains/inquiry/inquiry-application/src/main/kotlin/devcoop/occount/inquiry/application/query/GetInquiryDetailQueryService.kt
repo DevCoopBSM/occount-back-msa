@@ -1,6 +1,5 @@
 package devcoop.occount.inquiry.application.query
 
-import devcoop.occount.inquiry.application.exception.InquiryAccessDeniedException
 import devcoop.occount.inquiry.application.exception.InquiryNotFoundException
 import devcoop.occount.inquiry.application.output.InquiryRepository
 import devcoop.occount.inquiry.application.shared.InquiryDetailResponse
@@ -15,7 +14,7 @@ class GetInquiryDetailQueryService(
             ?: throw InquiryNotFoundException()
 
         if (inquiry.userId != userId) {
-            throw InquiryAccessDeniedException()
+            throw InquiryNotFoundException()
         }
 
         return InquiryDetailResponse(

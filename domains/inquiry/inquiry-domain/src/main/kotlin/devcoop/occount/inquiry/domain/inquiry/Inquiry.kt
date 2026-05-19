@@ -10,5 +10,5 @@ data class Inquiry(
     val category: InquiryCategory,
     val status: InquiryStatus = InquiryStatus.RECEIVED,
     val createdAt: LocalDateTime = LocalDateTime.now(),
-    val updatedAt: LocalDateTime = LocalDateTime.now(),
+    val updatedAt: LocalDateTime = createdAt,
 )

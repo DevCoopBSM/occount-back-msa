@@ -2,6 +2,7 @@ package devcoop.occount.member.infrastructure.mail
 
 import devcoop.occount.member.application.output.EmailSender
 import jakarta.mail.internet.MimeMessage
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Component
@@ -9,13 +10,14 @@ import org.springframework.stereotype.Component
 @Component
 class EmailSenderImpl(
     private val javaMailSender: JavaMailSender,
+    @Value("\${spring.mail.username}") private val fromAddress: String,
 ) : EmailSender {
 
     override fun sendOtp(to: String, otpCode: String) {
         val message: MimeMessage = javaMailSender.createMimeMessage()
         val helper = MimeMessageHelper(message, false, "UTF-8")
 
-        helper.setFrom("serverdvcp@gmail.com")
+        helper.setFrom(fromAddress)
         helper.setTo(to)
         helper.setSubject("[Occount] 이메일 인증번호")
         helper.setText(buildHtml(otpCode), true)

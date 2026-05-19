@@ -8,9 +8,9 @@ data class EmailOtp(
     val expiresAt: Instant,
     val verified: Boolean = false,
     val failCount: Int = 0,
-    val createdAt: Instant = Instant.now(),
+    val createdAt: Instant,
 ) {
-    fun isExpired(): Boolean = Instant.now().isAfter(expiresAt)
+    fun isExpired(now: Instant = Instant.now()): Boolean = now.isAfter(expiresAt)
 
     fun verify(): EmailOtp = copy(verified = true)
 
@@ -18,7 +18,7 @@ data class EmailOtp(
 
     fun isLocked(): Boolean = failCount >= MAX_FAIL_COUNT
 
-    fun isRecentlySent(): Boolean = Instant.now().isBefore(createdAt.plusSeconds(RESEND_COOLDOWN_SECONDS))
+    fun isRecentlySent(now: Instant = Instant.now()): Boolean = now.isBefore(createdAt.plusSeconds(RESEND_COOLDOWN_SECONDS))
 
     companion object {
         const val MAX_FAIL_COUNT = 5

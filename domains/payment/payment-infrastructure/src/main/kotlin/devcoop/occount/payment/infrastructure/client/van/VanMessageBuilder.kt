@@ -1,6 +1,7 @@
 package devcoop.occount.payment.infrastructure.client.van
 
 import devcoop.occount.payment.application.dto.request.ItemCommand
+import devcoop.occount.payment.application.exception.InvalidPaymentRequestException
 import org.springframework.stereotype.Component
 import java.io.ByteArrayOutputStream
 
@@ -94,8 +95,8 @@ class VanMessageBuilder(
         }.toByteArray()
 
         val totalLength = 1 + 4 + body.size + 1
-        require(totalLength <= 9999) {
-            "VAN 메시지 길이 초과: $totalLength (4자리 length 헤더 한도 9999 초과 — items 과다 가능성)"
+        if (totalLength > 9999) {
+            throw InvalidPaymentRequestException()
         }
         val data = ByteArrayOutputStream().apply {
             write(protocolSpec.stxByte.toInt())
