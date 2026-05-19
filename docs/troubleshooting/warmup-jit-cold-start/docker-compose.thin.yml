@@ -6,12 +6,12 @@ services:
       - --skip-name-resolve
       - --performance-schema=OFF
     environment:
-      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
     volumes:
       - mysql-thin-data:/var/lib/mysql
       - ../../../docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p123456"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-123456}"]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -49,9 +49,9 @@ services:
       APP_STARTUP_WARMUP_ENABLED: ${APP_STARTUP_WARMUP_ENABLED:-true}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_member?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      JWT_SECRET_KEY: df93043843653badaf156d8de9fc7706b80412cbcb7c1b37213d4e64b1c11ab1
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-bG9jYWxEZXZTZWNyZXRLZXlNdXN0QmVBdExlYXN0MzJDaGFyc0xvbmc=}
       JWT_ACCESS_EXPIRATION_TIME: 3600000
       JWT_KIOSK_EXPIRATION_TIME: 86400000
       JWT_PREFIX: Bearer
@@ -83,9 +83,9 @@ services:
       APP_STARTUP_WARMUP_ENABLED: ${APP_STARTUP_WARMUP_ENABLED:-true}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_item?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      JWT_SECRET_KEY: df93043843653badaf156d8de9fc7706b80412cbcb7c1b37213d4e64b1c11ab1
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-bG9jYWxEZXZTZWNyZXRLZXlNdXN0QmVBdExlYXN0MzJDaGFyc0xvbmc=}
       JWT_ACCESS_EXPIRATION_TIME: 3600000
       JWT_KIOSK_EXPIRATION_TIME: 86400000
       JWT_PREFIX: Bearer
@@ -118,9 +118,9 @@ services:
       APP_STARTUP_WARMUP_ENABLED: ${APP_STARTUP_WARMUP_ENABLED:-true}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_order?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      JWT_SECRET_KEY: df93043843653badaf156d8de9fc7706b80412cbcb7c1b37213d4e64b1c11ab1
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-bG9jYWxEZXZTZWNyZXRLZXlNdXN0QmVBdExlYXN0MzJDaGFyc0xvbmc=}
       JWT_ACCESS_EXPIRATION_TIME: 3600000
       JWT_KIOSK_EXPIRATION_TIME: 86400000
       JWT_PREFIX: Bearer
@@ -156,9 +156,9 @@ services:
       APP_STARTUP_WARMUP_ENABLED: ${APP_STARTUP_WARMUP_ENABLED:-true}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_payment?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      JWT_SECRET_KEY: df93043843653badaf156d8de9fc7706b80412cbcb7c1b37213d4e64b1c11ab1
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-bG9jYWxEZXZTZWNyZXRLZXlNdXN0QmVBdExlYXN0MzJDaGFyc0xvbmc=}
       JWT_ACCESS_EXPIRATION_TIME: 3600000
       JWT_KIOSK_EXPIRATION_TIME: 86400000
       JWT_PREFIX: Bearer
@@ -227,7 +227,7 @@ services:
       JWT_KIOSK_EXPIRATION_TIME: 86400000
       JWT_PREFIX: Bearer
       JWT_HEADER: Authorization
-      JWT_SECRET_KEY: df93043843653badaf156d8de9fc7706b80412cbcb7c1b37213d4e64b1c11ab1
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-bG9jYWxEZXZTZWNyZXRLZXlNdXN0QmVBdExlYXN0MzJDaGFyc0xvbmc=}
       OTEL_SDK_DISABLED: "true"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
     depends_on:
