@@ -154,7 +154,7 @@ class AuthControllerTest {
                     }
                     """.trimIndent(),
                 ),
-        ).andExpect(status().isCreated)
+        ).andExpect(status().isOk)
             .andExpect(header().string(HttpHeaders.AUTHORIZATION, "Bearer access-1-ROLE_USER"))
     }
 
