@@ -270,7 +270,7 @@ services:
         APP_JAR_NAME: "inquiry-api.jar"
     restart: unless-stopped
     ports:
-      - "8085:8080"
+      - "8086:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/occount_inquiry?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true&cacheServerConfiguration=true&rewriteBatchedStatements=true&useLocalSessionState=true&elideSetAutoCommits=true&maintainTimeStats=false
       SPRING_DATASOURCE_USERNAME: root
