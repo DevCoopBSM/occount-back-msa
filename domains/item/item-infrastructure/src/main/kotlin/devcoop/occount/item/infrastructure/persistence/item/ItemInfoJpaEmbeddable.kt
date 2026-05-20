@@ -15,7 +15,7 @@ class ItemInfoJpaEmbeddable(
     private var category: Category,
     @field:Column(name = "price", nullable = false)
     private var price: Int,
-    @field:Column(name = "barcode")
+    @field:Column(name = "barcode", unique = true)
     private var barcode: String? = null,
 ) {
     fun getName() = name
