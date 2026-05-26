@@ -4,7 +4,9 @@ import devcoop.occount.core.common.event.DomainEventTypes
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.member.application.event.MemberRegisteredEvent
+import devcoop.occount.member.application.exception.EmailNotVerifiedException
 import devcoop.occount.member.application.exception.UserAlreadyExistsException
+import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.domain.user.User
 import org.springframework.beans.factory.annotation.Value
@@ -18,11 +20,17 @@ class RegisterUserUseCase(
     private val userRepository: UserRepository,
     private val eventPublisher: EventPublisher,
     private val passwordEncoder: PasswordEncoder,
+    private val emailOtpRepository: EmailOtpRepository,
     @param:Value("\${app.default-pin}")
     private val defaultPin: String,
 ) {
     @Transactional
     fun register(request: MemberRegisterRequest) {
+        val emailOtp = emailOtpRepository.findValidByEmail(request.userEmail)
+        if (emailOtp == null || !emailOtp.verified) {
+            throw EmailNotVerifiedException()
+        }
+
         val user = try {
             userRepository.save(
                 User.register(
@@ -37,6 +45,8 @@ class RegisterUserUseCase(
         } catch (_: DataIntegrityViolationException) {
             throw UserAlreadyExistsException()
         }
+
+        emailOtpRepository.deleteByEmail(request.userEmail)
 
         eventPublisher.publish(
             topic = DomainTopics.MEMBER_REGISTERED,

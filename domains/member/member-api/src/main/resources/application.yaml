@@ -7,6 +7,8 @@ spring:
     name: member-api
   jackson:
     property-naming-strategy: SNAKE_CASE
+  mail:
+    username: ${MAIL_USERNAME}
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true&cacheServerConfiguration=true&rewriteBatchedStatements=true&useLocalSessionState=true&elideSetAutoCommits=true&maintainTimeStats=false
     username: ${DB_USER}
@@ -25,6 +27,12 @@ spring:
       ddl-auto: update
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+
+mail:
+  oauth2:
+    client-id: ${MAIL_OAUTH2_CLIENT_ID}
+    client-secret: ${MAIL_OAUTH2_CLIENT_SECRET}
+    refresh-token: ${MAIL_OAUTH2_REFRESH_TOKEN}
 
 jwt:
   access-expiration-time: ${JWT_ACCESS_EXPIRATION_TIME}

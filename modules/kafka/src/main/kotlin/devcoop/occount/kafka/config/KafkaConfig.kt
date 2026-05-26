@@ -31,6 +31,10 @@ class KafkaConfig {
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+            ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true,
+            ProducerConfig.ACKS_CONFIG to "all",
+            ProducerConfig.RETRIES_CONFIG to 3,
+            ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION to 5,
         ))
         openTelemetry.ifAvailable?.let { otel ->
             factory.addPostProcessor { KafkaTelemetry.create(otel).wrap(it) }
@@ -56,8 +60,11 @@ class KafkaConfig {
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG to 50,
+            ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG to 500,
             ConsumerConfig.FETCH_MIN_BYTES_CONFIG to 1,
+            ConsumerConfig.ISOLATION_LEVEL_CONFIG to "read_committed",
+            ConsumerConfig.MAX_POLL_RECORDS_CONFIG to 500,
+            ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG to 30_000,
         ))
         openTelemetry.ifAvailable?.let { otel ->
             factory.addPostProcessor { KafkaTelemetry.create(otel).wrap(it) }

@@ -2,6 +2,10 @@ plugins {
     id 'java-library'
 }
 
+tasks.withType(Test).configureEach {
+    systemProperties(System.properties.findAll { k, v -> k.toString().startsWith('mail.') })
+}
+
 dependencies {
     implementation project(':core:core-common')
     implementation project(':domains:member:member-domain')
@@ -12,4 +16,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
     implementation 'io.jsonwebtoken:jjwt:0.12.6'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.35.0'
 }

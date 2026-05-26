@@ -21,6 +21,7 @@ class AripickCommandUseCase(
     private val foodSafetyRepository: FoodSafetyRepository,
     private val aripickMapper: AripickMapper,
 ) {
+    @Transactional
     fun create(
         request: CreateAripickRequest,
         proposerId: Long,
@@ -49,25 +50,25 @@ class AripickCommandUseCase(
     @Transactional
     fun approve(proposalId: Long): AripickResponse {
         val proposal = getProposal(proposalId)
-        changeStatus(proposalId, proposal.approve().getStatus())
-        val approved = getProposal(proposalId)
-        return aripickMapper.toResponse(approved)
+        val updated = proposal.approve()
+        changeStatus(proposalId, updated.getStatus())
+        return aripickMapper.toResponse(updated)
     }
 
     @Transactional
     fun reject(proposalId: Long): AripickResponse {
         val proposal = getProposal(proposalId)
-        changeStatus(proposalId, proposal.reject().getStatus())
-        val rejected = getProposal(proposalId)
-        return aripickMapper.toResponse(rejected)
+        val updated = proposal.reject()
+        changeStatus(proposalId, updated.getStatus())
+        return aripickMapper.toResponse(updated)
     }
 
     @Transactional
     fun pending(proposalId: Long): AripickResponse {
         val proposal = getProposal(proposalId)
-        changeStatus(proposalId, proposal.pending().getStatus())
-        val pending = getProposal(proposalId)
-        return aripickMapper.toResponse(pending)
+        val updated = proposal.pending()
+        changeStatus(proposalId, updated.getStatus())
+        return aripickMapper.toResponse(updated)
     }
 
     @Transactional

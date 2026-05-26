@@ -1,5 +1,6 @@
 package devcoop.occount.payment.application.dto.request
 
+import devcoop.occount.core.common.event.ItemStockPayload
 import devcoop.occount.payment.application.shared.PaymentItem
 
 data class ItemCommand(
@@ -15,6 +16,15 @@ data class ItemCommand(
                 price = item.itemPrice,
                 quantity = item.quantity,
                 total = item.totalPrice,
+            )
+        }
+
+        fun from(payload: ItemStockPayload): ItemCommand {
+            return ItemCommand(
+                name = payload.itemName,
+                price = payload.itemPrice,
+                quantity = payload.quantity,
+                total = payload.totalPrice,
             )
         }
 

@@ -1,16 +1,21 @@
 package devcoop.occount.member.application.usecase.register
 
 import devcoop.occount.member.application.event.MemberRegisteredEvent
+import devcoop.occount.member.application.exception.EmailNotVerifiedException
 import devcoop.occount.member.application.exception.UserAlreadyExistsException
+import devcoop.occount.member.application.otp.EmailOtp
+import devcoop.occount.member.application.support.FakeEmailOtpRepository
 import devcoop.occount.member.application.support.FakeEventPublisher
 import devcoop.occount.member.application.support.FakePasswordEncoder
 import devcoop.occount.member.application.support.FakeUserRepository
 import devcoop.occount.member.application.support.duplicateUserSaveException
+import devcoop.occount.member.application.support.verifiedEmailOtp
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 @DisplayName("RegisterUserUseCase 단위 테스트")
 class RegisterUserUseCaseTest {
@@ -29,10 +34,16 @@ class RegisterUserUseCaseTest {
     fun `register saves user and publishes MemberRegisteredEvent`() {
         val userRepository = FakeUserRepository()
         val eventPublisher = FakeEventPublisher()
+        val emailOtpRepository = FakeEmailOtpRepository(
+            initialOtpsByEmail = mapOf(
+                request.userEmail to verifiedEmailOtp(email = request.userEmail),
+            ),
+        )
         val registerUserUseCase = RegisterUserUseCase(
             userRepository = userRepository,
             eventPublisher = eventPublisher,
             passwordEncoder = FakePasswordEncoder(),
+            emailOtpRepository = emailOtpRepository,
             defaultPin = defaultPin,
         )
 
@@ -47,12 +58,81 @@ class RegisterUserUseCaseTest {
     }
 
     @Test
+    @DisplayName("이메일 OTP 인증이 완료되지 않으면 EmailNotVerifiedException을 발생시킨다")
+    fun `register throws EmailNotVerifiedException when email otp is not verified`() {
+        val emailOtpRepository = FakeEmailOtpRepository(
+            initialOtpsByEmail = mapOf(
+                request.userEmail to verifiedEmailOtp(email = request.userEmail).copy(verified = false),
+            ),
+        )
+        val registerUserUseCase = RegisterUserUseCase(
+            userRepository = FakeUserRepository(),
+            eventPublisher = FakeEventPublisher(),
+            passwordEncoder = FakePasswordEncoder(),
+            emailOtpRepository = emailOtpRepository,
+            defaultPin = defaultPin,
+        )
+
+        assertFailsWith<EmailNotVerifiedException> {
+            registerUserUseCase.register(request)
+        }
+    }
+
+    @Test
+    @DisplayName("이메일 OTP가 존재하지 않으면 EmailNotVerifiedException을 발생시킨다")
+    fun `register throws EmailNotVerifiedException when email otp does not exist`() {
+        val registerUserUseCase = RegisterUserUseCase(
+            userRepository = FakeUserRepository(),
+            eventPublisher = FakeEventPublisher(),
+            passwordEncoder = FakePasswordEncoder(),
+            emailOtpRepository = FakeEmailOtpRepository(),
+            defaultPin = defaultPin,
+        )
+
+        assertFailsWith<EmailNotVerifiedException> {
+            registerUserUseCase.register(request)
+        }
+    }
+
+    @Test
+    @DisplayName("이메일 OTP가 만료되면 EmailNotVerifiedException을 발생시킨다")
+    fun `register throws EmailNotVerifiedException when email otp is expired`() {
+        val emailOtpRepository = FakeEmailOtpRepository(
+            initialOtpsByEmail = mapOf(
+                request.userEmail to EmailOtp(
+                    email = request.userEmail,
+                    otpCode = "123456",
+                    expiresAt = Instant.now().minusSeconds(1),
+                    verified = true,
+                ),
+            ),
+        )
+        val registerUserUseCase = RegisterUserUseCase(
+            userRepository = FakeUserRepository(),
+            eventPublisher = FakeEventPublisher(),
+            passwordEncoder = FakePasswordEncoder(),
+            emailOtpRepository = emailOtpRepository,
+            defaultPin = defaultPin,
+        )
+
+        assertFailsWith<EmailNotVerifiedException> {
+            registerUserUseCase.register(request)
+        }
+    }
+
+    @Test
     @DisplayName("이메일 중복으로 DataIntegrityViolationException 발생 시 UserAlreadyExistsException으로 변환된다")
     fun `register throws UserAlreadyExistsException when email already exists`() {
+        val emailOtpRepository = FakeEmailOtpRepository(
+            initialOtpsByEmail = mapOf(
+                request.userEmail to verifiedEmailOtp(email = request.userEmail),
+            ),
+        )
         val registerUserUseCase = RegisterUserUseCase(
             userRepository = FakeUserRepository(saveException = duplicateUserSaveException()),
             eventPublisher = FakeEventPublisher(),
             passwordEncoder = FakePasswordEncoder(),
+            emailOtpRepository = emailOtpRepository,
             defaultPin = defaultPin,
         )
 

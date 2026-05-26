@@ -13,6 +13,13 @@ enum class ErrorMessage(
     USER_ALREADY_EXISTS("이미 존재하는 유저입니다."),
     INVALID_PASSWORD("비밀번호가 일치하지 않습니다."),
 
+    OTP_NOT_FOUND("발송된 인증번호가 없습니다. 이메일 인증을 먼저 요청해주세요."),
+    OTP_EXPIRED("인증번호가 만료되었습니다. 다시 요청해주세요."),
+    OTP_MISMATCH("인증번호가 일치하지 않습니다."),
+    OTP_RATE_LIMITED("잠시 후 다시 시도해주세요. 인증번호는 60초마다 재발송할 수 있습니다."),
+    OTP_LOCKED("인증번호 입력 횟수를 초과했습니다. 이메일 인증을 다시 요청해주세요."),
+    EMAIL_NOT_VERIFIED("이메일 인증이 완료되지 않았습니다."),
+
 
     INVALID_PIN("핀번호가 틀렸습니다."),
 
@@ -60,6 +67,9 @@ enum class ErrorMessage(
     PAYMENT_LOG_SAVE_FAILED("결제 로그 저장에 실패했습니다."),
     CHARGE_LOG_SAVE_FAILED("충전 기록 저장에 실패했습니다."),
     KIOSK_TERMINAL_NOT_FOUND("등록되지 않은 키오스크입니다."),
+
+    INQUIRY_NOT_FOUND("문의 정보를 찾을 수 없습니다."),
+    INQUIRY_ACCESS_DENIED("해당 문의에 접근할 수 없습니다."),
 
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다."),
 }

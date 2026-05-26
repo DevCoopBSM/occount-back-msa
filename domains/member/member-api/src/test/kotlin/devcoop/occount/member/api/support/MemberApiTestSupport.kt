@@ -1,6 +1,11 @@
 package devcoop.occount.member.api.support
 
 import devcoop.occount.core.common.event.EventPublisher
+import devcoop.occount.member.application.otp.EmailOtp
+import devcoop.occount.member.application.output.EmailOtpRepository
+import devcoop.occount.member.application.output.EmailSender
+import devcoop.occount.member.application.usecase.otp.SendEmailOtpUseCase
+import devcoop.occount.member.application.usecase.otp.VerifyEmailOtpUseCase
 import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.domain.user.User
@@ -9,6 +14,7 @@ import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import tools.jackson.module.kotlin.jacksonMapperBuilder
+import java.time.Instant
 
 private val sharedPasswordEncoder = FakePasswordEncoder()
 
@@ -79,6 +85,51 @@ class FakePasswordEncoder : PasswordEncoder {
 
     override fun upgradeEncoding(encodedPassword: String?): Boolean = false
 }
+
+class FakeEmailSender : EmailSender {
+    override fun sendOtp(to: String, otpCode: String) = Unit
+}
+
+class FakeEmailOtpRepository(
+    initialOtpsByEmail: Map<String, EmailOtp> = emptyMap(),
+) : EmailOtpRepository {
+    private val otpsByEmail = initialOtpsByEmail.toMutableMap()
+
+    override fun save(emailOtp: EmailOtp): EmailOtp {
+        otpsByEmail[emailOtp.email] = emailOtp
+        return emailOtp
+    }
+
+    override fun findByEmail(email: String): EmailOtp? = otpsByEmail[email]
+
+    override fun findByEmailForUpdate(email: String): EmailOtp? = otpsByEmail[email]
+
+    override fun findValidByEmail(email: String): EmailOtp? =
+        otpsByEmail[email]?.takeIf { !it.isExpired() }
+
+    override fun deleteByEmail(email: String) {
+        otpsByEmail.remove(email)
+    }
+}
+
+fun verifiedEmailOtp(email: String, otpCode: String = "123456"): EmailOtp =
+    EmailOtp(
+        email = email,
+        otpCode = otpCode,
+        expiresAt = Instant.now().plusSeconds(EmailOtp.OTP_TTL_SECONDS),
+        verified = true,
+    )
+
+fun testSendEmailOtpUseCase(emailOtpRepository: EmailOtpRepository) =
+    SendEmailOtpUseCase(
+        emailOtpRepository = emailOtpRepository,
+        emailSender = FakeEmailSender(),
+    )
+
+fun testVerifyEmailOtpUseCase(emailOtpRepository: EmailOtpRepository) =
+    VerifyEmailOtpUseCase(
+        emailOtpRepository = emailOtpRepository,
+    )
 
 fun mockMvc(vararg controllers: Any): MockMvc {
     val messageConverter = JacksonJsonHttpMessageConverter(jacksonMapperBuilder())
