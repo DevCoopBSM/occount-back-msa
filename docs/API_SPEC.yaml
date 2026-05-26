@@ -1022,7 +1022,7 @@ components:
     UserBarcodeResponse:
       type: object
       properties:
-        userBarcode:
+        user_barcode:
           type: string
           nullable: true
           description: 회원 바코드
