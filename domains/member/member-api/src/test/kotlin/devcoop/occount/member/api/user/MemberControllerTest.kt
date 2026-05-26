@@ -59,7 +59,7 @@ class MemberControllerTest {
             get("/users/barcode")
                 .header(AuthHeaders.AUTHENTICATED_USER_ID, "7"),
         ).andExpect(status().isOk)
-            .andExpect(jsonPath("$.userBarcode").value("BARCODE-007"))
+            .andExpect(jsonPath("$.user_barcode").value("BARCODE-007"))
     }
 
     @Test
