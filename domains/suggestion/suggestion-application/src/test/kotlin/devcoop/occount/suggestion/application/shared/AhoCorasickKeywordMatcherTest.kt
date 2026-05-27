@@ -2,7 +2,9 @@ package devcoop.occount.suggestion.application.shared
 
 import devcoop.occount.suggestion.application.support.FakeAripickPolicyRepository
 import devcoop.occount.suggestion.domain.aripick.AripickBlockedKeyword
+import devcoop.occount.suggestion.domain.aripick.AripickPolicyUnavailableException
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -60,5 +62,17 @@ class AhoCorasickKeywordMatcherTest {
         matcher.refresh()
 
         assertFalse(matcher.contains("에너지 드링크 제로"))
+    }
+
+    @Test
+    fun `matcher throws when initial refresh fails`() {
+        val policyRepository = FakeAripickPolicyRepository(
+            throwOnFind = IllegalStateException("DB unavailable"),
+        )
+        val matcher = AhoCorasickKeywordMatcher(policyRepository)
+
+        assertThrows(AripickPolicyUnavailableException::class.java) {
+            matcher.contains("에너지 드링크 제로")
+        }
     }
 }

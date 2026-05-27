@@ -1,9 +1,10 @@
 package devcoop.occount.suggestion.application.shared
 
 import devcoop.occount.suggestion.application.output.AripickPolicyRepository
-import java.util.concurrent.atomic.AtomicReference
+import devcoop.occount.suggestion.domain.aripick.AripickPolicyUnavailableException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import org.springframework.stereotype.Component
 
 @Component
@@ -41,6 +42,9 @@ class AhoCorasickKeywordMatcher(
     fun contains(text: String): Boolean {
         if (!initializedRef.get()) {
             refresh()
+            if (!initializedRef.get()) {
+                throw AripickPolicyUnavailableException()
+            }
         }
         return automatonRef.get().contains(text)
     }
