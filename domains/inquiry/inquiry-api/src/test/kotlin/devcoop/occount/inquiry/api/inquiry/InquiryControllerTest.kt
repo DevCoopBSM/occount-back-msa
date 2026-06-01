@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.mock.web.MockHttpServletRequest
 import java.time.LocalDateTime
 
@@ -64,6 +66,7 @@ class InquiryControllerTest {
     @Test
     @DisplayName("내 문의 목록 조회 시 InquiryListResponse를 반환한다")
     fun `getInquiryList returns response from query service`() {
+        val pageable = PageRequest.of(0, 20)
         val expected = InquiryListResponse(
             inquiries = listOf(
                 InquiryListItemResponse(
@@ -74,13 +77,17 @@ class InquiryControllerTest {
                     createdAt = LocalDateTime.now(),
                 ),
             ),
+            totalCount = 1L,
+            totalPages = 1,
+            currentPage = 0,
+            pageSize = 20,
         )
-        `when`(getInquiryListQueryService.getList(17L)).thenReturn(expected)
+        `when`(getInquiryListQueryService.getList(17L, pageable)).thenReturn(expected)
 
-        val actual = controller.getInquiryList(httpRequest(17L))
+        val actual = controller.getInquiryList(httpRequest(17L), pageable)
 
         assertSame(expected, actual)
-        verify(getInquiryListQueryService).getList(17L)
+        verify(getInquiryListQueryService).getList(17L, pageable)
     }
 
     @Test

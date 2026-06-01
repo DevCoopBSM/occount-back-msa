@@ -11,4 +11,10 @@ data class Inquiry(
     val status: InquiryStatus = InquiryStatus.RECEIVED,
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = createdAt,
-)
+) {
+    init {
+        require(userId > 0) { "userId must be positive" }
+        require(title.isNotBlank()) { "title must not be blank" }
+        require(content.isNotBlank()) { "content must not be blank" }
+    }
+}
