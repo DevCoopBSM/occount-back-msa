@@ -19,6 +19,7 @@ enum class ErrorMessage(
     OTP_RATE_LIMITED("잠시 후 다시 시도해주세요. 인증번호는 60초마다 재발송할 수 있습니다."),
     OTP_LOCKED("인증번호 입력 횟수를 초과했습니다. 이메일 인증을 다시 요청해주세요."),
     EMAIL_NOT_VERIFIED("이메일 인증이 완료되지 않았습니다."),
+    IDENTITY_VERIFICATION_FAILED("본인인증에 실패했습니다."),
 
 
     INVALID_PIN("핀번호가 틀렸습니다."),

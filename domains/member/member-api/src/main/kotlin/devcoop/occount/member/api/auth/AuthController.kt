@@ -7,6 +7,8 @@ import devcoop.occount.member.application.usecase.login.LoginUserUseCase
 import devcoop.occount.member.application.usecase.login.MemberLoginRequest
 import devcoop.occount.member.application.usecase.otp.SendEmailOtpUseCase
 import devcoop.occount.member.application.usecase.otp.VerifyEmailOtpUseCase
+import devcoop.occount.member.application.usecase.identity.VerifyIdentityResponse
+import devcoop.occount.member.application.usecase.identity.VerifyIdentityUseCase
 import devcoop.occount.member.application.usecase.register.MemberRegisterRequest
 import devcoop.occount.member.application.usecase.register.RegisterUserUseCase
 import jakarta.servlet.http.HttpServletResponse
@@ -19,6 +21,12 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import jakarta.validation.constraints.NotBlank
+
+data class VerifyIdentityRequest(
+    @field:NotBlank(message = "본인인증 ID는 비어있을 수 없습니다.")
+    val identityVerificationId: String,
+)
 
 @RestController
 @RequestMapping("/auth")
@@ -27,6 +35,7 @@ class AuthController(
     private val registerUserUseCase: RegisterUserUseCase,
     private val sendEmailOtpUseCase: SendEmailOtpUseCase,
     private val verifyEmailOtpUseCase: VerifyEmailOtpUseCase,
+    private val verifyIdentityUseCase: VerifyIdentityUseCase,
 ) {
     @PostMapping("/email/send-otp")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -38,6 +47,12 @@ class AuthController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun verifyEmailOtp(@Valid @RequestBody request: VerifyEmailOtpRequest) {
         verifyEmailOtpUseCase.verify(request.email, request.otpCode)
+    }
+
+    @PostMapping("/identity/verify")
+    @ResponseStatus(HttpStatus.OK)
+    fun verifyIdentity(@Valid @RequestBody request: VerifyIdentityRequest): VerifyIdentityResponse {
+        return verifyIdentityUseCase.verify(request.identityVerificationId)
     }
 
     @PostMapping("/register")

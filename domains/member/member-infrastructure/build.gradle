@@ -18,5 +18,5 @@ dependencies {
 
     implementation 'io.jsonwebtoken:jjwt:0.12.6'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
-    implementation 'tools.jackson.module:jackson-module-kotlin'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
 }

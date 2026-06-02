@@ -105,6 +105,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/v3/auth/identity/verify:
+    post:
+      tags: [Auth]
+      operationId: verifyIdentity
+      summary: 본인인증 검증
+      description: PortOne SDK로 완료된 본인인증을 백엔드에서 검증하고, 회원가입에 필요한 사용자 정보를 반환합니다. (PERMIT_ALL)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyIdentityRequest'
+            example:
+              identity_verification_id: "identity-verification-id-from-portone"
+      responses:
+        "200":
+          description: 본인인증 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyIdentityResponse'
+              example:
+                user_ci_number: "CI_HASH_VALUE"
+                username: "홍길동"
+                user_phone: "01012345678"
+        "400":
+          description: 요청 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "502":
+          description: PortOne 본인인증 실패 또는 미완료
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/v3/auth/register:
     post:
       tags: [Auth]
@@ -1149,6 +1187,27 @@ components:
           minLength: 6
           maxLength: 6
           description: 6자리 인증번호
+
+    VerifyIdentityRequest:
+      type: object
+      required: [identity_verification_id]
+      properties:
+        identity_verification_id:
+          type: string
+          description: PortOne SDK에서 발급된 본인인증 고유 ID
+
+    VerifyIdentityResponse:
+      type: object
+      properties:
+        user_ci_number:
+          type: string
+          description: 본인인증 CI 값 (회원가입 시 사용)
+        username:
+          type: string
+          description: 실명
+        user_phone:
+          type: string
+          description: 전화번호
 
     MemberRegisterRequest:
       type: object

@@ -43,6 +43,8 @@ class ApiAdviceHandler {
 
             ErrorMessage.OTP_RATE_LIMITED -> HttpStatus.TOO_MANY_REQUESTS
 
+            ErrorMessage.IDENTITY_VERIFICATION_FAILED -> HttpStatus.BAD_GATEWAY
+
             ErrorMessage.USER_NOT_FOUND,
             ErrorMessage.ITEM_NOT_FOUND,
             ErrorMessage.ITEM_NOT_SYNCHRONIZED,
