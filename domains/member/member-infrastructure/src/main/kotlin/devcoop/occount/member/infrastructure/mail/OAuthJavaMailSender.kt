@@ -1,7 +1,5 @@
 package devcoop.occount.member.infrastructure.mail
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import jakarta.mail.internet.MimeMessage
 import org.slf4j.LoggerFactory
 import org.springframework.mail.javamail.JavaMailSenderImpl
@@ -17,7 +15,6 @@ class OAuthJavaMailSender(
     private val clientId: String,
     private val clientSecret: String,
     private val refreshToken: String,
-    private val objectMapper: ObjectMapper,
 ) : JavaMailSenderImpl() {
 
     private val logger = LoggerFactory.getLogger(OAuthJavaMailSender::class.java)
@@ -25,8 +22,8 @@ class OAuthJavaMailSender(
         .connectTimeout(Duration.ofSeconds(10))
         .build()
 
-    private var cachedToken: String? = null
-    private var tokenExpiresAt: Instant = Instant.EPOCH
+    @Volatile private var cachedToken: String? = null
+    @Volatile private var tokenExpiresAt: Instant = Instant.EPOCH
 
     init {
         host = "smtp.gmail.com"
@@ -40,19 +37,28 @@ class OAuthJavaMailSender(
     }
 
     override fun doSend(mimeMessages: Array<out MimeMessage>, originalMessages: Array<out Any>?) {
-        password = fetchAccessToken()
+        password = getAccessToken()
         super.doSend(mimeMessages, originalMessages)
     }
 
+    @Synchronized
+    private fun getAccessToken(): String {
+        val token = cachedToken
+        if (token != null && Instant.now() < tokenExpiresAt.minus(Duration.ofMinutes(1))) {
+            return token
+        }
+        return fetchAccessToken()
+    }
+
     private fun fetchAccessToken(): String {
-        val body = "grant_type=refresh_token" +
+        val requestBody = "grant_type=refresh_token" +
             "&client_id=${clientId}" +
             "&client_secret=${clientSecret}" +
             "&refresh_token=${refreshToken}"
 
         val request = HttpRequest.newBuilder(URI.create(TOKEN_ENDPOINT))
             .header("Content-Type", "application/x-www-form-urlencoded")
-            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .POST(HttpRequest.BodyPublishers.ofString(requestBody))
             .timeout(Duration.ofSeconds(30))
             .build()
 
@@ -61,10 +67,14 @@ class OAuthJavaMailSender(
             logger.debug("OAuth2 token refresh failed body: {}", response.body())
             error("Google OAuth2 token refresh failed with status ${response.statusCode()}")
         }
-        val parsed = objectMapper.readValue<Map<String, Any>>(response.body())
 
-        return parsed["access_token"] as? String
+        val body = response.body()
+        val accessToken = Regex(""""access_token"\s*:\s*"([^"]+)"""").find(body)?.groupValues?.get(1)
             ?: error("Google OAuth2 token refresh failed: access_token not found in response")
+        val expiresIn = Regex(""""expires_in"\s*:\s*(\d+)""").find(body)?.groupValues?.get(1)?.toLongOrNull() ?: 3600L
+        cachedToken = accessToken
+        tokenExpiresAt = Instant.now().plusSeconds(expiresIn)
+        return accessToken
     }
 
     companion object {

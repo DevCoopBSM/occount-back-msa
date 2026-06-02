@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.mail.javamail.JavaMailSender
-import com.fasterxml.jackson.databind.ObjectMapper
 
 @Configuration
 class GmailOAuth2MailConfig(
@@ -12,9 +11,8 @@ class GmailOAuth2MailConfig(
     @param:Value("\${mail.oauth2.client-id}") private val clientId: String,
     @param:Value("\${mail.oauth2.client-secret}") private val clientSecret: String,
     @param:Value("\${mail.oauth2.refresh-token}") private val refreshToken: String,
-    private val objectMapper: ObjectMapper,
 ) {
     @Bean
     fun javaMailSender(): JavaMailSender =
-        OAuthJavaMailSender(username, clientId, clientSecret, refreshToken, objectMapper)
+        OAuthJavaMailSender(username, clientId, clientSecret, refreshToken)
 }
