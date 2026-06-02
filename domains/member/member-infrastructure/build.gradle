@@ -18,5 +18,5 @@ dependencies {
 
     implementation 'io.jsonwebtoken:jjwt:0.12.6'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
-    implementation 'com.google.auth:google-auth-library-oauth2-http:1.35.0'
+    implementation 'tools.jackson.module:jackson-module-kotlin'
 }
