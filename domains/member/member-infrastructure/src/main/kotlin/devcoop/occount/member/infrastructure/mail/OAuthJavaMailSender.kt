@@ -44,6 +44,12 @@ class OAuthJavaMailSender(
         props["mail.smtp.auth.mechanisms"] = "XOAUTH2"
         props["mail.smtp.starttls.enable"] = "true"
         props["mail.smtp.ssl.trust"] = "smtp.gmail.com"
+        val proxyHost = System.getenv("HTTPS_PROXY_HOST") ?: System.getProperty("https.proxyHost")
+        val proxyPort = System.getenv("HTTPS_PROXY_PORT") ?: System.getProperty("https.proxyPort")
+        if (proxyHost != null && proxyPort != null) {
+            props["mail.smtp.proxy.host"] = proxyHost
+            props["mail.smtp.proxy.port"] = proxyPort
+        }
     }
 
     override fun doSend(mimeMessages: Array<out MimeMessage>, originalMessages: Array<out Any>?) {
