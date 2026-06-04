@@ -58,9 +58,8 @@ class InquiryController(
 
     private fun sanitizePageable(pageable: Pageable): Pageable {
         val cappedSize = minOf(pageable.pageSize, MAX_PAGE_SIZE)
-        val sanitizedSort = pageable.sort
-            .filter { it.property in ALLOWED_SORT_FIELDS }
-            .let { orders -> if (orders.isEmpty()) DEFAULT_SORT else Sort.by(orders) }
+        val filteredOrders = pageable.sort.filter { it.property in ALLOWED_SORT_FIELDS }.toList()
+        val sanitizedSort = if (filteredOrders.isEmpty()) DEFAULT_SORT else Sort.by(filteredOrders)
         return PageRequest.of(pageable.pageNumber, cappedSize, sanitizedSort)
     }
 
