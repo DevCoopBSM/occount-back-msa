@@ -23,7 +23,7 @@ class OAuthJavaMailSender(
     private val httpClient: HttpClient = buildHttpClient()
 
     private fun buildHttpClient(): HttpClient {
-        val builder = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10))
+        val builder = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(60))
         val proxyHost = System.getenv("HTTPS_PROXY_HOST") ?: System.getProperty("https.proxyHost")
         val proxyPort = (System.getenv("HTTPS_PROXY_PORT") ?: System.getProperty("https.proxyPort"))?.toIntOrNull()
         if (proxyHost != null && proxyPort != null) {
