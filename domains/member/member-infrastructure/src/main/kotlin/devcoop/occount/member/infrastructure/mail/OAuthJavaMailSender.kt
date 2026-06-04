@@ -3,6 +3,8 @@ package devcoop.occount.member.infrastructure.mail
 import jakarta.mail.internet.MimeMessage
 import org.slf4j.LoggerFactory
 import org.springframework.mail.javamail.JavaMailSenderImpl
+import java.net.InetSocketAddress
+import java.net.ProxySelector
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -18,9 +20,17 @@ class OAuthJavaMailSender(
 ) : JavaMailSenderImpl() {
 
     private val logger = LoggerFactory.getLogger(OAuthJavaMailSender::class.java)
-    private val httpClient: HttpClient = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(10))
-        .build()
+    private val httpClient: HttpClient = buildHttpClient()
+
+    private fun buildHttpClient(): HttpClient {
+        val builder = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10))
+        val proxyHost = System.getenv("HTTPS_PROXY_HOST") ?: System.getProperty("https.proxyHost")
+        val proxyPort = (System.getenv("HTTPS_PROXY_PORT") ?: System.getProperty("https.proxyPort"))?.toIntOrNull()
+        if (proxyHost != null && proxyPort != null) {
+            builder.proxy(ProxySelector.of(InetSocketAddress(proxyHost, proxyPort)))
+        }
+        return builder.build()
+    }
 
     @Volatile private var cachedToken: String? = null
     @Volatile private var tokenExpiresAt: Instant = Instant.EPOCH
