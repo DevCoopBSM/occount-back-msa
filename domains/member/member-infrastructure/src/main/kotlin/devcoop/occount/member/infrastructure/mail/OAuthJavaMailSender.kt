@@ -75,7 +75,7 @@ class OAuthJavaMailSender(
         val request = HttpRequest.newBuilder(URI.create(TOKEN_ENDPOINT))
             .header("Content-Type", "application/x-www-form-urlencoded")
             .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-            .timeout(Duration.ofSeconds(30))
+            .timeout(Duration.ofSeconds(90))
             .build()
 
         val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
