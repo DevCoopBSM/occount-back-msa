@@ -10,6 +10,7 @@ import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
 import java.security.SecureRandom
 import java.time.Instant
+import java.util.concurrent.CompletableFuture
 
 @Service
 class SendEmailOtpUseCase(
@@ -46,7 +47,7 @@ class SendEmailOtpUseCase(
             code
         }!!
 
-        emailSender.sendOtp(to = email, otpCode = otpCode)
+        CompletableFuture.runAsync { emailSender.sendOtp(to = email, otpCode = otpCode) }
     }
 
     private fun generateOtpCode(): String =
