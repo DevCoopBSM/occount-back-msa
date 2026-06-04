@@ -38,7 +38,7 @@ interface OrderJpaRepository : JpaRepository<OrderJpaEntity, Long> {
         """
         SELECT new devcoop.occount.order.application.output.SalesRankingItem(
             l.itemId,
-            l.itemNameSnapshot,
+            MAX(l.itemNameSnapshot),
             SUM(l.quantity)
         )
         FROM OrderJpaEntity o
@@ -46,7 +46,7 @@ interface OrderJpaRepository : JpaRepository<OrderJpaEntity, Long> {
         WHERE o.status = devcoop.occount.order.domain.order.OrderStatus.COMPLETED
           AND o.expiresAt >= :startDateTime
           AND o.expiresAt < :endDateTime
-        GROUP BY l.itemId, l.itemNameSnapshot
+        GROUP BY l.itemId
         ORDER BY SUM(l.quantity) DESC, l.itemId ASC
         """
     )
@@ -60,7 +60,7 @@ interface OrderJpaRepository : JpaRepository<OrderJpaEntity, Long> {
         """
         SELECT new devcoop.occount.order.application.output.SalesRankingItem(
             l.itemId,
-            l.itemNameSnapshot,
+            MAX(l.itemNameSnapshot),
             SUM(l.quantity)
         )
         FROM OrderJpaEntity o
@@ -68,7 +68,7 @@ interface OrderJpaRepository : JpaRepository<OrderJpaEntity, Long> {
         WHERE o.status = devcoop.occount.order.domain.order.OrderStatus.COMPLETED
           AND o.expiresAt >= :startDateTime
           AND o.expiresAt < :endDateTime
-        GROUP BY l.itemId, l.itemNameSnapshot
+        GROUP BY l.itemId
         ORDER BY SUM(l.quantity) ASC, l.itemId ASC
         """
     )
