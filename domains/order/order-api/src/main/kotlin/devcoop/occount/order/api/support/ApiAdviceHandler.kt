@@ -3,6 +3,7 @@ package devcoop.occount.order.api.support
 import devcoop.occount.core.common.error.ErrorResponse
 import devcoop.occount.core.common.error.ErrorMessage
 import devcoop.occount.core.common.exception.BusinessBaseException
+import devcoop.occount.order.application.exception.BadRequestException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -33,11 +34,11 @@ class ApiAdviceHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors)
     }
 
-    @ExceptionHandler(IllegalArgumentException::class)
-    fun handleIllegalArgumentException(e: IllegalArgumentException): ResponseEntity<ErrorResponse> {
+    @ExceptionHandler(BadRequestException::class)
+    fun handleBadRequestException(e: BadRequestException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
-            .body(ErrorResponse(e.message ?: "Invalid request"))
+            .body(ErrorResponse("Invalid request"))
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)

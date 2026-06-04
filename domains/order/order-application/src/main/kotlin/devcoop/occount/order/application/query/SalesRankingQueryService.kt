@@ -1,5 +1,6 @@
 package devcoop.occount.order.application.query
 
+import devcoop.occount.order.application.exception.BadRequestException
 import devcoop.occount.order.application.output.SalesRankingRepository
 import devcoop.occount.order.application.shared.SalesRankingItemResponse
 import devcoop.occount.order.application.shared.SalesRankingPeriod
@@ -21,7 +22,9 @@ class SalesRankingQueryService(
         limit: Int,
         date: LocalDate = LocalDate.now(),
     ): SalesRankingResponse {
-        require(limit >= 1) { "limit must be greater than or equal to 1" }
+        if (limit < 1) {
+            throw BadRequestException()
+        }
 
         val range = SalesRankingDateRange.from(period, date)
         val items = salesRankingRepository.findSalesRanking(

@@ -207,7 +207,7 @@ class OrderControllerTest {
                 .param("type", "POPULAR")
                 .param("limit", "0"),
         ).andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.message").value("limit must be greater than or equal to 1"))
+            .andExpect(jsonPath("$.message").value("Invalid request"))
     }
 
     private fun buildMockMvc(
