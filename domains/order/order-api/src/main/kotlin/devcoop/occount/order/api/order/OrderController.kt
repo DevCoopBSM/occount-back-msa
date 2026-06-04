@@ -2,11 +2,16 @@ package devcoop.occount.order.api.order
 
 import devcoop.occount.core.common.auth.AuthHeaders
 import devcoop.occount.order.api.sse.OrderSseRegistry
+import devcoop.occount.order.application.query.SalesRankingQueryService
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
+import devcoop.occount.order.application.shared.SalesRankingPeriod
+import devcoop.occount.order.application.shared.SalesRankingResponse
+import devcoop.occount.order.application.shared.SalesRankingType
 import devcoop.occount.order.application.query.OrderQueryService
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -16,8 +21,10 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/orders")
@@ -25,6 +32,7 @@ class OrderController(
     private val createOrderUseCase: CreateOrderUseCase,
     private val cancelOrderUseCase: CancelOrderUseCase,
     private val orderQueryService: OrderQueryService,
+    private val salesRankingQueryService: SalesRankingQueryService,
     private val orderSseRegistry: OrderSseRegistry,
 ) {
     @PostMapping
@@ -43,6 +51,22 @@ class OrderController(
         @PathVariable orderId: Long,
     ): ResponseEntity<OrderResponse> {
         val response = orderQueryService.getOrder(orderId)
+        return ResponseEntity.ok(response)
+    }
+
+    @GetMapping("/sales-ranking")
+    fun getSalesRanking(
+        @RequestParam period: SalesRankingPeriod,
+        @RequestParam type: SalesRankingType,
+        @RequestParam(defaultValue = "10") limit: Int,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate?,
+    ): ResponseEntity<SalesRankingResponse> {
+        val response = salesRankingQueryService.getSalesRanking(
+            period = period,
+            type = type,
+            limit = limit,
+            date = date ?: LocalDate.now(),
+        )
         return ResponseEntity.ok(response)
     }
 

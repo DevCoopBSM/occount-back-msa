@@ -1,6 +1,7 @@
 package devcoop.occount.order.infrastructure.persistence.order
 
 import devcoop.occount.order.domain.order.OrderStatus
+import devcoop.occount.order.application.output.SalesRankingItem
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
@@ -32,4 +33,48 @@ interface OrderJpaRepository : JpaRepository<OrderJpaEntity, Long> {
         """
     )
     fun findOrderIdsRequiringCompensation(pageable: Pageable): List<Long>
+
+    @Query(
+        """
+        SELECT new devcoop.occount.order.application.output.SalesRankingItem(
+            l.itemId,
+            l.itemNameSnapshot,
+            SUM(l.quantity)
+        )
+        FROM OrderJpaEntity o
+        JOIN o.lines l
+        WHERE o.status = devcoop.occount.order.domain.order.OrderStatus.COMPLETED
+          AND o.expiresAt >= :startDateTime
+          AND o.expiresAt < :endDateTime
+        GROUP BY l.itemId, l.itemNameSnapshot
+        ORDER BY SUM(l.quantity) DESC, l.itemId ASC
+        """
+    )
+    fun findPopularSalesRanking(
+        @Param("startDateTime") startDateTime: Instant,
+        @Param("endDateTime") endDateTime: Instant,
+        pageable: Pageable,
+    ): List<SalesRankingItem>
+
+    @Query(
+        """
+        SELECT new devcoop.occount.order.application.output.SalesRankingItem(
+            l.itemId,
+            l.itemNameSnapshot,
+            SUM(l.quantity)
+        )
+        FROM OrderJpaEntity o
+        JOIN o.lines l
+        WHERE o.status = devcoop.occount.order.domain.order.OrderStatus.COMPLETED
+          AND o.expiresAt >= :startDateTime
+          AND o.expiresAt < :endDateTime
+        GROUP BY l.itemId, l.itemNameSnapshot
+        ORDER BY SUM(l.quantity) ASC, l.itemId ASC
+        """
+    )
+    fun findUnpopularSalesRanking(
+        @Param("startDateTime") startDateTime: Instant,
+        @Param("endDateTime") endDateTime: Instant,
+        pageable: Pageable,
+    ): List<SalesRankingItem>
 }
