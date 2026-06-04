@@ -4,10 +4,15 @@ import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.member.application.otp.EmailOtp
 import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.output.EmailSender
+import devcoop.occount.member.application.output.IdentityVerificationClient
+import devcoop.occount.member.application.output.VerifiedIdentity
+import devcoop.occount.member.application.usecase.identity.VerifyIdentityUseCase
 import devcoop.occount.member.application.usecase.otp.SendEmailOtpUseCase
 import devcoop.occount.member.application.usecase.otp.VerifyEmailOtpUseCase
 import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
+import org.springframework.transaction.support.AbstractPlatformTransactionManager
+import org.springframework.transaction.support.DefaultTransactionStatus
 import devcoop.occount.member.domain.user.User
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
@@ -118,17 +123,41 @@ fun verifiedEmailOtp(email: String, otpCode: String = "123456"): EmailOtp =
         otpCode = otpCode,
         expiresAt = Instant.now().plusSeconds(EmailOtp.OTP_TTL_SECONDS),
         verified = true,
+        createdAt = Instant.now(),
     )
+
+private val noopTransactionManager = object : AbstractPlatformTransactionManager() {
+    override fun doGetTransaction(): Any = Object()
+    override fun doBegin(transaction: Any, definition: org.springframework.transaction.TransactionDefinition) = Unit
+    override fun doCommit(status: DefaultTransactionStatus) = Unit
+    override fun doRollback(status: DefaultTransactionStatus) = Unit
+}
 
 fun testSendEmailOtpUseCase(emailOtpRepository: EmailOtpRepository) =
     SendEmailOtpUseCase(
         emailOtpRepository = emailOtpRepository,
         emailSender = FakeEmailSender(),
+        transactionManager = noopTransactionManager,
     )
 
 fun testVerifyEmailOtpUseCase(emailOtpRepository: EmailOtpRepository) =
     VerifyEmailOtpUseCase(
         emailOtpRepository = emailOtpRepository,
+    )
+
+class FakeIdentityVerificationClient(
+    private val response: VerifiedIdentity = VerifiedIdentity(
+        ciNumber = "CI_TEST_123",
+        username = "홍길동",
+        phone = "01012345678",
+    ),
+) : IdentityVerificationClient {
+    override fun verify(identityVerificationId: String): VerifiedIdentity = response
+}
+
+fun testVerifyIdentityUseCase() =
+    VerifyIdentityUseCase(
+        identityVerificationClient = FakeIdentityVerificationClient(),
     )
 
 fun mockMvc(vararg controllers: Any): MockMvc {
