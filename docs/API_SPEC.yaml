@@ -1525,6 +1525,13 @@ components:
 
     SalesRankingResponse:
       type: object
+      required:
+        - period
+        - type
+        - limit
+        - start_date
+        - end_date
+        - items
       properties:
         period:
           $ref: '#/components/schemas/SalesRankingPeriod'
@@ -1548,6 +1555,10 @@ components:
 
     SalesRankingItemResponse:
       type: object
+      required:
+        - item_id
+        - item_name
+        - sold_quantity
       properties:
         item_id:
           type: integer
