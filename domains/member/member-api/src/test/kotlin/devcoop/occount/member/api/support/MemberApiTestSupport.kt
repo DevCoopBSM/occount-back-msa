@@ -41,6 +41,10 @@ class FakeUserRepository(
 
     override fun findById(id: Long): User? = usersById[id]
 
+    override fun findAllByIds(ids: List<Long>): List<User> {
+        return ids.mapNotNull(usersById::get)
+    }
+
     override fun findByUserBarcode(userBarcode: String): User? {
         return usersById.values.firstOrNull { it.getUserBarcode() == userBarcode }
     }

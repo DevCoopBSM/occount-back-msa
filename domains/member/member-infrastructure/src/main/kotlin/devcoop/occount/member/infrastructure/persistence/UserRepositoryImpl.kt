@@ -14,6 +14,14 @@ class UserRepositoryImpl(
             .orElse(null)
     }
 
+    override fun findAllByIds(ids: List<Long>): List<User> {
+        if (ids.isEmpty()) {
+            return emptyList()
+        }
+        return userJpaRepository.findAllById(ids)
+            .map(UserPersistenceMapper::toDomain)
+    }
+
     override fun findByUserBarcode(userBarcode: String): User? {
         return userJpaRepository.findByUserBarcode(userBarcode)
             ?.let(UserPersistenceMapper::toDomain)

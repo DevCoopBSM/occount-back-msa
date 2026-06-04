@@ -38,6 +38,8 @@ class ApiAdviceHandler {
             -> HttpStatus.UNAUTHORIZED
 
             ErrorMessage.USER_NOT_FOUND,
+            ErrorMessage.CONTRIBUTION_DEPOSIT_REQUEST_NOT_FOUND,
+            ErrorMessage.CONTRIBUTION_WITHDRAWAL_REQUEST_NOT_FOUND,
             ErrorMessage.ITEM_NOT_FOUND,
             ErrorMessage.ITEM_NOT_SYNCHRONIZED,
             ErrorMessage.PAYMENT_LOG_NOT_FOUND,
@@ -45,6 +47,8 @@ class ApiAdviceHandler {
 
             ErrorMessage.USER_ALREADY_EXISTS,
             ErrorMessage.TRANSACTION_IN_PROGRESS,
+            ErrorMessage.CONTRIBUTION_DEPOSIT_REQUEST_ALREADY_PROCESSED,
+            ErrorMessage.CONTRIBUTION_WITHDRAWAL_REQUEST_ALREADY_PROCESSED,
             -> HttpStatus.CONFLICT
 
             ErrorMessage.PAYMENT_TIMEOUT -> HttpStatus.REQUEST_TIMEOUT
