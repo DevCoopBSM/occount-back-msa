@@ -19,6 +19,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.mock.web.MockHttpServletRequest
 import java.time.LocalDateTime
 
@@ -67,6 +68,7 @@ class InquiryControllerTest {
     @DisplayName("내 문의 목록 조회 시 InquiryListResponse를 반환한다")
     fun `getInquiryList returns response from query service`() {
         val pageable = PageRequest.of(0, 20)
+        val sanitizedPageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"))
         val expected = InquiryListResponse(
             inquiries = listOf(
                 InquiryListItemResponse(
@@ -82,12 +84,12 @@ class InquiryControllerTest {
             currentPage = 0,
             pageSize = 20,
         )
-        `when`(getInquiryListQueryService.getList(17L, pageable)).thenReturn(expected)
+        `when`(getInquiryListQueryService.getList(17L, sanitizedPageable)).thenReturn(expected)
 
         val actual = controller.getInquiryList(httpRequest(17L), pageable)
 
         assertSame(expected, actual)
-        verify(getInquiryListQueryService).getList(17L, pageable)
+        verify(getInquiryListQueryService).getList(17L, sanitizedPageable)
     }
 
     @Test
