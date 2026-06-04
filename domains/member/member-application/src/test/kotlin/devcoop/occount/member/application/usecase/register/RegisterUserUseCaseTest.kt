@@ -12,6 +12,7 @@ import devcoop.occount.member.application.support.duplicateUserSaveException
 import devcoop.occount.member.application.support.verifiedEmailOtp
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -53,6 +54,7 @@ class RegisterUserUseCaseTest {
         val publishedEvent = eventPublisher.published.single().payload as MemberRegisteredEvent
 
         assertEquals(savedUser.getId(), publishedEvent.userId)
+        assertNull(savedUser.getUserBarcode())
         assertTrue(savedUser.matchesPassword(request.password) { raw, enc -> enc == "encoded:$raw" })
         assertTrue(savedUser.matchesPin(defaultPin) { raw, enc -> enc == "encoded:$raw" })
     }
@@ -140,4 +142,5 @@ class RegisterUserUseCaseTest {
             registerUserUseCase.register(request)
         }
     }
+
 }

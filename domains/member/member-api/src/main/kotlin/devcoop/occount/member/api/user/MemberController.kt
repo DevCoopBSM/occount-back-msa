@@ -1,6 +1,7 @@
 package devcoop.occount.member.api.user
 
 import devcoop.occount.core.common.auth.RequestAuthPrincipalResolver
+import devcoop.occount.member.application.query.UserBarcodeResponse
 import devcoop.occount.member.application.query.UserPreOrderInfoResponse
 import devcoop.occount.member.application.query.UserQueryService
 import jakarta.servlet.http.HttpServletRequest
@@ -17,5 +18,11 @@ class MemberController(
     fun findUserInfo(httpRequest: HttpServletRequest): UserPreOrderInfoResponse {
         val authPrincipal = RequestAuthPrincipalResolver.resolve(httpRequest)
         return userQueryService.findPreOrderInfo(authPrincipal.userId)
+    }
+
+    @GetMapping("/barcode")
+    fun findUserBarcode(httpRequest: HttpServletRequest): UserBarcodeResponse {
+        val authPrincipal = RequestAuthPrincipalResolver.resolve(httpRequest)
+        return userQueryService.findUserBarcode(authPrincipal.userId)
     }
 }
