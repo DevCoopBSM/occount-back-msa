@@ -27,4 +27,10 @@ class EmailOtpJpaEntity(
 
     @Column(nullable = false, updatable = false)
     val createdAt: Instant = Instant.now(),
-)
+) {
+    protected constructor() : this(
+        email = "",
+        otpCode = "",
+        expiresAt = Instant.EPOCH,
+    )
+}
