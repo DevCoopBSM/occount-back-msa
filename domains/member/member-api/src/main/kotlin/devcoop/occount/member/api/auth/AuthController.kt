@@ -2,6 +2,9 @@ package devcoop.occount.member.api.auth
 
 import devcoop.occount.member.api.auth.dto.SendEmailOtpRequest
 import devcoop.occount.member.api.auth.dto.VerifyEmailOtpRequest
+import devcoop.occount.member.api.auth.dto.VerifyIdentityRequest
+import devcoop.occount.member.application.usecase.identity.VerifyIdentityResponse
+import devcoop.occount.member.application.usecase.identity.VerifyIdentityUseCase
 import devcoop.occount.member.application.usecase.login.KioskLoginRequest
 import devcoop.occount.member.application.usecase.login.LoginUserUseCase
 import devcoop.occount.member.application.usecase.login.MemberLoginRequest
@@ -79,5 +82,11 @@ class AuthController(
     ) {
         val token = loginUserUseCase.login(request)
         response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer $token")
+    }
+
+    @PostMapping("/identity/verify")
+    @ResponseStatus(HttpStatus.OK)
+    fun verifyIdentity(@Valid @RequestBody request: VerifyIdentityRequest): VerifyIdentityResponse {
+        return verifyIdentityUseCase.verify(request.identityVerificationId)
     }
 }
