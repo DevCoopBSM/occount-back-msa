@@ -16,7 +16,7 @@ class SalesRankingQueryServiceTest {
     @DisplayName("일간 판매 랭킹은 기준 날짜 하루 범위로 조회한다")
     fun `daily sales ranking uses one day range`() {
         val repository = FakeSalesRankingRepository()
-        val service = SalesRankingQueryService(repository)
+        val service = SalesRankingQueryService(repository, SalesRankingQueryParser())
 
         val response = service.getSalesRanking(
             period = "DAILY",
@@ -37,7 +37,7 @@ class SalesRankingQueryServiceTest {
     @DisplayName("주간 판매 랭킹은 기준 날짜가 포함된 월요일부터 일요일까지 조회한다")
     fun `weekly sales ranking uses monday to sunday range`() {
         val repository = FakeSalesRankingRepository()
-        val service = SalesRankingQueryService(repository)
+        val service = SalesRankingQueryService(repository, SalesRankingQueryParser())
 
         val response = service.getSalesRanking(
             period = "WEEKLY",
@@ -58,7 +58,7 @@ class SalesRankingQueryServiceTest {
     @DisplayName("월간 판매 랭킹은 기준 날짜가 포함된 월 전체 범위로 조회한다")
     fun `monthly sales ranking uses entire month range`() {
         val repository = FakeSalesRankingRepository()
-        val service = SalesRankingQueryService(repository)
+        val service = SalesRankingQueryService(repository, SalesRankingQueryParser())
 
         val response = service.getSalesRanking(
             period = "MONTHLY",

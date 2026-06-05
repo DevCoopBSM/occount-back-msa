@@ -17,6 +17,7 @@ import devcoop.occount.order.application.support.OrderPaymentCancellationEventPu
 import devcoop.occount.order.application.support.OrderResponseMapper
 import devcoop.occount.order.application.support.OrderStreamEventMapper
 import devcoop.occount.order.application.query.OrderQueryService
+import devcoop.occount.order.application.query.SalesRankingQueryParser
 import devcoop.occount.order.application.query.SalesRankingQueryService
 import devcoop.occount.order.application.output.SalesRankingItem
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
@@ -253,7 +254,10 @@ class OrderControllerTest {
                     orderResponseMapper = OrderResponseMapper(),
                     orderStreamEventMapper = OrderStreamEventMapper(),
                 ),
-                salesRankingQueryService = SalesRankingQueryService(salesRankingRepository),
+                salesRankingQueryService = SalesRankingQueryService(
+                    salesRankingRepository = salesRankingRepository,
+                    salesRankingQueryParser = SalesRankingQueryParser(),
+                ),
                 orderSseRegistry = OrderSseRegistry(DefaultOrderSseEmitterSupport()),
             ),
         )
