@@ -34,9 +34,6 @@ mail:
     client-secret: ${MAIL_OAUTH2_CLIENT_SECRET}
     refresh-token: ${MAIL_OAUTH2_REFRESH_TOKEN}
 
-portone:
-  secret-key: ${PORTONE_SECRET_KEY}
-
 jwt:
   access-expiration-time: ${JWT_ACCESS_EXPIRATION_TIME}
   kiosk-expiration-time: ${JWT_KIOSK_EXPIRATION_TIME}
@@ -53,7 +50,7 @@ app:
         body: '{"email":"warmup@warmup.invalid","password":"x"}'
 
 portone:
-  secret-key: ${PORTONE_SECRET_KEY}
+  secret-key: ${PORTONE_SECRET_KEY:}
 
 management:
   otlp:
