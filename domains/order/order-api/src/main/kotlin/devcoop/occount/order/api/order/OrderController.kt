@@ -52,7 +52,7 @@ class OrderController(
 
     @GetMapping("/statistics/sales-ranking")
     fun getSalesRanking(
-        @RequestParam(required = false) period: String,
+        @RequestParam(required = false) period: String?,
         @RequestParam(required = false) type: String?,
         @RequestParam(defaultValue = "10") limit: String,
         @RequestParam(required = false) date: String?,
