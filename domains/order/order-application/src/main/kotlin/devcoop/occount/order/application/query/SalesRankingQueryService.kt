@@ -9,7 +9,7 @@ import java.time.ZoneOffset
 @Service
 class SalesRankingQueryService(
     private val salesRankingRepository: SalesRankingRepository,
-    private val salesRankingQueryParser: SalesRankingQueryParser = SalesRankingQueryParser(),
+    private val salesRankingQueryParser: SalesRankingQueryParser,
 ) {
     fun getSalesRanking(
         period: String?,
