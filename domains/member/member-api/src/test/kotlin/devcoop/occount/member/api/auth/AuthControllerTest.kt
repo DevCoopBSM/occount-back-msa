@@ -124,7 +124,7 @@ class AuthControllerTest {
         mockMvc.perform(
             post("/auth/email/verify-otp")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"email": "test@test.com", "otpCode": "654321"}"""),
+                .content("""{"email": "test@test.com", "otp_code": "654321"}"""),
         ).andExpect(status().isNoContent)
     }
 
@@ -156,7 +156,7 @@ class AuthControllerTest {
         mockMvc.perform(
             post("/auth/email/verify-otp")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"email": "not-an-email", "otpCode": "12"}"""),
+                .content("""{"email": "not-an-email", "otp_code": "12"}"""),
         ).andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.email").value("올바른 이메일 형식이어야 합니다."))
             .andExpect(jsonPath("$.otpCode").value("인증번호는 6자리여야 합니다."))
@@ -370,7 +370,7 @@ class AuthControllerTest {
         mockMvc.perform(
             post("/auth/identity/verify")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"identityVerificationId": "test-verification-id"}"""),
+                .content("""{"identity_verification_id": "test-verification-id"}"""),
         ).andExpect(status().isOk)
             .andExpect(jsonPath("$.userCiNumber").value("CI_TEST_123"))
             .andExpect(jsonPath("$.username").value("홍길동"))
@@ -408,7 +408,7 @@ class AuthControllerTest {
         mockMvc.perform(
             post("/auth/identity/verify")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"identityVerificationId": "invalid-id"}"""),
+                .content("""{"identity_verification_id": "invalid-id"}"""),
         ).andExpect(status().isBadGateway)
     }
 
