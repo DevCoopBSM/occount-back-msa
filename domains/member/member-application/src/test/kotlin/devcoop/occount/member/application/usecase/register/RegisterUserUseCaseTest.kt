@@ -105,6 +105,7 @@ class RegisterUserUseCaseTest {
                     email = request.userEmail,
                     otpCode = "123456",
                     expiresAt = Instant.now().minusSeconds(1),
+                    createdAt = Instant.now(),
                     verified = true,
                 ),
             ),
