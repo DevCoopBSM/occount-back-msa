@@ -11,9 +11,3 @@ interface SalesRankingRepository {
         limit: Int,
     ): List<SalesRankingItem>
 }
-
-data class SalesRankingItem(
-    val itemId: Long,
-    val itemName: String,
-    val soldQuantity: Long,
-)

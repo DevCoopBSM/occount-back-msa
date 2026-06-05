@@ -58,7 +58,7 @@ class OrderRepositoryAdapter(
         limit: Int,
     ): List<SalesRankingItem> {
         val pageable = PageRequest.ofSize(limit)
-        return when (type) {
+        val results = when (type) {
             SalesRankingType.POPULAR -> orderJpaRepository.findPopularSalesRanking(
                 startDateTime = startDateTime,
                 endDateTime = endDateTime,
@@ -71,5 +71,14 @@ class OrderRepositoryAdapter(
                 pageable = pageable,
             )
         }
+        return results.map(::toSalesRankingItem)
+    }
+
+    private fun toSalesRankingItem(projection: SalesRankingItemJpaProjection): SalesRankingItem {
+        return SalesRankingItem(
+            itemId = projection.itemId,
+            itemName = projection.itemName,
+            soldQuantity = projection.soldQuantity,
+        )
     }
 }

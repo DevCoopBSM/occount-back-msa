@@ -1,7 +1,6 @@
 package devcoop.occount.order.infrastructure.persistence.order
 
 import devcoop.occount.order.domain.order.OrderStatus
-import devcoop.occount.order.application.output.SalesRankingItem
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
@@ -36,7 +35,7 @@ interface OrderJpaRepository : JpaRepository<OrderJpaEntity, Long> {
 
     @Query(
         """
-        SELECT new devcoop.occount.order.application.output.SalesRankingItem(
+        SELECT new devcoop.occount.order.infrastructure.persistence.order.SalesRankingItemJpaProjection(
             l.itemId,
             MAX(l.itemNameSnapshot),
             SUM(l.quantity)
@@ -54,11 +53,11 @@ interface OrderJpaRepository : JpaRepository<OrderJpaEntity, Long> {
         @Param("startDateTime") startDateTime: Instant,
         @Param("endDateTime") endDateTime: Instant,
         pageable: Pageable,
-    ): List<SalesRankingItem>
+    ): List<SalesRankingItemJpaProjection>
 
     @Query(
         """
-        SELECT new devcoop.occount.order.application.output.SalesRankingItem(
+        SELECT new devcoop.occount.order.infrastructure.persistence.order.SalesRankingItemJpaProjection(
             l.itemId,
             MAX(l.itemNameSnapshot),
             SUM(l.quantity)
@@ -76,5 +75,5 @@ interface OrderJpaRepository : JpaRepository<OrderJpaEntity, Long> {
         @Param("startDateTime") startDateTime: Instant,
         @Param("endDateTime") endDateTime: Instant,
         pageable: Pageable,
-    ): List<SalesRankingItem>
+    ): List<SalesRankingItemJpaProjection>
 }
