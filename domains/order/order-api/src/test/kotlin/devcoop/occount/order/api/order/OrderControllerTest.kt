@@ -207,7 +207,7 @@ class OrderControllerTest {
                 .param("type", "POPULAR")
                 .param("limit", "0"),
         ).andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.message").value("Invalid request"))
+            .andExpect(jsonPath("$.message").value("판매량 랭킹 조회 개수는 1 이상이어야 합니다."))
     }
 
     private fun buildMockMvc(

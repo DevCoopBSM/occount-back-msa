@@ -1,5 +1,6 @@
 package devcoop.occount.order.application.query
 
+import devcoop.occount.order.application.exception.OrderInvalidSalesRankingLimitException
 import devcoop.occount.order.application.output.SalesRankingItem
 import devcoop.occount.order.application.output.SalesRankingRepository
 import devcoop.occount.order.application.shared.SalesRankingPeriod
@@ -7,6 +8,7 @@ import devcoop.occount.order.application.shared.SalesRankingType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 import java.time.LocalDate
 
@@ -71,6 +73,22 @@ class SalesRankingQueryServiceTest {
         assertEquals(LocalDate.of(2026, 2, 28), response.endDate)
         assertEquals(Instant.parse("2026-02-01T00:00:00Z"), repository.lastStartDateTime)
         assertEquals(Instant.parse("2026-03-01T00:00:00Z"), repository.lastEndDateTime)
+    }
+
+    @Test
+    @DisplayName("조회 개수가 1 미만이면 판매량 랭킹 조회 개수 예외를 발생시킨다")
+    fun `sales ranking throws exception when limit is less than one`() {
+        val repository = FakeSalesRankingRepository()
+        val service = SalesRankingQueryService(repository)
+
+        assertThrows<OrderInvalidSalesRankingLimitException> {
+            service.getSalesRanking(
+                period = SalesRankingPeriod.DAILY,
+                type = SalesRankingType.POPULAR,
+                limit = 0,
+                date = LocalDate.of(2026, 6, 5),
+            )
+        }
     }
 
     private class FakeSalesRankingRepository : SalesRankingRepository {
