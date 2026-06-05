@@ -207,7 +207,21 @@ class OrderControllerTest {
                 .param("type", "POPULAR")
                 .param("limit", "0"),
         ).andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.message").value("판매량 랭킹 조회 개수는 1 이상이어야 합니다."))
+            .andExpect(jsonPath("$.message").value("판매량 랭킹 조회 개수는 1 이상의 숫자여야 합니다."))
+    }
+
+    @Test
+    @DisplayName("상품 판매량 랭킹 조회 기간이 올바르지 않으면 400을 반환한다")
+    fun `getSalesRanking returns 400 when period is invalid`() {
+        val mockMvc = buildMockMvc()
+
+        mockMvc.perform(
+            get("/orders/sales-ranking")
+                .param("period", "INVALID")
+                .param("type", "POPULAR")
+                .param("limit", "5"),
+        ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.message").value("판매량 랭킹 조회 기간이 올바르지 않습니다."))
     }
 
     private fun buildMockMvc(
