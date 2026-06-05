@@ -1,8 +1,10 @@
 package devcoop.occount.member.infrastructure.persistence
 
+import devcoop.occount.member.infrastructure.crypto.CryptoConverter
 import devcoop.occount.member.domain.user.Role
 import devcoop.occount.member.domain.user.UserType
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -18,9 +20,11 @@ class UserJpaEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0L,
+    @Convert(converter = CryptoConverter::class)
     @field:Column(nullable = false)
     val username: String = "",
-    @field:Column(unique = true)
+    @Convert(converter = CryptoConverter::class)
+    @field:Column
     val phone: String? = null,
     @field:Column(unique = true)
     val userBarcode: String? = null,
@@ -38,7 +42,8 @@ class UserJpaEntity(
     val role: Role = Role.ROLE_USER,
     @field:Column(nullable = false)
     val pin: String = "",
-    @field:Column(unique = true)
+    @Convert(converter = CryptoConverter::class)
+    @field:Column
     val userCiNumber: String? = null,
     @field:Column
     val birthDate: LocalDate? = null,

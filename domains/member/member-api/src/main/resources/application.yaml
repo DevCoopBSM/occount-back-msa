@@ -43,6 +43,8 @@ jwt:
 
 app:
   default-pin: ${DEFAULT_PIN:0000}
+  encryption:
+    secret-key: ${ENCRYPTION_SECRET_KEY}
   startup-warmup:
     http-endpoints:
       - path: /api/v3/auth/login
