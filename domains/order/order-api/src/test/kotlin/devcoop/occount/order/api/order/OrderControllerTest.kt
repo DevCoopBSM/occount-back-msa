@@ -180,7 +180,7 @@ class OrderControllerTest {
         val mockMvc = buildMockMvc(salesRankingRepository = salesRankingRepository)
 
         mockMvc.perform(
-            get("/orders/sales-ranking")
+            get("/orders/statistics/sales-ranking")
                 .param("period", "DAILY")
                 .param("type", "POPULAR")
                 .param("limit", "5")
@@ -202,7 +202,7 @@ class OrderControllerTest {
         val mockMvc = buildMockMvc()
 
         mockMvc.perform(
-            get("/orders/sales-ranking")
+            get("/orders/statistics/sales-ranking")
                 .param("period", "DAILY")
                 .param("type", "POPULAR")
                 .param("limit", "0"),
@@ -216,7 +216,7 @@ class OrderControllerTest {
         val mockMvc = buildMockMvc()
 
         mockMvc.perform(
-            get("/orders/sales-ranking")
+            get("/orders/statistics/sales-ranking")
                 .param("period", "INVALID")
                 .param("type", "POPULAR")
                 .param("limit", "5"),
