@@ -4,6 +4,7 @@ import devcoop.occount.member.domain.user.User
 import devcoop.occount.member.domain.user.AccountInfo
 import devcoop.occount.member.domain.user.UserInfo
 import devcoop.occount.member.domain.user.UserSensitiveInfo
+import devcoop.occount.member.infrastructure.crypto.SensitiveInformationHash
 
 object UserPersistenceMapper {
     fun toDomain(entity: UserJpaEntity): User {
