@@ -7,7 +7,7 @@ object ContributionAccountPersistenceMapper {
         return ContributionAccount(
             userId = entity.userId,
             balance = entity.balance,
-            version = entity.version ?: 0L,
+            version = entity.version,
         )
     }
 

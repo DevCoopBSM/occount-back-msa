@@ -987,6 +987,20 @@ paths:
           schema:
             $ref: '#/components/schemas/ContributionDepositRequestStatus'
           description: 조회할 출자금 납입 신청 상태
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+          description: 페이지 번호
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+          description: 페이지 크기
       responses:
         "200":
           description: 조회 성공
@@ -1687,6 +1701,10 @@ components:
           nullable: true
         status:
           $ref: '#/components/schemas/ContributionDepositRequestStatus'
+        rejection_reason:
+          type: string
+          nullable: true
+          description: 반려 사유
         requested_at:
           type: string
           format: date-time
@@ -1771,6 +1789,10 @@ components:
           nullable: true
         status:
           $ref: '#/components/schemas/ContributionWithdrawalRequestStatus'
+        rejection_reason:
+          type: string
+          nullable: true
+          description: 반려 사유
         requested_at:
           type: string
           format: date-time

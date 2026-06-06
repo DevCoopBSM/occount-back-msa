@@ -3,7 +3,7 @@ package devcoop.occount.member.domain.contribution
 data class ContributionAccount(
     val userId: Long,
     val balance: Int = 0,
-    val version: Long = 0L,
+    val version: Long? = null,
 ) {
     fun deposit(amount: Int): ContributionAccount {
         if (amount <= 0) {

@@ -13,7 +13,7 @@ data class ContributionDepositRequest(
     val status: ContributionDepositRequestStatus = ContributionDepositRequestStatus.PENDING,
     val rejectionReason: String? = null,
     val requestedAt: LocalDateTime = LocalDateTime.now(),
-    val version: Long = 0L,
+    val version: Long? = null,
 ) {
     init {
         if (amount <= 0) {

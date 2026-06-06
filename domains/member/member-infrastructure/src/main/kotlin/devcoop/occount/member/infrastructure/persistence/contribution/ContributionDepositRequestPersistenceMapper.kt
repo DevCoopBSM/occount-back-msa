@@ -15,7 +15,7 @@ object ContributionDepositRequestPersistenceMapper {
             status = entity.status,
             rejectionReason = entity.rejectionReason,
             requestedAt = entity.requestedAt,
-            version = entity.version ?: 0L,
+            version = entity.version,
         )
     }
 

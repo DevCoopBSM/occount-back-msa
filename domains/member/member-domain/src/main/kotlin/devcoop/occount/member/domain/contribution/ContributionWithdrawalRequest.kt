@@ -13,7 +13,7 @@ data class ContributionWithdrawalRequest(
     val status: ContributionWithdrawalRequestStatus = ContributionWithdrawalRequestStatus.PENDING,
     val rejectionReason: String? = null,
     val requestedAt: LocalDateTime = LocalDateTime.now(),
-    val version: Long = 0L,
+    val version: Long? = null,
 ) {
     init {
         if (amount <= 0) {
