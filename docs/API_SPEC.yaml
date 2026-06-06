@@ -874,6 +874,78 @@ paths:
         "401":
           description: 잘못된 토큰
 
+  /api/v3/orders/sales-ranking:
+    get:
+      tags: [Order]
+      operationId: getOrderSalesRanking
+      summary: 상품 판매량 랭킹 조회
+      description: |
+        결제 완료된 주문을 기준으로 상품별 판매 수량 합계 랭킹을 조회합니다. (AUTHENTICATED)
+
+        - 판매량은 `COMPLETED` 주문의 주문 상품 `quantity` 합계입니다.
+        - `DAILY` 는 기준 날짜 하루, `WEEKLY` 는 기준 날짜가 포함된 월요일~일요일, `MONTHLY` 는 기준 날짜가 포함된 월 전체를 집계합니다.
+        - `date` 를 생략하면 서버 기준 오늘 날짜로 집계합니다.
+        - 판매 이력이 없는 상품은 주문 데이터만으로 알 수 없으므로 응답에 포함되지 않습니다.
+      parameters:
+        - name: period
+          in: query
+          required: true
+          description: 집계 기간
+          schema:
+            $ref: '#/components/schemas/SalesRankingPeriod'
+          example: DAILY
+        - name: type
+          in: query
+          required: true
+          description: 인기순/비인기순 정렬 기준
+          schema:
+            $ref: '#/components/schemas/SalesRankingType'
+          example: POPULAR
+        - name: limit
+          in: query
+          required: false
+          description: 조회할 상품 개수
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+          example: 5
+        - name: date
+          in: query
+          required: false
+          description: 기준 날짜. 없으면 서버 기준 오늘
+          schema:
+            type: string
+            format: date
+          example: "2026-06-05"
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 상품 판매량 랭킹 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesRankingResponse'
+              example:
+                period: DAILY
+                type: POPULAR
+                limit: 5
+                start_date: "2026-06-05"
+                end_date: "2026-06-05"
+                items:
+                  - item_id: 1
+                    item_name: "아메리카노"
+                    sold_quantity: 123
+        "400":
+          description: 잘못된 집계 기간, 정렬 기준, 조회 개수 또는 날짜 형식
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: 인증 실패
+
   /api/v3/orders/{orderId}:
     get:
       tags: [Order]
@@ -1538,6 +1610,76 @@ components:
           type: string
           nullable: true
           description: 실패/취소 사유
+
+    SalesRankingResponse:
+      type: object
+      required:
+        - period
+        - type
+        - limit
+        - start_date
+        - end_date
+        - items
+      properties:
+        period:
+          $ref: '#/components/schemas/SalesRankingPeriod'
+        type:
+          $ref: '#/components/schemas/SalesRankingType'
+        limit:
+          type: integer
+          minimum: 1
+        start_date:
+          type: string
+          format: date
+          description: 실제 집계 시작일
+        end_date:
+          type: string
+          format: date
+          description: 실제 집계 종료일
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesRankingItemResponse'
+
+    SalesRankingItemResponse:
+      type: object
+      required:
+        - item_id
+        - item_name
+        - sold_quantity
+      properties:
+        item_id:
+          type: integer
+          format: int64
+        item_name:
+          type: string
+          description: 주문 시점 상품명 스냅샷
+        sold_quantity:
+          type: integer
+          format: int64
+          description: 해당 기간 동안 판매된 총 수량
+
+    SalesRankingPeriod:
+      type: string
+      description: |
+        판매량 집계 기간.
+        - `DAILY` — 기준 날짜 하루
+        - `WEEKLY` — 기준 날짜가 포함된 월요일~일요일
+        - `MONTHLY` — 기준 날짜가 포함된 월 전체
+      enum:
+        - DAILY
+        - WEEKLY
+        - MONTHLY
+
+    SalesRankingType:
+      type: string
+      description: |
+        판매량 랭킹 정렬 기준.
+        - `POPULAR` — 많이 팔린 순
+        - `UNPOPULAR` — 적게 팔린 순
+      enum:
+        - POPULAR
+        - UNPOPULAR
 
     OrderStatus:
       type: string

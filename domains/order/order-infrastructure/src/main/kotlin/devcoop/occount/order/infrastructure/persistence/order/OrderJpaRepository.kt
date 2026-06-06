@@ -32,4 +32,48 @@ interface OrderJpaRepository : JpaRepository<OrderJpaEntity, Long> {
         """
     )
     fun findOrderIdsRequiringCompensation(pageable: Pageable): List<Long>
+
+    @Query(
+        """
+        SELECT new devcoop.occount.order.infrastructure.persistence.order.SalesRankingItemJpaProjection(
+            l.itemId,
+            MAX(l.itemNameSnapshot),
+            SUM(l.quantity)
+        )
+        FROM OrderJpaEntity o
+        JOIN o.lines l
+        WHERE o.status = devcoop.occount.order.domain.order.OrderStatus.COMPLETED
+          AND o.expiresAt >= :startDateTime
+          AND o.expiresAt < :endDateTime
+        GROUP BY l.itemId
+        ORDER BY SUM(l.quantity) DESC, l.itemId ASC
+        """
+    )
+    fun findPopularSalesRanking(
+        @Param("startDateTime") startDateTime: Instant,
+        @Param("endDateTime") endDateTime: Instant,
+        pageable: Pageable,
+    ): List<SalesRankingItemJpaProjection>
+
+    @Query(
+        """
+        SELECT new devcoop.occount.order.infrastructure.persistence.order.SalesRankingItemJpaProjection(
+            l.itemId,
+            MAX(l.itemNameSnapshot),
+            SUM(l.quantity)
+        )
+        FROM OrderJpaEntity o
+        JOIN o.lines l
+        WHERE o.status = devcoop.occount.order.domain.order.OrderStatus.COMPLETED
+          AND o.expiresAt >= :startDateTime
+          AND o.expiresAt < :endDateTime
+        GROUP BY l.itemId
+        ORDER BY SUM(l.quantity) ASC, l.itemId ASC
+        """
+    )
+    fun findUnpopularSalesRanking(
+        @Param("startDateTime") startDateTime: Instant,
+        @Param("endDateTime") endDateTime: Instant,
+        pageable: Pageable,
+    ): List<SalesRankingItemJpaProjection>
 }
