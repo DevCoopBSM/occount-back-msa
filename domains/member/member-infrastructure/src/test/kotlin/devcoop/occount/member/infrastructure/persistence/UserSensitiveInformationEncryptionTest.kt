@@ -169,14 +169,22 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
     @Test
     @DisplayName("기존 평문 민감정보는 startup migration으로 암호문과 검색 해시로 보정된다")
     fun `migration encrypts legacy plaintext values and fills hashes`() {
+        val legacyPlainPhone = "ENC:010-3333-4444"
+        val stalePhoneHash = sensitiveInformationHasher.hash("stale-phone")
+        val staleCiHash = sensitiveInformationHasher.hash("stale-ci")
         jdbcTemplate.update(
             """
-            insert into common_user(username, phone, user_ci_number, user_barcode, user_type, email, password, role, pin)
-            values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            insert into common_user(
+                username, phone, phone_hash, user_ci_number, user_ci_number_hash,
+                user_barcode, user_type, email, password, role, pin
+            )
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """.trimIndent(),
             "평문사용자",
-            "010-3333-4444",
+            legacyPlainPhone,
+            stalePhoneHash,
             "CI-PLAIN-123",
+            staleCiHash,
             "BARCODE-PLAIN",
             UserType.STUDENT.name,
             "plain@test.com",
@@ -204,14 +212,14 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
             id,
         )
         assertEncrypted(rawValues["username"], "평문사용자")
-        assertEncrypted(rawValues["phone"], "010-3333-4444")
-        assertEquals(sensitiveInformationHasher.hash("010-3333-4444"), rawValues["phone_hash"])
+        assertEncrypted(rawValues["phone"], legacyPlainPhone)
+        assertEquals(sensitiveInformationHasher.hash(legacyPlainPhone), rawValues["phone_hash"])
         assertEncrypted(rawValues["user_ci_number"], "CI-PLAIN-123")
         assertEquals(sensitiveInformationHasher.hash("CI-PLAIN-123"), rawValues["user_ci_number_hash"])
 
         val foundEntity = userJpaRepository.findById(id).orElseThrow()
         assertEquals("평문사용자", foundEntity.username)
-        assertEquals("010-3333-4444", foundEntity.phone)
+        assertEquals(legacyPlainPhone, foundEntity.phone)
         assertEquals("CI-PLAIN-123", foundEntity.userCiNumber)
     }
 

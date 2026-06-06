@@ -3,9 +3,11 @@ package devcoop.occount.member.infrastructure.crypto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import java.util.Base64
 
 @DisplayName("CryptoHelper 단위 테스트")
 class CryptoHelperTest {
@@ -20,7 +22,26 @@ class CryptoHelperTest {
 
         assertNotEquals(plainText, encryptedText)
         assertTrue(encryptedText!!.startsWith(CryptoHelper.ENCRYPTION_PREFIX))
+        assertTrue(cryptoHelper.isEncrypted(encryptedText))
         assertEquals(plainText, cryptoHelper.decrypt(encryptedText))
+    }
+
+    @Test
+    @DisplayName("ENC prefix가 있어도 유효한 AES-GCM envelope가 아니면 암호문으로 판단하지 않는다")
+    fun `isEncrypted returns false for invalid encrypted envelope`() {
+        assertFalse(cryptoHelper.isEncrypted("ENC:alice"))
+        assertFalse(cryptoHelper.isEncrypted("ENC:not-base64!"))
+        assertFalse(cryptoHelper.isEncrypted("plainText"))
+    }
+
+    @Test
+    @DisplayName("길이가 충분한 Base64 envelope라도 GCM 복호화에 실패하면 암호문으로 판단하지 않는다")
+    fun `isEncrypted returns false for envelope that cannot be decrypted`() {
+        val invalidEnvelope = ByteArray(29) { index -> index.toByte() }
+        val invalidEncryptedText = CryptoHelper.ENCRYPTION_PREFIX +
+            Base64.getEncoder().encodeToString(invalidEnvelope)
+
+        assertFalse(cryptoHelper.isEncrypted(invalidEncryptedText))
     }
 
     @Test

@@ -21,10 +21,10 @@ class UserJpaEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0L,
     @Convert(converter = CryptoConverter::class)
-    @field:Column(nullable = false)
+    @field:Column(nullable = false, length = 512)
     val username: String = "",
     @Convert(converter = CryptoConverter::class)
-    @field:Column
+    @field:Column(length = 512)
     val phone: String? = null,
     @field:Column(unique = true)
     val userBarcode: String? = null,
@@ -43,7 +43,7 @@ class UserJpaEntity(
     @field:Column(nullable = false)
     val pin: String = "",
     @Convert(converter = CryptoConverter::class)
-    @field:Column
+    @field:Column(length = 512)
     val userCiNumber: String? = null,
     @field:Column
     val birthDate: LocalDate? = null,

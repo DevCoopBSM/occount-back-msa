@@ -96,8 +96,16 @@ class SensitiveInformationMigrationRunner(
             }
 
             legacyIndexNames.forEach { indexName ->
-                jdbcTemplate.execute("alter table $COMMON_USER_TABLE drop index `${indexName.replace("`", "``")}`")
-                log.info("Dropped legacy unique index on encrypted member sensitive information. index={}", indexName)
+                runCatching {
+                    jdbcTemplate.execute("alter table $COMMON_USER_TABLE drop index `${indexName.replace("`", "``")}`")
+                    log.info("Dropped legacy unique index on encrypted member sensitive information. index={}", indexName)
+                }.onFailure { exception ->
+                    log.warn(
+                        "Failed to drop legacy unique index on encrypted member sensitive information. index={}",
+                        indexName,
+                        exception,
+                    )
+                }
             }
         }
     }
@@ -111,8 +119,8 @@ class SensitiveInformationMigrationRunner(
             username = encryptIfPlain(username),
             phone = encryptIfPlain(phone),
             userCiNumber = encryptIfPlain(userCiNumber),
-            phoneHash = phoneHash ?: sensitiveInformationHasher.hash(plainPhone),
-            userCiNumberHash = userCiNumberHash ?: sensitiveInformationHasher.hash(plainUserCiNumber),
+            phoneHash = sensitiveInformationHasher.hash(plainPhone),
+            userCiNumberHash = sensitiveInformationHasher.hash(plainUserCiNumber),
         )
 
         return migrated.takeIf {
@@ -125,14 +133,14 @@ class SensitiveInformationMigrationRunner(
     }
 
     private fun encryptIfPlain(value: String?): String? {
-        if (value.isNullOrEmpty() || value.startsWith(CryptoHelper.ENCRYPTION_PREFIX)) {
+        if (value.isNullOrEmpty() || cryptoHelper.isEncrypted(value)) {
             return value
         }
         return cryptoHelper.encrypt(value)
     }
 
     private fun decryptIfEncrypted(value: String?): String? {
-        if (value.isNullOrEmpty() || !value.startsWith(CryptoHelper.ENCRYPTION_PREFIX)) {
+        if (value.isNullOrEmpty() || !cryptoHelper.isEncrypted(value)) {
             return value
         }
         return cryptoHelper.decrypt(value)
