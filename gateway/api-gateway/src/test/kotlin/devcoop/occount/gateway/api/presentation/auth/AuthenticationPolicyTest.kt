@@ -64,6 +64,14 @@ class AuthenticationPolicyTest {
     }
 
     @Test
+    fun `order sales ranking requires authentication`() {
+        assertEquals(
+            AuthenticationRule.Access.AUTHENTICATED,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/orders/sales-ranking"),
+        )
+    }
+
+    @Test
     fun `ari pick list path is public`() {
         assertEquals(AuthenticationRule.Access.PERMIT_ALL, policy.resolveAccess(HttpMethod.GET, "/api/v3/ari-pick"))
     }

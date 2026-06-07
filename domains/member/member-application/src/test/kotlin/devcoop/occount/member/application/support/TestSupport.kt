@@ -1,11 +1,14 @@
 package devcoop.occount.member.application.support
 
 import devcoop.occount.core.common.event.EventPublisher
+import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
+import devcoop.occount.member.application.otp.EmailOtp
 import devcoop.occount.member.domain.user.User
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.password.PasswordEncoder
+import java.time.Instant
 
 private val sharedPasswordEncoder = FakePasswordEncoder()
 
@@ -63,6 +66,37 @@ class FakeUserRepository(
         return persistedUser
     }
 }
+
+class FakeEmailOtpRepository(
+    initialOtpsByEmail: Map<String, EmailOtp> = emptyMap(),
+) : EmailOtpRepository {
+    private val otpsByEmail = initialOtpsByEmail.toMutableMap()
+
+    override fun save(emailOtp: EmailOtp): EmailOtp {
+        otpsByEmail[emailOtp.email] = emailOtp
+        return emailOtp
+    }
+
+    override fun findByEmail(email: String): EmailOtp? = otpsByEmail[email]
+
+    override fun findByEmailForUpdate(email: String): EmailOtp? = otpsByEmail[email]
+
+    override fun findValidByEmail(email: String): EmailOtp? =
+        otpsByEmail[email]?.takeIf { !it.isExpired() }
+
+    override fun deleteByEmail(email: String) {
+        otpsByEmail.remove(email)
+    }
+}
+
+fun verifiedEmailOtp(email: String, otpCode: String = "123456"): EmailOtp =
+    EmailOtp(
+        email = email,
+        otpCode = otpCode,
+        expiresAt = Instant.now().plusSeconds(EmailOtp.OTP_TTL_SECONDS),
+        createdAt = Instant.now(),
+        verified = true,
+    )
 
 class FakeTokenGenerator : TokenGenerator {
     override fun createAccessToken(userId: Long, role: String): String = "access-$userId-$role"

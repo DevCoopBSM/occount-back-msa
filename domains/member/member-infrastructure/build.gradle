@@ -1,5 +1,10 @@
 plugins {
     id 'java-library'
+    id 'org.jetbrains.kotlin.plugin.jpa'
+}
+
+tasks.withType(Test).configureEach {
+    systemProperties(System.properties.findAll { k, v -> k.toString().startsWith('mail.') })
 }
 
 dependencies {
@@ -12,4 +17,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
     implementation 'io.jsonwebtoken:jjwt:0.12.6'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
 }

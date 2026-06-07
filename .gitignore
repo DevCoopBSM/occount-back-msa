@@ -48,3 +48,8 @@ out/
 
 ### benchmark artifacts ###
 bench-jars/
+
+### local shell config ###
+.zshrc
+.zshenv
+.zprofile

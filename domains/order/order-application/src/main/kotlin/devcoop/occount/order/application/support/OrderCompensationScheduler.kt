@@ -3,8 +3,9 @@ package devcoop.occount.order.application.support
 import devcoop.occount.core.common.event.DomainEventTypes
 import devcoop.occount.core.common.event.DomainTopics
 import devcoop.occount.core.common.event.EventPublisher
-import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
 import devcoop.occount.core.common.event.ItemStockCompensationPayload
+import devcoop.occount.core.common.event.ItemStockPayload
+import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
 import devcoop.occount.core.common.event.OrderStockCompensationRequestedEvent
 import devcoop.occount.order.application.exception.OrderNotFoundException
 import devcoop.occount.order.application.output.OrderRepository
@@ -61,7 +62,7 @@ class OrderCompensationScheduler(
     private fun publishPaymentCompensationRequested(order: OrderAggregate) {
         log.info("결제 보상 요청 이벤트 발행 - 주문={}", order.orderId)
         eventPublisher.publish(
-            topic = DomainTopics.ORDER_PAYMENT_COMPENSATION_REQUESTED,
+            topic = DomainTopics.PAYMENT_COMMANDS,
             key = order.orderId.toString(),
             eventType = DomainEventTypes.ORDER_PAYMENT_COMPENSATION_REQUESTED,
             payload = OrderPaymentCompensationRequestedEvent(
@@ -71,6 +72,15 @@ class OrderCompensationScheduler(
                 paymentLogId = order.paymentResult.paymentLogId,
                 pointsUsed = order.paymentResult.pointsUsed,
                 cardAmount = order.paymentResult.cardAmount,
+                items = order.lines.map { line ->
+                    ItemStockPayload(
+                        itemId = line.itemId,
+                        itemName = line.itemNameSnapshot,
+                        itemPrice = line.unitPrice,
+                        quantity = line.quantity,
+                        totalPrice = line.totalPrice,
+                    )
+                },
             ),
         )
     }

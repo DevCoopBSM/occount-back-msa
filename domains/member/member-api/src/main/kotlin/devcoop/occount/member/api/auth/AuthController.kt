@@ -1,8 +1,15 @@
 package devcoop.occount.member.api.auth
 
+import devcoop.occount.member.api.auth.dto.SendEmailOtpRequest
+import devcoop.occount.member.api.auth.dto.VerifyEmailOtpRequest
+import devcoop.occount.member.api.auth.dto.VerifyIdentityRequest
+import devcoop.occount.member.application.usecase.identity.VerifyIdentityResponse
+import devcoop.occount.member.application.usecase.identity.VerifyIdentityUseCase
 import devcoop.occount.member.application.usecase.login.KioskLoginRequest
 import devcoop.occount.member.application.usecase.login.LoginUserUseCase
 import devcoop.occount.member.application.usecase.login.MemberLoginRequest
+import devcoop.occount.member.application.usecase.otp.SendEmailOtpUseCase
+import devcoop.occount.member.application.usecase.otp.VerifyEmailOtpUseCase
 import devcoop.occount.member.application.usecase.register.MemberRegisterRequest
 import devcoop.occount.member.application.usecase.register.RegisterUserUseCase
 import jakarta.servlet.http.HttpServletResponse
@@ -21,7 +28,28 @@ import org.springframework.web.bind.annotation.RestController
 class AuthController(
     private val loginUserUseCase: LoginUserUseCase,
     private val registerUserUseCase: RegisterUserUseCase,
+    private val sendEmailOtpUseCase: SendEmailOtpUseCase,
+    private val verifyEmailOtpUseCase: VerifyEmailOtpUseCase,
+    private val verifyIdentityUseCase: VerifyIdentityUseCase,
 ) {
+    @PostMapping("/email/send-otp")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun sendEmailOtp(@Valid @RequestBody request: SendEmailOtpRequest) {
+        sendEmailOtpUseCase.send(request.email)
+    }
+
+    @PostMapping("/email/verify-otp")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun verifyEmailOtp(@Valid @RequestBody request: VerifyEmailOtpRequest) {
+        verifyEmailOtpUseCase.verify(request.email, request.otpCode)
+    }
+
+    @PostMapping("/identity/verify")
+    @ResponseStatus(HttpStatus.OK)
+    fun verifyIdentity(@Valid @RequestBody request: VerifyIdentityRequest): VerifyIdentityResponse {
+        return verifyIdentityUseCase.verify(request.identityVerificationId)
+    }
+
     @PostMapping("/register")
     fun register(@Valid @RequestBody request: MemberRegisterRequest): ResponseEntity<Void> {
         registerUserUseCase.register(request)
@@ -29,7 +57,7 @@ class AuthController(
     }
 
     @PostMapping("/login")
-    @ResponseStatus(HttpStatus.CREATED)
+    @ResponseStatus(HttpStatus.OK)
     fun login(
         @Valid @RequestBody request: MemberLoginRequest,
         response: HttpServletResponse,
@@ -39,7 +67,7 @@ class AuthController(
     }
 
     @PostMapping("/kiosk/login")
-    @ResponseStatus(HttpStatus.CREATED)
+    @ResponseStatus(HttpStatus.OK)
     fun login(
         @Valid @RequestBody request: KioskLoginRequest,
         response: HttpServletResponse,

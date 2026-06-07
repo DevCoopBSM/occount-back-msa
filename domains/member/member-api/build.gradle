@@ -11,6 +11,7 @@ dependencies {
 
     testImplementation project(':domains:member:member-domain')
     testImplementation 'org.springframework.security:spring-security-crypto'
+    testImplementation 'org.springframework:spring-tx'
     testImplementation 'tools.jackson.core:jackson-databind'
     testImplementation 'tools.jackson.module:jackson-module-kotlin'
 }

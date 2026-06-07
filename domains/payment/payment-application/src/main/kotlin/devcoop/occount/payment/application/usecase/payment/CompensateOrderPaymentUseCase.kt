@@ -7,6 +7,7 @@ import devcoop.occount.core.common.event.PaymentCompensatedEvent
 import devcoop.occount.core.common.event.PaymentCompensationFailedEvent
 import devcoop.occount.core.common.event.OrderPaymentCompensationRequestedEvent
 import devcoop.occount.core.common.exception.BusinessBaseException
+import devcoop.occount.payment.application.dto.request.ItemCommand
 import devcoop.occount.payment.application.exception.InvalidPaymentRequestException
 import devcoop.occount.payment.application.exception.PaymentCancelledException
 import devcoop.occount.payment.application.exception.PaymentFailedException
@@ -27,7 +28,7 @@ class CompensateOrderPaymentUseCase(
     private val refundWalletPointsUseCase: RefundWalletPointsUseCase,
     private val eventPublisher: EventPublisher,
 ) {
-    fun compensate(event: OrderPaymentCompensationRequestedEvent) {
+    fun compensate(event: OrderPaymentCompensationRequestedEvent, recordConsumption: () -> Unit = {}) {
         val requiresCardRefund = event.cardAmount > 0
         val requiresPointRefund = event.pointsUsed > 0
 
@@ -37,6 +38,7 @@ class CompensateOrderPaymentUseCase(
                 ?: throw PaymentLogNotFoundException()
 
             if (paymentLog.getRefundState() == RefundState.COMPLETED) {
+                runCatching { recordConsumption() }
                 publishCompensated(event)
                 return
             }
@@ -60,6 +62,7 @@ class CompensateOrderPaymentUseCase(
                     approvalNumber = transactionInfo.approvalNumber(),
                     approvalDate = approvalDate,
                     amount = event.cardAmount,
+                    items = event.items.map(ItemCommand::from),
                     kioskId = event.kioskId,
                 )
 
@@ -85,6 +88,7 @@ class CompensateOrderPaymentUseCase(
                 requiresPointRefund = requiresPointRefund,
             )
             paymentLogRepository.save(paymentLog)
+            recordConsumption()
             publishCompensated(event)
         } catch (ex: BusinessBaseException) {
             if (ex.isRetryableCompensationError()) {
@@ -96,7 +100,7 @@ class CompensateOrderPaymentUseCase(
 
     private fun publishCompensated(event: OrderPaymentCompensationRequestedEvent) {
         eventPublisher.publish(
-            topic = DomainTopics.PAYMENT_COMPENSATED,
+            topic = DomainTopics.PAYMENT_EVENTS,
             key = event.orderId.toString(),
             eventType = DomainEventTypes.PAYMENT_COMPENSATED,
             payload = PaymentCompensatedEvent(
@@ -108,7 +112,7 @@ class CompensateOrderPaymentUseCase(
 
     private fun publishFailed(event: OrderPaymentCompensationRequestedEvent, reason: String) {
         eventPublisher.publish(
-            topic = DomainTopics.PAYMENT_COMPENSATION_FAILED,
+            topic = DomainTopics.PAYMENT_EVENTS,
             key = event.orderId.toString(),
             eventType = DomainEventTypes.PAYMENT_COMPENSATION_FAILED,
             payload = PaymentCompensationFailedEvent(
