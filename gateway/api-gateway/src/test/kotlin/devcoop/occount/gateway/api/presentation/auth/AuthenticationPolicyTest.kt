@@ -64,6 +64,14 @@ class AuthenticationPolicyTest {
     }
 
     @Test
+    fun `order receipt allows optional auth`() {
+        assertEquals(
+            AuthenticationRule.Access.OPTIONAL_AUTH,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/orders/order-1/receipt"),
+        )
+    }
+
+    @Test
     fun `ari pick list path is public`() {
         assertEquals(AuthenticationRule.Access.PERMIT_ALL, policy.resolveAccess(HttpMethod.GET, "/api/v3/ari-pick"))
     }
