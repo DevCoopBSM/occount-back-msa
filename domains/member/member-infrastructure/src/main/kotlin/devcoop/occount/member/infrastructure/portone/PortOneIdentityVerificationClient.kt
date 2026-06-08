@@ -1,8 +1,10 @@
 package devcoop.occount.member.infrastructure.portone
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import devcoop.occount.member.application.exception.IdentityNotVerifiedException
 import devcoop.occount.member.application.exception.IdentityVerificationFailedException
 import devcoop.occount.member.application.output.IdentityVerificationClient
 import devcoop.occount.member.application.output.VerifiedIdentity
@@ -15,14 +17,16 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 private data class PortOneVerificationResponse(
     val status: String?,
-    @JsonProperty("verifiedCustomer") val verifiedCustomer: VerifiedCustomer?,
+    val verifiedCustomer: VerifiedCustomer?,
 ) {
+    @JsonIgnoreProperties(ignoreUnknown = true)
     data class VerifiedCustomer(
         val ci: String?,
         val name: String?,
-        @JsonProperty("phoneNumber") val phoneNumber: String?,
+        val phoneNumber: String?,
     )
 }
 
@@ -66,7 +70,7 @@ class PortOneIdentityVerificationClient(
 
         if (body.status != "VERIFIED") {
             log.warn("본인인증 미완료 상태 - status={}", body.status)
-            throw IdentityVerificationFailedException()
+            throw IdentityNotVerifiedException()
         }
 
         val customer = body.verifiedCustomer

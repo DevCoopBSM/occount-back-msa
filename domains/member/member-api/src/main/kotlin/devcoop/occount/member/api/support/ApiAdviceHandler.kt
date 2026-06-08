@@ -45,6 +45,8 @@ class ApiAdviceHandler {
 
             ErrorMessage.IDENTITY_VERIFICATION_FAILED -> HttpStatus.BAD_GATEWAY
 
+            ErrorMessage.IDENTITY_NOT_VERIFIED -> HttpStatus.BAD_REQUEST
+
             ErrorMessage.USER_NOT_FOUND,
             ErrorMessage.ITEM_NOT_FOUND,
             ErrorMessage.ITEM_NOT_SYNCHRONIZED,
