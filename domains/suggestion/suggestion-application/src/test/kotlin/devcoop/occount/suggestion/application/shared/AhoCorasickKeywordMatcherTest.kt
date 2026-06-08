@@ -37,6 +37,15 @@ class AhoCorasickKeywordMatcherTest {
     }
 
     @Test
+    fun `automaton contains follows precomputed fallback transition without runtime fail traversal`() {
+        val automaton = AhoCorasickAutomaton.build(listOf("abcd", "bcd"))
+
+        val result = automaton.contains("xxabcd")
+
+        assertTrue(result)
+    }
+
+    @Test
     fun `matcher refresh reflects newly blocked keyword`() {
         val policyRepository = FakeAripickPolicyRepository()
         val matcher = AhoCorasickKeywordMatcher(policyRepository)

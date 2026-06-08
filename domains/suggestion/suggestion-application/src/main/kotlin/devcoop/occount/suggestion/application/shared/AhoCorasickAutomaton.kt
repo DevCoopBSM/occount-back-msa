@@ -10,10 +10,7 @@ class AhoCorasickAutomaton private constructor(
         val normalizedText = text.lowercase(Locale.ROOT)
         var state = root
         for (char in normalizedText) {
-            while (state !== root && !state.children.containsKey(char)) {
-                state = state.fail
-            }
-            state = state.children[char] ?: root
+            state = state.transitions[char] ?: root
             if (state.isTerminal) {
                 return true
             }
@@ -22,7 +19,8 @@ class AhoCorasickAutomaton private constructor(
     }
 
     private class Node(
-        val children: MutableMap<Char, Node> = mutableMapOf(),
+        val edges: MutableMap<Char, Node> = mutableMapOf(),
+        val transitions: MutableMap<Char, Node> = mutableMapOf(),
         var isTerminal: Boolean = false,
     ) {
         lateinit var fail: Node
@@ -40,11 +38,13 @@ class AhoCorasickAutomaton private constructor(
 
             val root = Node()
             root.fail = root
+            val alphabet = linkedSetOf<Char>()
 
             for (pattern in normalizedKeywords) {
                 var node = root
                 for (char in pattern) {
-                    node = node.children.getOrPut(char) {
+                    alphabet += char
+                    node = node.edges.getOrPut(char) {
                         Node().apply { fail = root }
                     }
                 }
@@ -52,21 +52,31 @@ class AhoCorasickAutomaton private constructor(
             }
 
             val queue = ArrayDeque<Node>()
-            for (child in root.children.values) {
+            for (char in alphabet) {
+                root.transitions[char] = root.edges[char] ?: root
+            }
+
+            for (child in root.edges.values) {
                 child.fail = root
                 queue.addLast(child)
             }
 
             while (queue.isNotEmpty()) {
                 val current = queue.removeFirst()
-                for ((char, next) in current.children) {
+                for ((char, next) in current.edges) {
                     var failure = current.fail
-                    while (failure !== root && !failure.children.containsKey(char)) {
+                    while (failure !== root && !failure.edges.containsKey(char)) {
                         failure = failure.fail
                     }
-                    next.fail = failure.children[char] ?: root
+                    next.fail = failure.edges[char] ?: root
                     next.isTerminal = next.isTerminal || next.fail.isTerminal
                     queue.addLast(next)
+                }
+
+                for (char in alphabet) {
+                    current.transitions[char] = current.edges[char]
+                        ?: current.fail.transitions[char]
+                        ?: root
                 }
             }
 
