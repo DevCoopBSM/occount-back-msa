@@ -64,6 +64,7 @@ class ApiAdviceHandlerTest {
                 userPhone = null,
                 userEmail = "invalid-email",
                 password = "password1234",
+                pin = "1234",
             ),
             "request",
         ).apply {
