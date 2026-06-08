@@ -10,14 +10,29 @@ class CryptoConfig(
     @param:Value("\${app.encryption.secret-key}")
     private val secretKey: String,
 ) {
-    private val cryptoHelper = CryptoHelper(secretKey)
-    private val sensitiveInformationHasher = SensitiveInformationHasher(secretKey)
+    @Bean
+    fun cryptoHelper(): CryptoHelper {
+        return CryptoHelper(secretKey)
+    }
 
     @Bean
-    fun cryptoHelper(): CryptoHelper = cryptoHelper
+    fun sensitiveInformationHasher(): SensitiveInformationHasher {
+        return SensitiveInformationHasher(secretKey)
+    }
 
     @Bean
-    fun sensitiveInformationHasher(): SensitiveInformationHasher = sensitiveInformationHasher
+    fun cryptoInitializer(
+        cryptoHelper: CryptoHelper,
+        sensitiveInformationHasher: SensitiveInformationHasher,
+    ): CryptoInitializer {
+        return CryptoInitializer(cryptoHelper, sensitiveInformationHasher)
+    }
+}
+
+class CryptoInitializer(
+    private val cryptoHelper: CryptoHelper,
+    private val sensitiveInformationHasher: SensitiveInformationHasher,
+) {
 
     @PostConstruct
     fun configureCrypto() {
