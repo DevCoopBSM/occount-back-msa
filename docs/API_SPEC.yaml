@@ -530,7 +530,7 @@ paths:
         "400":
           description: 매점 물품 수칙 위반
         "503":
-          description: 식약처 연동 실패
+          description: 식약처 연동 실패 또는 금지 키워드 정책 로딩 실패
         "401":
           description: 인증 실패
 

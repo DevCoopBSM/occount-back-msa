@@ -130,6 +130,7 @@ class FakeAripickRepository(
 
 class FakeAripickPolicyRepository(
     initialKeywords: List<AripickBlockedKeyword> = emptyList(),
+    private val throwOnFind: RuntimeException? = null,
 ) : AripickPolicyRepository {
     private val keywordsById = linkedMapOf<Long, AripickBlockedKeyword>().apply {
         initialKeywords.forEach { put(it.getKeywordId(), it) }
@@ -146,6 +147,7 @@ class FakeAripickPolicyRepository(
     }
 
     override fun findBlockedKeywords(): List<AripickBlockedKeyword> {
+        throwOnFind?.let { throw it }
         return keywordsById.values.toList()
     }
 
