@@ -5,6 +5,8 @@ import devcoop.occount.order.api.sse.OrderSseRegistry
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
 import devcoop.occount.order.application.query.OrderQueryService
+import devcoop.occount.order.application.query.receipt.GetReceiptQueryService
+import devcoop.occount.order.application.query.receipt.ReceiptResponse
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
 import org.springframework.http.HttpStatus
@@ -25,6 +27,7 @@ class OrderController(
     private val createOrderUseCase: CreateOrderUseCase,
     private val cancelOrderUseCase: CancelOrderUseCase,
     private val orderQueryService: OrderQueryService,
+    private val getReceiptQueryService: GetReceiptQueryService,
     private val orderSseRegistry: OrderSseRegistry,
 ) {
     @PostMapping
@@ -43,6 +46,17 @@ class OrderController(
         @PathVariable orderId: Long,
     ): ResponseEntity<OrderResponse> {
         val response = orderQueryService.getOrder(orderId)
+        return ResponseEntity.ok(response)
+    }
+
+    @GetMapping("/{orderId}/receipt")
+    fun getReceipt(
+        @PathVariable orderId: Long,
+        @RequestHeader(value = AuthHeaders.KIOSK_ID, required = false) kioskId: String?,
+        @RequestHeader(value = AuthHeaders.AUTHENTICATED_USER_ID, required = false) userIdHeader: String?,
+    ): ResponseEntity<ReceiptResponse> {
+        val userId = userIdHeader?.toLongOrNull()
+        val response = getReceiptQueryService.getReceipt(orderId, userId, kioskId)
         return ResponseEntity.ok(response)
     }
 
