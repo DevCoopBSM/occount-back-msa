@@ -1,5 +1,6 @@
 package devcoop.occount.member.infrastructure.portone
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -15,14 +16,16 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 private data class PortOneVerificationResponse(
     val status: String?,
-    @JsonProperty("verifiedCustomer") val verifiedCustomer: VerifiedCustomer?,
+    val verifiedCustomer: VerifiedCustomer?,
 ) {
+    @JsonIgnoreProperties(ignoreUnknown = true)
     data class VerifiedCustomer(
         val ci: String?,
         val name: String?,
-        @JsonProperty("phoneNumber") val phoneNumber: String?,
+        val phoneNumber: String?,
     )
 }
 
