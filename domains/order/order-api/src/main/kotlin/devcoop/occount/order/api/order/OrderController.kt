@@ -62,7 +62,8 @@ class OrderController(
         val userId = userIdHeader?.toLongOrNull()
         val response = getReceiptQueryService.getReceipt(orderId, userId, kioskId)
         return ResponseEntity.ok(response)
-        
+    }
+
     @GetMapping("/statistics/sales-ranking")
     fun getSalesRanking(
         @RequestParam(required = false) period: String?,
