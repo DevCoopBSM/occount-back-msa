@@ -7,9 +7,13 @@ import devcoop.occount.member.api.support.FakeTokenGenerator
 import devcoop.occount.member.api.support.FakeUserRepository
 import devcoop.occount.member.api.support.mockMvc
 import devcoop.occount.member.api.support.userFixture
+import devcoop.occount.member.api.support.FakeIdentityVerificationClient
 import devcoop.occount.member.api.support.testSendEmailOtpUseCase
 import devcoop.occount.member.api.support.testVerifyEmailOtpUseCase
+import devcoop.occount.member.api.support.testVerifyIdentityUseCase
 import devcoop.occount.member.api.support.verifiedEmailOtp
+import devcoop.occount.member.application.exception.IdentityVerificationFailedException
+import devcoop.occount.member.application.usecase.identity.VerifyIdentityUseCase
 import devcoop.occount.member.application.usecase.login.LoginUserUseCase
 import devcoop.occount.member.application.usecase.register.RegisterUserUseCase
 import org.junit.jupiter.api.DisplayName
@@ -40,10 +44,10 @@ class AuthControllerTest {
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
                     emailOtpRepository = emailOtpRepository,
-                    defaultPin = "000000",
                 ),
                 sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
                 verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+                verifyIdentityUseCase = testVerifyIdentityUseCase(),
             ),
         )
 
@@ -71,10 +75,10 @@ class AuthControllerTest {
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
                     emailOtpRepository = emailOtpRepository,
-                    defaultPin = "000000",
                 ),
                 sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
                 verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+                verifyIdentityUseCase = testVerifyIdentityUseCase(),
             ),
         )
 
@@ -107,17 +111,17 @@ class AuthControllerTest {
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
                     emailOtpRepository = emailOtpRepository,
-                    defaultPin = "000000",
                 ),
                 sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
                 verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+                verifyIdentityUseCase = testVerifyIdentityUseCase(),
             ),
         )
 
         mockMvc.perform(
             post("/auth/email/verify-otp")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"email": "test@test.com", "otpCode": "654321"}"""),
+                .content("""{"email": "test@test.com", "otp_code": "654321"}"""),
         ).andExpect(status().isNoContent)
     }
 
@@ -138,17 +142,17 @@ class AuthControllerTest {
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
                     emailOtpRepository = emailOtpRepository,
-                    defaultPin = "000000",
                 ),
                 sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
                 verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+                verifyIdentityUseCase = testVerifyIdentityUseCase(),
             ),
         )
 
         mockMvc.perform(
             post("/auth/email/verify-otp")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"email": "not-an-email", "otpCode": "12"}"""),
+                .content("""{"email": "not-an-email", "otp_code": "12"}"""),
         ).andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.email").value("올바른 이메일 형식이어야 합니다."))
             .andExpect(jsonPath("$.otpCode").value("인증번호는 6자리여야 합니다."))
@@ -174,10 +178,10 @@ class AuthControllerTest {
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
                     emailOtpRepository = emailOtpRepository,
-                    defaultPin = "000000",
                 ),
                 sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
                 verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+                verifyIdentityUseCase = testVerifyIdentityUseCase(),
             ),
         )
 
@@ -191,7 +195,8 @@ class AuthControllerTest {
                       "username": "홍길동",
                       "userPhone": null,
                       "userEmail": "test@test.com",
-                      "password": "password1234"
+                      "password": "password1234",
+                      "pin": "123456"
                     }
                     """.trimIndent(),
                 ),
@@ -219,10 +224,10 @@ class AuthControllerTest {
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
                     emailOtpRepository = emailOtpRepository,
-                    defaultPin = "000000",
                 ),
                 sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
                 verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+                verifyIdentityUseCase = testVerifyIdentityUseCase(),
             ),
         )
 
@@ -236,7 +241,8 @@ class AuthControllerTest {
                       "username": "홍길동",
                       "userPhone": null,
                       "userEmail": "invalid-email",
-                      "password": "short"
+                      "password": "short",
+                      "pin": "123456"
                     }
                     """.trimIndent(),
                 ),
@@ -266,10 +272,10 @@ class AuthControllerTest {
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
                     emailOtpRepository = emailOtpRepository,
-                    defaultPin = "000000",
                 ),
                 sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
                 verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+                verifyIdentityUseCase = testVerifyIdentityUseCase(),
             ),
         )
 
@@ -309,10 +315,10 @@ class AuthControllerTest {
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
                     emailOtpRepository = emailOtpRepository,
-                    defaultPin = "000000",
                 ),
                 sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
                 verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+                verifyIdentityUseCase = testVerifyIdentityUseCase(),
             ),
         )
 
@@ -329,6 +335,73 @@ class AuthControllerTest {
                 ),
         ).andExpect(status().isUnauthorized)
             .andExpect(jsonPath("$.message").value("비밀번호가 일치하지 않습니다."))
+    }
+
+    @Test
+    @DisplayName("본인인증 검증 성공 시 200과 사용자 정보를 반환한다")
+    fun `verifyIdentity returns 200 with user info on success`() {
+        val emailOtpRepository = FakeEmailOtpRepository()
+        val mockMvc = mockMvc(
+            AuthController(
+                loginUserUseCase = LoginUserUseCase(
+                    userRepository = FakeUserRepository(),
+                    tokenGenerator = FakeTokenGenerator(),
+                    passwordEncoder = FakePasswordEncoder(),
+                ),
+                registerUserUseCase = RegisterUserUseCase(
+                    userRepository = FakeUserRepository(),
+                    eventPublisher = FakeEventPublisher(),
+                    passwordEncoder = FakePasswordEncoder(),
+                    emailOtpRepository = emailOtpRepository,
+                ),
+                sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
+                verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+                verifyIdentityUseCase = testVerifyIdentityUseCase(),
+            ),
+        )
+
+        mockMvc.perform(
+            post("/auth/identity/verify")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"identity_verification_id": "test-verification-id"}"""),
+        ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.userCiNumber").value("CI_TEST_123"))
+            .andExpect(jsonPath("$.username").value("홍길동"))
+            .andExpect(jsonPath("$.userPhone").value("01012345678"))
+    }
+
+    @Test
+    @DisplayName("본인인증 검증 실패 시 502를 반환한다")
+    fun `verifyIdentity returns 502 when verification fails`() {
+        val emailOtpRepository = FakeEmailOtpRepository()
+        val mockMvc = mockMvc(
+            AuthController(
+                loginUserUseCase = LoginUserUseCase(
+                    userRepository = FakeUserRepository(),
+                    tokenGenerator = FakeTokenGenerator(),
+                    passwordEncoder = FakePasswordEncoder(),
+                ),
+                registerUserUseCase = RegisterUserUseCase(
+                    userRepository = FakeUserRepository(),
+                    eventPublisher = FakeEventPublisher(),
+                    passwordEncoder = FakePasswordEncoder(),
+                    emailOtpRepository = emailOtpRepository,
+                ),
+                sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
+                verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+                verifyIdentityUseCase = VerifyIdentityUseCase(
+                    identityVerificationClient = object : devcoop.occount.member.application.output.IdentityVerificationClient {
+                        override fun verify(identityVerificationId: String) = throw IdentityVerificationFailedException()
+                    },
+                ),
+            ),
+        )
+
+        mockMvc.perform(
+            post("/auth/identity/verify")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"identity_verification_id": "invalid-id"}"""),
+        ).andExpect(status().isBadGateway)
     }
 
     @Test
@@ -352,10 +425,10 @@ class AuthControllerTest {
                     eventPublisher = FakeEventPublisher(),
                     passwordEncoder = FakePasswordEncoder(),
                     emailOtpRepository = emailOtpRepository,
-                    defaultPin = "000000",
                 ),
                 sendEmailOtpUseCase = testSendEmailOtpUseCase(emailOtpRepository),
                 verifyEmailOtpUseCase = testVerifyEmailOtpUseCase(emailOtpRepository),
+                verifyIdentityUseCase = testVerifyIdentityUseCase(),
             ),
         )
 

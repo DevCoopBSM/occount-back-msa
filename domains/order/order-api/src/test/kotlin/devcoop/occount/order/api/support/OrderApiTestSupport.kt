@@ -4,9 +4,12 @@ import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.order.application.exception.OrderConcurrencyException
 import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.output.PersistedOrder
+import devcoop.occount.order.application.output.SalesRankingItem
+import devcoop.occount.order.application.output.SalesRankingRepository
 import devcoop.occount.order.application.output.TransactionPort
 import devcoop.occount.order.application.output.OrderStatusNotifier
 import devcoop.occount.order.application.shared.OrderStreamEvent
+import devcoop.occount.order.application.shared.SalesRankingType
 import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderLine
 import devcoop.occount.order.domain.order.OrderPayment
@@ -105,6 +108,17 @@ class FakeOrderRepository(
             .map(OrderAggregate::orderId)
             .take(limit)
     }
+}
+
+class FakeSalesRankingRepository(
+    private val items: List<SalesRankingItem> = emptyList(),
+) : SalesRankingRepository {
+    override fun findSalesRanking(
+        startDateTime: Instant,
+        endDateTime: Instant,
+        type: SalesRankingType,
+        limit: Int,
+    ): List<SalesRankingItem> = items.take(limit)
 }
 
 class FakeTransactionPort : TransactionPort {

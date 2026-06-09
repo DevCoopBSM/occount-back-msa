@@ -94,6 +94,7 @@ fun verifiedEmailOtp(email: String, otpCode: String = "123456"): EmailOtp =
         email = email,
         otpCode = otpCode,
         expiresAt = Instant.now().plusSeconds(EmailOtp.OTP_TTL_SECONDS),
+        createdAt = Instant.now(),
         verified = true,
     )
 

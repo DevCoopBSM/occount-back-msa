@@ -1,5 +1,6 @@
 package devcoop.occount.suggestion.application.usecase.aripick
 
+import devcoop.occount.suggestion.application.shared.AhoCorasickKeywordMatcher
 import devcoop.occount.suggestion.application.support.FakeAripickPolicyRepository
 import devcoop.occount.suggestion.domain.aripick.AripickBlockedKeywordAlreadyExistsException
 import devcoop.occount.suggestion.domain.aripick.AripickInvalidBlockedKeywordException
@@ -10,7 +11,11 @@ import org.junit.jupiter.api.Test
 class AripickPolicyUseCaseTest {
     @Test
     fun `block and list keywords`() {
-        val useCase = AripickPolicyUseCase(FakeAripickPolicyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickPolicyUseCase(
+            aripickPolicyRepository = policyRepository,
+            blockedKeywordMatcher = AhoCorasickKeywordMatcher(policyRepository),
+        )
 
         useCase.blockKeyword(CreateAripickBlockedKeywordRequest(keyword = "에너지"))
         val result = useCase.getBlockedKeywords()
@@ -21,7 +26,11 @@ class AripickPolicyUseCaseTest {
 
     @Test
     fun `unblock keyword removes it`() {
-        val useCase = AripickPolicyUseCase(FakeAripickPolicyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickPolicyUseCase(
+            aripickPolicyRepository = policyRepository,
+            blockedKeywordMatcher = AhoCorasickKeywordMatcher(policyRepository),
+        )
         val created = useCase.blockKeyword(CreateAripickBlockedKeywordRequest(keyword = "에너지"))
 
         useCase.unblockKeyword(created.keywordId)
@@ -32,7 +41,11 @@ class AripickPolicyUseCaseTest {
 
     @Test
     fun `block keyword throws when keyword is blank`() {
-        val useCase = AripickPolicyUseCase(FakeAripickPolicyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickPolicyUseCase(
+            aripickPolicyRepository = policyRepository,
+            blockedKeywordMatcher = AhoCorasickKeywordMatcher(policyRepository),
+        )
 
         assertThrows(AripickInvalidBlockedKeywordException::class.java) {
             useCase.blockKeyword(CreateAripickBlockedKeywordRequest(keyword = "   "))
@@ -41,7 +54,11 @@ class AripickPolicyUseCaseTest {
 
     @Test
     fun `block keyword throws when keyword already exists`() {
-        val useCase = AripickPolicyUseCase(FakeAripickPolicyRepository())
+        val policyRepository = FakeAripickPolicyRepository()
+        val useCase = AripickPolicyUseCase(
+            aripickPolicyRepository = policyRepository,
+            blockedKeywordMatcher = AhoCorasickKeywordMatcher(policyRepository),
+        )
         useCase.blockKeyword(CreateAripickBlockedKeywordRequest(keyword = "에너지"))
 
         assertThrows(AripickBlockedKeywordAlreadyExistsException::class.java) {

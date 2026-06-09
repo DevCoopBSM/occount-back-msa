@@ -6,6 +6,7 @@ import devcoop.occount.order.api.sse.OrderSseRegistry
 import devcoop.occount.order.api.support.FakeEventPublisher
 import devcoop.occount.order.api.support.FakeOrderRepository
 import devcoop.occount.order.api.support.FakeOrderStatusNotifier
+import devcoop.occount.order.api.support.FakeSalesRankingRepository
 import devcoop.occount.order.api.support.FakeTransactionPort
 import devcoop.occount.order.api.support.mockMvc
 import devcoop.occount.order.api.support.orderFixture
@@ -18,6 +19,9 @@ import devcoop.occount.order.application.support.OrderStreamEventMapper
 import devcoop.occount.order.application.support.ReceiptResponseMapper
 import devcoop.occount.order.application.query.OrderQueryService
 import devcoop.occount.order.application.query.receipt.GetReceiptQueryService
+import devcoop.occount.order.application.query.SalesRankingQueryParser
+import devcoop.occount.order.application.query.SalesRankingQueryService
+import devcoop.occount.order.application.output.SalesRankingItem
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
 import devcoop.occount.order.domain.order.OrderLine
@@ -222,7 +226,69 @@ class OrderControllerTest {
             .andExpect(jsonPath("$.message").value("해당 주문에 접근할 수 없습니다."))
     }
 
-    private fun buildMockMvc(initialOrders: List<devcoop.occount.order.domain.order.OrderAggregate> = emptyList()): MockMvc {
+    @Test
+    @DisplayName("상품 판매량 랭킹 조회 요청이 성공하면 기간과 판매 수량을 반환한다")
+    fun `getSalesRanking returns 200 with sales ranking`() {
+        val salesRankingRepository = FakeSalesRankingRepository(
+            items = listOf(
+                SalesRankingItem(
+                    itemId = 1L,
+                    itemName = "아메리카노",
+                    soldQuantity = 12L,
+                ),
+            ),
+        )
+        val mockMvc = buildMockMvc(salesRankingRepository = salesRankingRepository)
+
+        mockMvc.perform(
+            get("/orders/statistics/sales-ranking")
+                .param("period", "DAILY")
+                .param("type", "POPULAR")
+                .param("limit", "5")
+                .param("date", "2026-06-05"),
+        ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.period").value("DAILY"))
+            .andExpect(jsonPath("$.type").value("POPULAR"))
+            .andExpect(jsonPath("$.limit").value(5))
+            .andExpect(jsonPath("$.startDate").value("2026-06-05"))
+            .andExpect(jsonPath("$.endDate").value("2026-06-05"))
+            .andExpect(jsonPath("$.items[0].itemId").value(1))
+            .andExpect(jsonPath("$.items[0].itemName").value("아메리카노"))
+            .andExpect(jsonPath("$.items[0].soldQuantity").value(12))
+    }
+
+    @Test
+    @DisplayName("상품 판매량 랭킹 조회 개수가 1 미만이면 400을 반환한다")
+    fun `getSalesRanking returns 400 when limit is less than one`() {
+        val mockMvc = buildMockMvc()
+
+        mockMvc.perform(
+            get("/orders/statistics/sales-ranking")
+                .param("period", "DAILY")
+                .param("type", "POPULAR")
+                .param("limit", "0"),
+        ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.message").value("판매량 랭킹 조회 개수는 1 이상의 숫자여야 합니다."))
+    }
+
+    @Test
+    @DisplayName("상품 판매량 랭킹 조회 기간이 올바르지 않으면 400을 반환한다")
+    fun `getSalesRanking returns 400 when period is invalid`() {
+        val mockMvc = buildMockMvc()
+
+        mockMvc.perform(
+            get("/orders/statistics/sales-ranking")
+                .param("period", "INVALID")
+                .param("type", "POPULAR")
+                .param("limit", "5"),
+        ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.message").value("판매량 랭킹 조회 기간이 올바르지 않습니다."))
+    }
+
+    private fun buildMockMvc(
+        initialOrders: List<devcoop.occount.order.domain.order.OrderAggregate> = emptyList(),
+        salesRankingRepository: FakeSalesRankingRepository = FakeSalesRankingRepository(),
+    ): MockMvc {
         val orderRepository = FakeOrderRepository(initialOrders)
         val eventPublisher = FakeEventPublisher()
         val transactionPort = FakeTransactionPort()
@@ -251,6 +317,10 @@ class OrderControllerTest {
                 getReceiptQueryService = GetReceiptQueryService(
                     orderRepository = orderRepository,
                     receiptResponseMapper = ReceiptResponseMapper(),
+                ),
+                salesRankingQueryService = SalesRankingQueryService(
+                    salesRankingRepository = salesRankingRepository,
+                    salesRankingQueryParser = SalesRankingQueryParser(),
                 ),
                 orderSseRegistry = OrderSseRegistry(DefaultOrderSseEmitterSupport()),
             ),

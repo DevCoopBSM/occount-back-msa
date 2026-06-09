@@ -18,7 +18,7 @@ class OAuthEmailSendTest {
             ?: error("mail.oauth2.refresh-token not set")
 
         val sender = OAuthJavaMailSender(username, clientId, clientSecret, refreshToken)
-        val emailSender = EmailSenderImpl(sender)
+        val emailSender = EmailSenderImpl(sender, username)
 
         emailSender.sendOtp(to = "24.016@bssm.hs.kr", otpCode = "123456")
 

@@ -105,6 +105,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/v3/auth/identity/verify:
+    post:
+      tags: [Auth]
+      operationId: verifyIdentity
+      summary: 본인인증 검증
+      description: PortOne SDK로 완료된 본인인증을 백엔드에서 검증하고, 회원가입에 필요한 사용자 정보를 반환합니다. (PERMIT_ALL)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyIdentityRequest'
+            example:
+              identity_verification_id: "identity-verification-id-from-portone"
+      responses:
+        "200":
+          description: 본인인증 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyIdentityResponse'
+              example:
+                user_ci_number: "CI_HASH_VALUE"
+                username: "홍길동"
+                user_phone: "01012345678"
+        "400":
+          description: 요청 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "502":
+          description: PortOne 본인인증 실패 또는 미완료
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/v3/auth/register:
     post:
       tags: [Auth]
@@ -212,7 +250,7 @@ paths:
       operationId: getPreOrderInfo
       summary: 주문 전 회원 정보 조회
       description: |
-        주문 화면 진입 시 회원 이름과 보유 포인트를 반환합니다. (AUTHENTICATED)
+        주문 화면 진입 시 회원 이름을 반환합니다. (AUTHENTICATED)
       security:
         - BearerAuth: []
       responses:
@@ -224,6 +262,27 @@ paths:
                 $ref: '#/components/schemas/UserPreOrderInfoResponse'
               example:
                 username: "홍길동"
+        "401":
+          description: 인증 실패
+
+  /api/v3/users/barcode:
+    get:
+      tags: [Member]
+      operationId: getUserBarcode
+      summary: 회원 바코드 조회
+      description: |
+        로그인한 회원의 바코드를 반환합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarcodeResponse'
+              example:
+                user_barcode: "BARCODE123"
         "401":
           description: 인증 실패
 
@@ -471,7 +530,7 @@ paths:
         "400":
           description: 매점 물품 수칙 위반
         "503":
-          description: 식약처 연동 실패
+          description: 식약처 연동 실패 또는 금지 키워드 정책 로딩 실패
         "401":
           description: 인증 실패
 
@@ -814,6 +873,78 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "401":
           description: 잘못된 토큰
+
+  /api/v3/orders/sales-ranking:
+    get:
+      tags: [Order]
+      operationId: getOrderSalesRanking
+      summary: 상품 판매량 랭킹 조회
+      description: |
+        결제 완료된 주문을 기준으로 상품별 판매 수량 합계 랭킹을 조회합니다. (AUTHENTICATED)
+
+        - 판매량은 `COMPLETED` 주문의 주문 상품 `quantity` 합계입니다.
+        - `DAILY` 는 기준 날짜 하루, `WEEKLY` 는 기준 날짜가 포함된 월요일~일요일, `MONTHLY` 는 기준 날짜가 포함된 월 전체를 집계합니다.
+        - `date` 를 생략하면 서버 기준 오늘 날짜로 집계합니다.
+        - 판매 이력이 없는 상품은 주문 데이터만으로 알 수 없으므로 응답에 포함되지 않습니다.
+      parameters:
+        - name: period
+          in: query
+          required: true
+          description: 집계 기간
+          schema:
+            $ref: '#/components/schemas/SalesRankingPeriod'
+          example: DAILY
+        - name: type
+          in: query
+          required: true
+          description: 인기순/비인기순 정렬 기준
+          schema:
+            $ref: '#/components/schemas/SalesRankingType'
+          example: POPULAR
+        - name: limit
+          in: query
+          required: false
+          description: 조회할 상품 개수
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+          example: 5
+        - name: date
+          in: query
+          required: false
+          description: 기준 날짜. 없으면 서버 기준 오늘
+          schema:
+            type: string
+            format: date
+          example: "2026-06-05"
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 상품 판매량 랭킹 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesRankingResponse'
+              example:
+                period: DAILY
+                type: POPULAR
+                limit: 5
+                start_date: "2026-06-05"
+                end_date: "2026-06-05"
+                items:
+                  - item_id: 1
+                    item_name: "아메리카노"
+                    sold_quantity: 123
+        "400":
+          description: 잘못된 집계 기간, 정렬 기준, 조회 개수 또는 날짜 형식
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: 인증 실패
 
   /api/v3/orders/{orderId}:
     get:
@@ -1212,6 +1343,27 @@ components:
           maxLength: 6
           description: 6자리 인증번호
 
+    VerifyIdentityRequest:
+      type: object
+      required: [identity_verification_id]
+      properties:
+        identity_verification_id:
+          type: string
+          description: PortOne SDK에서 발급된 본인인증 고유 ID
+
+    VerifyIdentityResponse:
+      type: object
+      properties:
+        user_ci_number:
+          type: string
+          description: 본인인증 CI 값 (회원가입 시 사용)
+        username:
+          type: string
+          description: 실명
+        user_phone:
+          type: string
+          description: 전화번호
+
     MemberRegisterRequest:
       type: object
       required: [user_ci_number, username, user_email, password]
@@ -1265,6 +1417,14 @@ components:
         username:
           type: string
           description: 회원 이름
+
+    UserBarcodeResponse:
+      type: object
+      properties:
+        user_barcode:
+          type: string
+          nullable: true
+          description: 회원 바코드
 
     # ── Item ───────────────────────────────────────
     ItemListResponse:
@@ -1585,6 +1745,76 @@ components:
         - POINT
         - CARD
         - MIXED
+        
+    SalesRankingResponse:
+      type: object
+      required:
+        - period
+        - type
+        - limit
+        - start_date
+        - end_date
+        - items
+      properties:
+        period:
+          $ref: '#/components/schemas/SalesRankingPeriod'
+        type:
+          $ref: '#/components/schemas/SalesRankingType'
+        limit:
+          type: integer
+          minimum: 1
+        start_date:
+          type: string
+          format: date
+          description: 실제 집계 시작일
+        end_date:
+          type: string
+          format: date
+          description: 실제 집계 종료일
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesRankingItemResponse'
+
+    SalesRankingItemResponse:
+      type: object
+      required:
+        - item_id
+        - item_name
+        - sold_quantity
+      properties:
+        item_id:
+          type: integer
+          format: int64
+        item_name:
+          type: string
+          description: 주문 시점 상품명 스냅샷
+        sold_quantity:
+          type: integer
+          format: int64
+          description: 해당 기간 동안 판매된 총 수량
+
+    SalesRankingPeriod:
+      type: string
+      description: |
+        판매량 집계 기간.
+        - `DAILY` — 기준 날짜 하루
+        - `WEEKLY` — 기준 날짜가 포함된 월요일~일요일
+        - `MONTHLY` — 기준 날짜가 포함된 월 전체
+      enum:
+        - DAILY
+        - WEEKLY
+        - MONTHLY
+
+    SalesRankingType:
+      type: string
+      description: |
+        판매량 랭킹 정렬 기준.
+        - `POPULAR` — 많이 팔린 순
+        - `UNPOPULAR` — 적게 팔린 순
+      enum:
+        - POPULAR
+        - UNPOPULAR
 
     OrderStatus:
       type: string

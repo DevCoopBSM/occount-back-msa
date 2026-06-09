@@ -19,6 +19,8 @@ enum class ErrorMessage(
     OTP_RATE_LIMITED("잠시 후 다시 시도해주세요. 인증번호는 60초마다 재발송할 수 있습니다."),
     OTP_LOCKED("인증번호 입력 횟수를 초과했습니다. 이메일 인증을 다시 요청해주세요."),
     EMAIL_NOT_VERIFIED("이메일 인증이 완료되지 않았습니다."),
+    IDENTITY_VERIFICATION_FAILED("본인인증에 실패했습니다."),
+    IDENTITY_NOT_VERIFIED("본인인증이 완료되지 않았습니다. 인증을 먼저 완료해주세요."),
 
 
     INVALID_PIN("핀번호가 틀렸습니다."),
@@ -34,6 +36,7 @@ enum class ErrorMessage(
     ARIPICK_POLICY_VIOLATION("매점 물품 수칙과 맞지 않습니다."),
     ARIPICK_INVALID_BLOCKED_KEYWORD("금지 키워드는 비어 있을 수 없습니다."),
     ARIPICK_BLOCKED_KEYWORD_ALREADY_EXISTS("이미 등록된 금지 키워드입니다."),
+    ARIPICK_POLICY_UNAVAILABLE("금지 키워드 정책을 불러오지 못했습니다. 잠시 후 다시 시도해주세요."),
     ARIPICK_FOOD_SAFETY_UNAVAILABLE("식약처 연동에 실패했습니다. 잠시 후 다시 시도해주세요."),
 
 
@@ -43,6 +46,10 @@ enum class ErrorMessage(
     ORDER_RECEIPT_NOT_AVAILABLE("현재 상태에서는 영수증을 조회할 수 없습니다."),
     ORDER_INVALID_TOTAL_PRICE("주문 항목의 총 금액이 일치하지 않습니다."),
     ORDER_INVALID_PAYMENT_TYPE("비회원 주문은 카드 결제만 지원합니다."),
+    ORDER_INVALID_SALES_RANKING_PERIOD("판매량 랭킹 조회 기간이 올바르지 않습니다."),
+    ORDER_INVALID_SALES_RANKING_TYPE("판매량 랭킹 조회 유형이 올바르지 않습니다."),
+    ORDER_INVALID_SALES_RANKING_LIMIT("판매량 랭킹 조회 개수는 1 이상의 숫자여야 합니다."),
+    ORDER_INVALID_SALES_RANKING_DATE("판매량 랭킹 조회 기준일이 올바르지 않습니다."),
     ORDER_TRANSACTION_FAILED("주문 트랜잭션 처리에 실패했습니다."),
     ORDER_UNREACHABLE_STATE("도달할 수 없는 주문 처리 상태입니다."),
     ORDER_CONCURRENCY_CONFLICT("동시 주문 처리 충돌이 발생했습니다. 잠시 후 다시 시도해주세요."),

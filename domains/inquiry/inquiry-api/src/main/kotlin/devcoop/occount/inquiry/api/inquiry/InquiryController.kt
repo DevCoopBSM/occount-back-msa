@@ -10,6 +10,10 @@ import devcoop.occount.inquiry.application.usecase.create.CreateInquiryResponse
 import devcoop.occount.inquiry.application.usecase.create.CreateInquiryUseCase
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -26,6 +30,12 @@ class InquiryController(
     private val getInquiryListQueryService: GetInquiryListQueryService,
     private val getInquiryDetailQueryService: GetInquiryDetailQueryService,
 ) {
+    companion object {
+        private const val MAX_PAGE_SIZE = 100
+        private val ALLOWED_SORT_FIELDS = setOf("createdAt", "title", "status", "category")
+        private val DEFAULT_SORT = Sort.by(Sort.Direction.DESC, "createdAt")
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun createInquiry(
@@ -38,9 +48,19 @@ class InquiryController(
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    fun getInquiryList(httpRequest: HttpServletRequest): InquiryListResponse {
+    fun getInquiryList(
+        httpRequest: HttpServletRequest,
+        @PageableDefault(size = 20, sort = ["createdAt"], direction = Sort.Direction.DESC) pageable: Pageable,
+    ): InquiryListResponse {
         val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return getInquiryListQueryService.getList(userId)
+        return getInquiryListQueryService.getList(userId, sanitizePageable(pageable))
+    }
+
+    private fun sanitizePageable(pageable: Pageable): Pageable {
+        val cappedSize = minOf(pageable.pageSize, MAX_PAGE_SIZE)
+        val filteredOrders = pageable.sort.filter { it.property in ALLOWED_SORT_FIELDS }.toList()
+        val sanitizedSort = if (filteredOrders.isEmpty()) DEFAULT_SORT else Sort.by(filteredOrders)
+        return PageRequest.of(pageable.pageNumber, cappedSize, sanitizedSort)
     }
 
     @GetMapping("/{inquiryId}")
