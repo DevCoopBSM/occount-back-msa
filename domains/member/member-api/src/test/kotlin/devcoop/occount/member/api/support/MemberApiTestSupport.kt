@@ -11,6 +11,7 @@ import devcoop.occount.member.application.usecase.identity.VerifyIdentityUseCase
 import devcoop.occount.member.application.usecase.otp.SendEmailOtpUseCase
 import devcoop.occount.member.application.usecase.otp.VerifyEmailOtpUseCase
 import devcoop.occount.member.application.usecase.password.ChangePasswordUseCase
+import devcoop.occount.member.application.usecase.pin.ChangePinUseCase
 import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.domain.user.User
@@ -179,6 +180,13 @@ fun testChangePasswordUseCase(
 ) = ChangePasswordUseCase(
     userRepository = userRepository,
     emailOtpRepository = emailOtpRepository,
+    passwordEncoder = FakePasswordEncoder(),
+)
+
+fun testChangePinUseCase(
+    userRepository: UserRepository = FakeUserRepository(),
+) = ChangePinUseCase(
+    userRepository = userRepository,
     passwordEncoder = FakePasswordEncoder(),
 )
 

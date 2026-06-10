@@ -32,6 +32,9 @@ data class User(
     fun changePassword(encodedPassword: String): User =
         copy(accountInfo = accountInfo.copy(password = encodedPassword))
 
+    fun changePin(encodedPin: String): User =
+        copy(accountInfo = accountInfo.copy(pin = encodedPin))
+
     companion object {
         fun register(
             userCiNumber: String,
