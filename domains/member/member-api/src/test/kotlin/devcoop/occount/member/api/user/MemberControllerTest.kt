@@ -173,7 +173,7 @@ class MemberControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{"password": "password1234", "new_pin": "abc"}"""),
         ).andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.newPin").value("PIN은 4~6자리 숫자여야 합니다."))
+            .andExpect(jsonPath("$.new_pin").value("PIN은 4~6자리 숫자여야 합니다."))
     }
 
     @Test

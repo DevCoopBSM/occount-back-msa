@@ -86,7 +86,8 @@ class ApiAdviceHandlerTest {
         val response = apiAdviceHandler.handleValidationException(exception)
 
         assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-        assertEquals("올바른 이메일 형식이어야 합니다.", response.body?.get("userEmail"))
+        // FieldError의 프로퍼티명(userEmail)은 응답에서 snake_case(user_email)로 변환된다
+        assertEquals("올바른 이메일 형식이어야 합니다.", response.body?.get("user_email"))
     }
 
     @Test

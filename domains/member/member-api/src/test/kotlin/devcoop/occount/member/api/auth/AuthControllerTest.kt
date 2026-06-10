@@ -161,7 +161,7 @@ class AuthControllerTest {
                 .content("""{"email": "not-an-email", "otp_code": "12"}"""),
         ).andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.email").value("올바른 이메일 형식이어야 합니다."))
-            .andExpect(jsonPath("$.otpCode").value("인증번호는 6자리여야 합니다."))
+            .andExpect(jsonPath("$.otp_code").value("인증번호는 6자리여야 합니다."))
     }
     @Test
     @DisplayName("회원가입 요청이 성공하면 201 Created를 반환한다")
@@ -255,7 +255,7 @@ class AuthControllerTest {
                     """.trimIndent(),
                 ),
         ).andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.userEmail").value("올바른 이메일 형식이어야 합니다."))
+            .andExpect(jsonPath("$.user_email").value("올바른 이메일 형식이어야 합니다."))
             .andExpect(jsonPath("$.password").value("비밀번호는 최소 8자 이상 16자 이하여야 합니다."))
     }
 
@@ -568,6 +568,6 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{"email": "test@test.com", "otp_code": "123456", "new_password": "short"}"""),
         ).andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.newPassword").value("비밀번호는 최소 8자 이상 16자 이하여야 합니다."))
+            .andExpect(jsonPath("$.new_password").value("비밀번호는 최소 8자 이상 16자 이하여야 합니다."))
     }
 }
