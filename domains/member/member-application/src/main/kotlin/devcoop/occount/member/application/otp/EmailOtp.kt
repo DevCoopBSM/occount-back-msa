@@ -6,6 +6,7 @@ data class EmailOtp(
     val email: String,
     val otpCode: String,
     val expiresAt: Instant,
+    val purpose: OtpPurpose = OtpPurpose.REGISTER,
     val verified: Boolean = false,
     val failCount: Int = 0,
     val createdAt: Instant,

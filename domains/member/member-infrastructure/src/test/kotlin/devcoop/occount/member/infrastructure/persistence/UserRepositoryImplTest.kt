@@ -109,7 +109,7 @@ class UserRepositoryImplTest {
     @DisplayName("유저 저장 시 JPA 저장 후 도메인 객체로 변환하여 반환한다")
     fun `save stores entity and returns domain user`() {
         val domainToSave = User(
-            userInfo = UserInfo("홍길동", "010-1234-5678", UserType.STUDENT, null, null),
+            userInfo = UserInfo("홍길동", "010-1234-5678", UserType.STUDENT, null, null, null),
             accountInfo = AccountInfo("test@test.com", "encodedPassword", Role.ROLE_USER, "encodedPin"),
             userSensitiveInfo = UserSensitiveInfo("CI123456"),
         )

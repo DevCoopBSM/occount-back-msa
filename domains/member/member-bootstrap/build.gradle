@@ -23,3 +23,44 @@ dependencies {
 
     runtimeOnly 'com.mysql:mysql-connector-j'
 }
+
+// member 도메인 전체(5개 모듈) 통합 커버리지 리포트 (-Pcoverage 옵트인, JDK 21로 실행)
+if (project.hasProperty('coverage')) {
+def memberModules = [
+    ':domains:member:member-domain',
+    ':domains:member:member-application',
+    ':domains:member:member-infrastructure',
+    ':domains:member:member-api',
+    ':domains:member:member-bootstrap',
+].collect { project(it) }
+
+tasks.register('memberCoverageReport', JacocoReport) {
+    group = 'verification'
+    description = 'member 도메인 전체 모듈 통합 JaCoCo 커버리지 리포트'
+
+    memberModules.each { dependsOn("${it.path}:test") }
+
+    executionData.from files(memberModules.collect {
+        it.layout.buildDirectory.file('jacoco/test.exec')
+    }).filter { it.exists() }
+
+    sourceDirectories.from files(memberModules.collect { it.file('src/main/kotlin') })
+    classDirectories.from files(memberModules.collect {
+        fileTree(it.layout.buildDirectory.dir('classes/kotlin/main')) {
+            // 단위 테스트로 커버 불가능한 외부 의존/프레임워크 진입점은 제외
+            exclude(
+                // Spring Boot 애플리케이션 진입점(main)
+                '**/MemberBootstrapApplication*',
+                // Google OAuth2 토큰 갱신 + Gmail SMTP 송신 (실제 외부 호출, 주입 가능한 seam 없음)
+                '**/mail/OAuthJavaMailSender*',
+            )
+        }
+    })
+
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = true
+    }
+}
+}

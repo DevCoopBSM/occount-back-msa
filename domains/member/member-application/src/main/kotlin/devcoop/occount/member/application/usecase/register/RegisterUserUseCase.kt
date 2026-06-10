@@ -6,6 +6,7 @@ import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.member.application.event.MemberRegisteredEvent
 import devcoop.occount.member.application.exception.EmailNotVerifiedException
 import devcoop.occount.member.application.exception.UserAlreadyExistsException
+import devcoop.occount.member.application.otp.OtpPurpose
 import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.domain.user.User
@@ -24,7 +25,7 @@ class RegisterUserUseCase(
     @Transactional
     fun register(request: MemberRegisterRequest) {
         val emailOtp = emailOtpRepository.findValidByEmail(request.userEmail)
-        if (emailOtp == null || !emailOtp.verified) {
+        if (emailOtp == null || !emailOtp.verified || emailOtp.purpose != OtpPurpose.REGISTER) {
             throw EmailNotVerifiedException()
         }
 
@@ -37,6 +38,7 @@ class RegisterUserUseCase(
                     email = request.userEmail,
                     encodedPassword = passwordEncoder.encode(request.password)!!,
                     encodedPin = passwordEncoder.encode(request.pin)!!,
+                    birthDate = request.birthDate,
                 )
             )
         } catch (_: DataIntegrityViolationException) {

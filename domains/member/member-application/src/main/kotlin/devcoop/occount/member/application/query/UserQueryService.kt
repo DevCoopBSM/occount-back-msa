@@ -21,4 +21,11 @@ class UserQueryService(
 
         return UserBarcodeResponse.toUserBarcodeResponse(user)
     }
+
+    fun findMemberInfo(userId: Long): MemberInfoResponse {
+        val user = userRepository.findById(userId)
+            ?: throw UserNotFoundException()
+
+        return MemberInfoResponse.toMemberInfoResponse(user)
+    }
 }

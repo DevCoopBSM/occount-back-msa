@@ -16,6 +16,8 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 private data class PortOneVerificationResponse(
@@ -27,6 +29,7 @@ private data class PortOneVerificationResponse(
         val ci: String?,
         val name: String?,
         val phoneNumber: String?,
+        val birthDate: String?,
     )
 }
 
@@ -34,15 +37,16 @@ private data class PortOneVerificationResponse(
 @EnableConfigurationProperties(PortOneProperties::class)
 class PortOneIdentityVerificationClient(
     private val properties: PortOneProperties,
+    private val httpClient: HttpClient = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(10))
+        .build(),
+    private val apiBaseUrl: String = PORTONE_API_URL,
 ) : IdentityVerificationClient {
 
     private val objectMapper = jacksonObjectMapper()
-    private val httpClient: HttpClient = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(10))
-        .build()
 
     override fun verify(identityVerificationId: String): VerifiedIdentity {
-        val request = HttpRequest.newBuilder(URI.create("$PORTONE_API_URL/$identityVerificationId"))
+        val request = HttpRequest.newBuilder(URI.create("$apiBaseUrl/$identityVerificationId"))
             .header("Authorization", "PortOne ${properties.secretKey}")
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(30))
@@ -57,7 +61,12 @@ class PortOneIdentityVerificationClient(
         }
 
         if (response.statusCode() !in 200..299) {
-            log.error("PortOne API 오류 응답 - status={}, body={}", response.statusCode(), response.body())
+            // 응답 body에는 CI·이름·전화·생년월일 등 개인정보가 담길 수 있어 로그에 남기지 않는다.
+            log.error(
+                "PortOne API 오류 응답 - status={}, identityVerificationId={}",
+                response.statusCode(),
+                identityVerificationId,
+            )
             throw IdentityVerificationFailedException()
         }
 
@@ -77,6 +86,7 @@ class PortOneIdentityVerificationClient(
         val ciNumber = customer?.ci.orEmpty()
         val username = customer?.name.orEmpty()
         val phone = customer?.phoneNumber.orEmpty()
+        val birthDate = parseBirthDate(customer?.birthDate)
 
         if (ciNumber.isBlank() || username.isBlank()) {
             log.error("PortOne 응답에 필수 값 누락 - identityVerificationId={}", identityVerificationId)
@@ -87,7 +97,21 @@ class PortOneIdentityVerificationClient(
             ciNumber = ciNumber,
             username = username,
             phone = phone,
+            birthDate = birthDate,
         )
+    }
+
+    private fun parseBirthDate(rawBirthDate: String?): LocalDate? {
+        if (rawBirthDate.isNullOrBlank()) {
+            return null
+        }
+        return try {
+            LocalDate.parse(rawBirthDate)
+        } catch (e: DateTimeParseException) {
+            // 생년월일(PII)은 값 자체를 로그에 남기지 않는다.
+            log.warn("PortOne 생년월일 파싱 실패 (값 미기록)", e)
+            null
+        }
     }
 
     companion object {
