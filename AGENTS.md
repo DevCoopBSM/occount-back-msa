@@ -100,6 +100,18 @@ For pull requests:
 - `domains/payment/payment-api/.../WalletController.kt`
 - `gateway/api-gateway/.../AuthenticationPolicy.kt` (인증 정책 변경 시)
 
+### JSON 네이밍 규약 (외부 계약)
+
+- **외부 API 계약(요청/응답 JSON)의 필드 키는 `snake_case`다.**
+  - 모든 `*-api` 모듈은 `application.yaml`에 `spring.jackson.property-naming-strategy: SNAKE_CASE`를 설정해 이를 강제한다 (member/item/order/payment/suggestion).
+  - Kotlin DTO 프로퍼티는 평소대로 `camelCase`로 작성하고, 와이어 포맷으로 직렬화/역직렬화될 때 Jackson이 `snake_case`로 변환한다. `@JsonProperty`로 키를 수동 지정하지 않는다.
+  - 예: `proposalId` → `proposal_id`, `likeCount` → `like_count`. 연속 대문자는 분리되지 않는다 — `typeNSeq` → `type_nseq`(❌ `type_n_seq` 아님).
+- **컨트롤러 테스트도 실제 계약과 동일한 규칙으로 검증한다.**
+  - standalone `MockMvc`는 기본 컨버터가 camelCase이므로, `jacksonMapperBuilder().propertyNamingStrategy(SNAKE_CASE)` 매퍼를 주입한 `JacksonJsonHttpMessageConverter`를 명시적으로 설정한다.
+  - 요청 본문과 `jsonPath` 단언은 `snake_case` 키로 작성한다. 선례: `MemberApiTestSupport`, `AripickControllerTest`.
+  - 이를 위해 테스트 의존성에 `tools.jackson.module:jackson-module-kotlin`이 필요하다.
+- `docs/API_SPEC.yaml`의 필드명도 `snake_case`로 기술한다.
+
 ## Kafka 토픽 / 이벤트 규칙
 
 ### 토픽 네이밍 컨벤션
