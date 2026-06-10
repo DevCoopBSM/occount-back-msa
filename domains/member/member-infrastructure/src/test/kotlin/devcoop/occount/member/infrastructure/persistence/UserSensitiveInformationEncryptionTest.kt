@@ -1,6 +1,9 @@
 package devcoop.occount.member.infrastructure.persistence
 
 import devcoop.occount.core.common.event.EventPublisher
+import devcoop.occount.member.application.otp.EmailOtp
+import devcoop.occount.member.application.otp.OtpPurpose
+import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.usecase.register.MemberRegisterRequest
 import devcoop.occount.member.application.usecase.register.RegisterUserUseCase
 import devcoop.occount.member.domain.user.AccountInfo
@@ -29,6 +32,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.context.TestPropertySource
+import java.time.Instant
+import java.time.LocalDate
 
 @DataJpaTest
 @TestPropertySource(properties = ["app.encryption.secret-key=12345678901234567890123456789012"])
@@ -49,7 +54,14 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
 
         val savedUser = userRepository.save(
             User(
-                userInfo = UserInfo(username, phone, UserType.STUDENT, null, "BARCODE123"),
+                userInfo = UserInfo(
+                    username = username,
+                    phone = phone,
+                    userType = UserType.STUDENT,
+                    cooperativeNumber = null,
+                    userBarcode = "BARCODE123",
+                    birthDate = LocalDate.of(2000, 1, 15),
+                ),
                 accountInfo = AccountInfo("test@test.com", "encodedPassword", Role.ROLE_USER, "encodedPin"),
                 userSensitiveInfo = UserSensitiveInfo(ciNumber),
             ),
@@ -81,7 +93,7 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
             userRepository = userRepository,
             eventPublisher = NoOpEventPublisher(),
             passwordEncoder = TestPasswordEncoder(),
-            defaultPin = "000000",
+            emailOtpRepository = VerifiedEmailOtpRepository("register@test.com"),
         )
         val username = "가입자"
         val phone = "010-9999-8888"
@@ -92,8 +104,10 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
                 userCiNumber = ciNumber,
                 username = username,
                 userPhone = phone,
+                birthDate = LocalDate.of(2001, 2, 16),
                 userEmail = "register@test.com",
                 password = "password1234",
+                pin = "123456",
             ),
         )
         entityManager.flush()
@@ -184,7 +198,14 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
         ciNumber: String,
     ): User {
         return User(
-            userInfo = UserInfo("사용자", phone, UserType.STUDENT, null, barcode),
+            userInfo = UserInfo(
+                username = "사용자",
+                phone = phone,
+                userType = UserType.STUDENT,
+                cooperativeNumber = null,
+                userBarcode = barcode,
+                birthDate = LocalDate.of(2000, 1, 15),
+            ),
             accountInfo = AccountInfo(email, "encodedPassword", Role.ROLE_USER, "encodedPin"),
             userSensitiveInfo = UserSensitiveInfo(ciNumber),
         )
@@ -198,6 +219,36 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
 
     private class NoOpEventPublisher : EventPublisher {
         override fun publish(topic: String, key: String, eventType: String, payload: Any) = Unit
+    }
+
+    private class VerifiedEmailOtpRepository(
+        private val verifiedEmail: String,
+    ) : EmailOtpRepository {
+        private var deletedEmail: String? = null
+
+        override fun save(emailOtp: EmailOtp): EmailOtp = emailOtp
+
+        override fun findByEmail(email: String): EmailOtp? = findValidByEmail(email)
+
+        override fun findByEmailForUpdate(email: String): EmailOtp? = findValidByEmail(email)
+
+        override fun findValidByEmail(email: String): EmailOtp? {
+            if (email != verifiedEmail) {
+                return null
+            }
+            return EmailOtp(
+                email = email,
+                otpCode = "123456",
+                expiresAt = Instant.now().plusSeconds(60),
+                purpose = OtpPurpose.REGISTER,
+                verified = true,
+                createdAt = Instant.now(),
+            )
+        }
+
+        override fun deleteByEmail(email: String) {
+            deletedEmail = email
+        }
     }
 
     private class TestPasswordEncoder : PasswordEncoder {

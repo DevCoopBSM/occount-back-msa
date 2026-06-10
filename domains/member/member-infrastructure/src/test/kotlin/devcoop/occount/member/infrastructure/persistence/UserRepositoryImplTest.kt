@@ -11,6 +11,7 @@ import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.*
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import java.time.LocalDate
 import java.util.Optional
 
 @DisplayName("UserRepositoryImpl 단위 테스트")
@@ -119,7 +120,14 @@ class UserRepositoryImplTest {
     @DisplayName("유저 저장 시 JPA 저장 후 도메인 객체로 변환하여 반환한다")
     fun `save stores entity and returns domain user`() {
         val domainToSave = User(
-            userInfo = UserInfo("홍길동", "010-1234-5678", UserType.STUDENT, null, null, null),
+            userInfo = UserInfo(
+                username = "홍길동",
+                phone = "010-1234-5678",
+                userType = UserType.STUDENT,
+                cooperativeNumber = null,
+                userBarcode = null,
+                birthDate = null,
+            ),
             accountInfo = AccountInfo("test@test.com", "encodedPassword", Role.ROLE_USER, "encodedPin"),
             userSensitiveInfo = UserSensitiveInfo("CI123456"),
         )
@@ -138,7 +146,14 @@ class UserRepositoryImplTest {
     @DisplayName("저장 시점에 민감정보 암호문 unique 충돌이 발생하면 다시 암호화해 저장한다")
     fun `save retries with re-encrypted sensitive values when saveAndFlush detects ciphertext collision`() {
         val domainToSave = User(
-            userInfo = UserInfo("홍길동", "010-1234-5678", UserType.STUDENT, null, null),
+            userInfo = UserInfo(
+                username = "홍길동",
+                phone = "010-1234-5678",
+                userType = UserType.STUDENT,
+                cooperativeNumber = null,
+                userBarcode = null,
+                birthDate = LocalDate.of(2000, 1, 15),
+            ),
             accountInfo = AccountInfo("test@test.com", "encodedPassword", Role.ROLE_USER, "encodedPin"),
             userSensitiveInfo = UserSensitiveInfo("CI123456"),
         )
@@ -162,7 +177,14 @@ class UserRepositoryImplTest {
     @DisplayName("민감정보 암호문 충돌이 아닌 저장 실패는 재시도하지 않고 전파한다")
     fun `save rethrows non sensitive unique violation`() {
         val domainToSave = User(
-            userInfo = UserInfo("홍길동", "010-1234-5678", UserType.STUDENT, null, null),
+            userInfo = UserInfo(
+                username = "홍길동",
+                phone = "010-1234-5678",
+                userType = UserType.STUDENT,
+                cooperativeNumber = null,
+                userBarcode = null,
+                birthDate = LocalDate.of(2000, 1, 15),
+            ),
             accountInfo = AccountInfo("test@test.com", "encodedPassword", Role.ROLE_USER, "encodedPin"),
             userSensitiveInfo = UserSensitiveInfo("CI123456"),
         )
