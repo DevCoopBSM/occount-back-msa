@@ -1,8 +1,7 @@
 package devcoop.occount.member.infrastructure.persistence
 
 import devcoop.occount.member.domain.user.*
-import devcoop.occount.member.infrastructure.crypto.SensitiveInformationHash
-import devcoop.occount.member.infrastructure.crypto.SensitiveInformationHasher
+import devcoop.occount.member.infrastructure.crypto.CryptoHelper
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -18,6 +17,7 @@ class UserRepositoryImplTest {
 
     private lateinit var userJpaRepository: UserJpaRepository
     private lateinit var userRepositoryImpl: UserRepositoryImpl
+    private lateinit var cryptoHelper: CryptoHelper
 
     // Kotlin + 순수 Mockito에서 non-null 타입에 any() 매처를 사용하기 위한 헬퍼
     @Suppress("UNCHECKED_CAST")
@@ -28,15 +28,15 @@ class UserRepositoryImplTest {
 
     @BeforeEach
     fun setUp() {
-        SensitiveInformationHash.configure(SensitiveInformationHasher("12345678901234567890123456789012"))
+        cryptoHelper = CryptoHelper("12345678901234567890123456789012")
         userJpaRepository = mock(UserJpaRepository::class.java)
-        userRepositoryImpl = UserRepositoryImpl(userJpaRepository)
+        userRepositoryImpl = UserRepositoryImpl(userJpaRepository, cryptoHelper)
     }
 
     private fun createEntity(id: Long = 1L) = UserJpaEntity(
         id = id,
         username = "홍길동",
-        phone = "010-1234-5678",
+        phone = cryptoHelper.encrypt("010-1234-5678"),
         userBarcode = "BARCODE123",
         userType = UserType.STUDENT,
         cooperativeNumber = null,
@@ -44,7 +44,7 @@ class UserRepositoryImplTest {
         password = "encodedPassword",
         role = Role.ROLE_USER,
         pin = "encodedPin",
-        userCiNumber = "CI123456",
+        userCiNumber = cryptoHelper.encrypt("CI123456"),
     )
 
     @Test
@@ -123,12 +123,14 @@ class UserRepositoryImplTest {
             userSensitiveInfo = UserSensitiveInfo("CI123456"),
         )
         val savedEntity = createEntity(id = 10L)
-        `when`(userJpaRepository.save(anyArg<UserJpaEntity>())).thenReturn(savedEntity)
+        `when`(userJpaRepository.existsByPhone(anyArg())).thenReturn(false)
+        `when`(userJpaRepository.existsByUserCiNumber(anyArg())).thenReturn(false)
+        `when`(userJpaRepository.saveAndFlush(anyArg<UserJpaEntity>())).thenReturn(savedEntity)
 
         val result = userRepositoryImpl.save(domainToSave)
 
         assertEquals(10L, result.getId())
-        verify(userJpaRepository).save(anyArg())
+        verify(userJpaRepository).saveAndFlush(anyArg())
     }
 
     @Test

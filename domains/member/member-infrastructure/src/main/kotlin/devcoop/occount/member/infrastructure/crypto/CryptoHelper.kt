@@ -49,6 +49,13 @@ class CryptoHelper(
         return String(decryptEnvelope(envelope), StandardCharsets.UTF_8)
     }
 
+    fun decryptIfEncrypted(value: String?): String? {
+        if (value.isNullOrEmpty() || !isEncrypted(value)) {
+            return value
+        }
+        return decrypt(value)
+    }
+
     fun isEncrypted(value: String?): Boolean {
         val envelope = parseEncryptedEnvelope(value) ?: return false
         return runCatching { decryptEnvelope(envelope) }.isSuccess

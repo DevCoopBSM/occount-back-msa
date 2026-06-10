@@ -1,21 +1,20 @@
 package devcoop.occount.member.infrastructure.persistence
 
 import devcoop.occount.member.domain.user.*
-import devcoop.occount.member.infrastructure.crypto.SensitiveInformationHash
-import devcoop.occount.member.infrastructure.crypto.SensitiveInformationHasher
+import devcoop.occount.member.infrastructure.crypto.CryptoHelper
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
 @DisplayName("UserPersistenceMapper 단위 테스트")
 class UserPersistenceMapperTest {
+    private val cryptoHelper = CryptoHelper("12345678901234567890123456789012")
 
     private fun createEntity(id: Long = 1L) = UserJpaEntity(
         id = id,
         username = "홍길동",
-        phone = "010-1234-5678",
+        phone = cryptoHelper.encrypt("010-1234-5678"),
         userBarcode = "BARCODE123",
         userType = UserType.STUDENT,
         cooperativeNumber = "COOP001",
@@ -23,7 +22,7 @@ class UserPersistenceMapperTest {
         password = "encodedPassword",
         role = Role.ROLE_USER,
         pin = "encodedPin",
-        userCiNumber = "CI123456",
+        userCiNumber = cryptoHelper.encrypt("CI123456"),
         birthDate = LocalDate.of(2000, 1, 15),
     )
 
@@ -51,7 +50,7 @@ class UserPersistenceMapperTest {
     fun `toDomain maps all fields from entity to domain`() {
         val entity = createEntity(id = 5L)
 
-        val domain = UserPersistenceMapper.toDomain(entity)
+        val domain = UserPersistenceMapper.toDomain(entity, cryptoHelper)
 
         assertEquals(5L, domain.getId())
         assertEquals("홍길동", domain.getUsername())
@@ -72,11 +71,18 @@ class UserPersistenceMapperTest {
     fun `toEntity maps all fields from domain to entity`() {
         val domain = createDomain(id = 5L)
 
-        val entity = UserPersistenceMapper.toEntity(domain)
+        val encryptedPhone = cryptoHelper.encrypt("010-1234-5678")
+        val encryptedCiNumber = cryptoHelper.encrypt("CI123456")
+
+        val entity = UserPersistenceMapper.toEntity(
+            domain = domain,
+            encryptedPhone = encryptedPhone,
+            encryptedCiNumber = encryptedCiNumber,
+        )
 
         assertEquals(5L, entity.id)
         assertEquals("홍길동", entity.username)
-        assertEquals("010-1234-5678", entity.phone)
+        assertEquals(encryptedPhone, entity.phone)
         assertEquals("BARCODE123", entity.userBarcode)
         assertEquals(UserType.STUDENT, entity.userType)
         assertEquals("COOP001", entity.cooperativeNumber)
@@ -84,7 +90,7 @@ class UserPersistenceMapperTest {
         assertEquals("encodedPassword", entity.password)
         assertEquals(Role.ROLE_USER, entity.role)
         assertEquals("encodedPin", entity.pin)
-        assertEquals("CI123456", entity.userCiNumber)
+        assertEquals(encryptedCiNumber, entity.userCiNumber)
         assertEquals(LocalDate.of(2000, 1, 15), entity.birthDate)
     }
 
@@ -105,7 +111,7 @@ class UserPersistenceMapperTest {
             userCiNumber = null,
         )
 
-        val domain = UserPersistenceMapper.toDomain(entity)
+        val domain = UserPersistenceMapper.toDomain(entity, cryptoHelper)
 
         assertNull(domain.getPhone())
         assertNull(domain.getUserBarcode())

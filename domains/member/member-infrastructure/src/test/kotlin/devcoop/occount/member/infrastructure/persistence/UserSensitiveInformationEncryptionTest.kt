@@ -3,12 +3,14 @@ package devcoop.occount.member.infrastructure.persistence
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.member.application.usecase.register.MemberRegisterRequest
 import devcoop.occount.member.application.usecase.register.RegisterUserUseCase
+import devcoop.occount.member.domain.user.AccountInfo
 import devcoop.occount.member.domain.user.Role
+import devcoop.occount.member.domain.user.User
+import devcoop.occount.member.domain.user.UserInfo
+import devcoop.occount.member.domain.user.UserSensitiveInfo
 import devcoop.occount.member.domain.user.UserType
 import devcoop.occount.member.infrastructure.crypto.CryptoConfig
 import devcoop.occount.member.infrastructure.crypto.CryptoHelper
-import devcoop.occount.member.infrastructure.crypto.SensitiveInformationHasher
-import devcoop.occount.member.infrastructure.crypto.SensitiveInformationMigrationRunner
 import jakarta.persistence.EntityManager
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
@@ -20,14 +22,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
-import org.springframework.context.annotation.Import
-import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.boot.persistence.autoconfigure.EntityScan
+import org.springframework.context.annotation.Import
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.context.TestPropertySource
-import javax.sql.DataSource
 
 @DataJpaTest
 @TestPropertySource(properties = ["app.encryption.secret-key=12345678901234567890123456789012"])
@@ -36,55 +37,46 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
     private val userJpaRepository: UserJpaRepository,
     private val jdbcTemplate: JdbcTemplate,
     private val entityManager: EntityManager,
-    private val dataSource: DataSource,
     private val cryptoHelper: CryptoHelper,
-    private val sensitiveInformationHasher: SensitiveInformationHasher,
 ) {
     @Test
-    @DisplayName("Entity 저장 후 DB raw 값은 암호문이고 JPA 조회 값은 복호화된 평문이다")
-    fun `jpa encrypts raw values and decrypts entity values`() {
+    @DisplayName("Repository 저장 후 DB raw 값은 암호문이고 repository 조회 값은 복호화된 평문이다")
+    fun `repository encrypts raw values and decrypts domain values`() {
+        val userRepository = UserRepositoryImpl(userJpaRepository, cryptoHelper)
         val username = "홍길동"
         val phone = "010-1234-5678"
         val ciNumber = "CI123456"
-        val savedEntity = userJpaRepository.saveAndFlush(
-            UserJpaEntity(
-                username = username,
-                phone = phone,
-                phoneHash = sensitiveInformationHasher.hash(phone),
-                userBarcode = "BARCODE123",
-                userType = UserType.STUDENT,
-                cooperativeNumber = null,
-                email = "test@test.com",
-                password = "encodedPassword",
-                role = Role.ROLE_USER,
-                pin = "encodedPin",
-                userCiNumber = ciNumber,
-                userCiNumberHash = sensitiveInformationHasher.hash(ciNumber),
+
+        val savedUser = userRepository.save(
+            User(
+                userInfo = UserInfo(username, phone, UserType.STUDENT, null, "BARCODE123"),
+                accountInfo = AccountInfo("test@test.com", "encodedPassword", Role.ROLE_USER, "encodedPin"),
+                userSensitiveInfo = UserSensitiveInfo(ciNumber),
             ),
         )
 
         val rawValues = jdbcTemplate.queryForMap(
-            "select username, phone, phone_hash, user_ci_number, user_ci_number_hash from common_user where id = ?",
-            savedEntity.id,
+            "select username, phone, user_ci_number from common_user where id = ?",
+            savedUser.getId(),
         )
         entityManager.clear()
 
         assertEncrypted(rawValues["username"], username)
         assertEncrypted(rawValues["phone"], phone)
-        assertEquals(sensitiveInformationHasher.hash(phone), rawValues["phone_hash"])
+        assertEquals(phone, cryptoHelper.decrypt(rawValues["phone"] as String))
         assertEncrypted(rawValues["user_ci_number"], ciNumber)
-        assertEquals(sensitiveInformationHasher.hash(ciNumber), rawValues["user_ci_number_hash"])
+        assertEquals(ciNumber, cryptoHelper.decrypt(rawValues["user_ci_number"] as String))
 
-        val foundEntity = userJpaRepository.findById(savedEntity.id).orElseThrow()
-        assertEquals(username, foundEntity.username)
-        assertEquals(phone, foundEntity.phone)
-        assertEquals(ciNumber, foundEntity.userCiNumber)
+        val foundUser = userRepository.findById(savedUser.getId())
+        assertEquals(username, foundUser!!.getUsername())
+        assertEquals(phone, foundUser.getPhone())
+        assertEquals(ciNumber, foundUser.getCiNumber())
     }
 
     @Test
     @DisplayName("회원가입 use case 저장 후 DB raw 값은 암호문이고 repository 조회 값은 복호화된 평문이다")
     fun `register use case stores encrypted sensitive information`() {
-        val userRepository = UserRepositoryImpl(userJpaRepository)
+        val userRepository = UserRepositoryImpl(userJpaRepository, cryptoHelper)
         val registerUserUseCase = RegisterUserUseCase(
             userRepository = userRepository,
             eventPublisher = NoOpEventPublisher(),
@@ -107,16 +99,16 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
         entityManager.flush()
 
         val rawValues = jdbcTemplate.queryForMap(
-            "select username, phone, phone_hash, user_ci_number, user_ci_number_hash from common_user where email = ?",
+            "select username, phone, user_ci_number from common_user where email = ?",
             "register@test.com",
         )
         entityManager.clear()
 
         assertEncrypted(rawValues["username"], username)
         assertEncrypted(rawValues["phone"], phone)
-        assertEquals(sensitiveInformationHasher.hash(phone), rawValues["phone_hash"])
+        assertEquals(phone, cryptoHelper.decrypt(rawValues["phone"] as String))
         assertEncrypted(rawValues["user_ci_number"], ciNumber)
-        assertEquals(sensitiveInformationHasher.hash(ciNumber), rawValues["user_ci_number_hash"])
+        assertEquals(ciNumber, cryptoHelper.decrypt(rawValues["user_ci_number"] as String))
 
         val foundUser = userRepository.findByEmail("register@test.com")
         assertEquals(username, foundUser!!.getUsername())
@@ -125,24 +117,46 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("같은 전화번호와 CI는 같은 HMAC 해시가 저장되어 DB unique 제약으로 중복을 막는다")
-    fun `same sensitive values are rejected by hash unique constraints`() {
+    @DisplayName("같은 전화번호와 CI도 랜덤 암호화로 서로 다른 raw 암호문이 저장된다")
+    fun `same sensitive values are stored as different ciphertexts`() {
+        val userRepository = UserRepositoryImpl(userJpaRepository, cryptoHelper)
         val phone = "010-1111-2222"
         val ciNumber = "CI-SAME-123"
+
+        userRepository.save(createUser("first@test.com", "BARCODE-FIRST", phone, ciNumber))
+        userRepository.save(createUser("second@test.com", "BARCODE-SECOND", phone, ciNumber))
+
+        val rows = jdbcTemplate.queryForList(
+            "select phone, user_ci_number from common_user where email in (?, ?) order by email",
+            "first@test.com",
+            "second@test.com",
+        )
+
+        assertNotEquals(rows[0]["phone"], rows[1]["phone"])
+        assertEquals(phone, cryptoHelper.decrypt(rows[0]["phone"] as String))
+        assertEquals(phone, cryptoHelper.decrypt(rows[1]["phone"] as String))
+        assertNotEquals(rows[0]["user_ci_number"], rows[1]["user_ci_number"])
+        assertEquals(ciNumber, cryptoHelper.decrypt(rows[0]["user_ci_number"] as String))
+        assertEquals(ciNumber, cryptoHelper.decrypt(rows[1]["user_ci_number"] as String))
+    }
+
+    @Test
+    @DisplayName("동일한 암호문은 DB unique 제약으로 중복 저장되지 않는다")
+    fun `same encrypted values are rejected by unique constraints`() {
+        val encryptedPhone = cryptoHelper.encrypt("010-2222-3333")
+        val encryptedCiNumber = cryptoHelper.encrypt("CI-UNIQUE-123")
+
         userJpaRepository.saveAndFlush(
             UserJpaEntity(
                 username = "첫번째",
-                phone = phone,
-                phoneHash = sensitiveInformationHasher.hash(phone),
-                userBarcode = "BARCODE-FIRST",
+                phone = encryptedPhone,
+                userBarcode = "BARCODE-UNIQUE-FIRST",
                 userType = UserType.STUDENT,
-                cooperativeNumber = null,
-                email = "first@test.com",
+                email = "unique-first@test.com",
                 password = "encodedPassword",
                 role = Role.ROLE_USER,
                 pin = "encodedPin",
-                userCiNumber = ciNumber,
-                userCiNumberHash = sensitiveInformationHasher.hash(ciNumber),
+                userCiNumber = encryptedCiNumber,
             ),
         )
 
@@ -150,77 +164,30 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
             userJpaRepository.saveAndFlush(
                 UserJpaEntity(
                     username = "두번째",
-                    phone = phone,
-                    phoneHash = sensitiveInformationHasher.hash(phone),
-                    userBarcode = "BARCODE-SECOND",
+                    phone = encryptedPhone,
+                    userBarcode = "BARCODE-UNIQUE-SECOND",
                     userType = UserType.STUDENT,
-                    cooperativeNumber = null,
-                    email = "second@test.com",
+                    email = "unique-second@test.com",
                     password = "encodedPassword",
                     role = Role.ROLE_USER,
                     pin = "encodedPin",
-                    userCiNumber = ciNumber,
-                    userCiNumberHash = sensitiveInformationHasher.hash(ciNumber),
+                    userCiNumber = cryptoHelper.encrypt("CI-UNIQUE-456"),
                 ),
             )
         }
     }
 
-    @Test
-    @DisplayName("기존 평문 민감정보는 startup migration으로 암호문과 검색 해시로 보정된다")
-    fun `migration encrypts legacy plaintext values and fills hashes`() {
-        val legacyPlainPhone = "ENC:010-3333-4444"
-        val stalePhoneHash = sensitiveInformationHasher.hash("stale-phone")
-        val staleCiHash = sensitiveInformationHasher.hash("stale-ci")
-        jdbcTemplate.update(
-            """
-            insert into common_user(
-                username, phone, phone_hash, user_ci_number, user_ci_number_hash,
-                user_barcode, user_type, email, password, role, pin
-            )
-            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """.trimIndent(),
-            "평문사용자",
-            legacyPlainPhone,
-            stalePhoneHash,
-            "CI-PLAIN-123",
-            staleCiHash,
-            "BARCODE-PLAIN",
-            UserType.STUDENT.name,
-            "plain@test.com",
-            "encodedPassword",
-            Role.ROLE_USER.name,
-            "encodedPin",
+    private fun createUser(
+        email: String,
+        barcode: String,
+        phone: String,
+        ciNumber: String,
+    ): User {
+        return User(
+            userInfo = UserInfo("사용자", phone, UserType.STUDENT, null, barcode),
+            accountInfo = AccountInfo(email, "encodedPassword", Role.ROLE_USER, "encodedPin"),
+            userSensitiveInfo = UserSensitiveInfo(ciNumber),
         )
-        val id = jdbcTemplate.queryForObject(
-            "select id from common_user where email = ?",
-            Long::class.java,
-            "plain@test.com",
-        )!!
-
-        val migratedCount = SensitiveInformationMigrationRunner(
-            jdbcTemplate = jdbcTemplate,
-            dataSource = dataSource,
-            cryptoHelper = cryptoHelper,
-            sensitiveInformationHasher = sensitiveInformationHasher,
-        ).migrate()
-        entityManager.clear()
-
-        assertEquals(1, migratedCount)
-        val rawValues = jdbcTemplate.queryForMap(
-            "select username, phone, phone_hash, user_ci_number, user_ci_number_hash from common_user where id = ?",
-            id,
-        )
-        assertEncrypted(rawValues["username"], "평문사용자")
-        assertEncrypted(rawValues["phone"], legacyPlainPhone)
-        assertEquals(sensitiveInformationHasher.hash(legacyPlainPhone), rawValues["phone_hash"])
-        assertEncrypted(rawValues["user_ci_number"], "CI-PLAIN-123")
-        assertEquals(sensitiveInformationHasher.hash("CI-PLAIN-123"), rawValues["user_ci_number_hash"])
-
-        val foundEntity = userJpaRepository.findById(id).orElseThrow()
-        assertEquals("평문사용자", foundEntity.username)
-        assertEquals(legacyPlainPhone, foundEntity.phone)
-        assertEquals("CI-PLAIN-123", foundEntity.userCiNumber)
     }
 
     private fun assertEncrypted(rawValue: Any?, plainText: String) {

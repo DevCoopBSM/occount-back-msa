@@ -16,27 +16,17 @@ class CryptoConfig(
     }
 
     @Bean
-    fun sensitiveInformationHasher(): SensitiveInformationHasher {
-        return SensitiveInformationHasher(secretKey)
-    }
-
-    @Bean
-    fun cryptoInitializer(
-        cryptoHelper: CryptoHelper,
-        sensitiveInformationHasher: SensitiveInformationHasher,
-    ): CryptoInitializer {
-        return CryptoInitializer(cryptoHelper, sensitiveInformationHasher)
+    fun cryptoInitializer(cryptoHelper: CryptoHelper): CryptoInitializer {
+        return CryptoInitializer(cryptoHelper)
     }
 }
 
 class CryptoInitializer(
     private val cryptoHelper: CryptoHelper,
-    private val sensitiveInformationHasher: SensitiveInformationHasher,
 ) {
 
     @PostConstruct
     fun configureCrypto() {
         CryptoConverter.configure(cryptoHelper)
-        SensitiveInformationHash.configure(sensitiveInformationHasher)
     }
 }

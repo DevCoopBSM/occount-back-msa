@@ -10,7 +10,7 @@ class CryptoConverter : AttributeConverter<String, String> {
     }
 
     override fun convertToEntityAttribute(dbData: String?): String? {
-        return helper().decrypt(dbData)
+        return helper().decryptIfEncrypted(dbData)
     }
 
     private fun helper(): CryptoHelper {
