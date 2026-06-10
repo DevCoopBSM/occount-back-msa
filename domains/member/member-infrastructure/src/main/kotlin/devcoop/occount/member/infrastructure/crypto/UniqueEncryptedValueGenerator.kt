@@ -14,7 +14,7 @@ class UniqueEncryptedValueGenerator(
         }
 
         repeat(MAX_ATTEMPTS) {
-            val encryptedValue = encrypt(plainText) ?: return encryptedValue
+            val encryptedValue = encrypt(plainText) ?: return null
             if (!existsByEncryptedValue(encryptedValue)) {
                 return encryptedValue
             }
