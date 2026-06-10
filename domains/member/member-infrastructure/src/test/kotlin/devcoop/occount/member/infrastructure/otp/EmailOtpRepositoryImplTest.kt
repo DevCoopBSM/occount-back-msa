@@ -1,6 +1,7 @@
 package devcoop.occount.member.infrastructure.otp
 
 import devcoop.occount.member.application.otp.EmailOtp
+import devcoop.occount.member.application.otp.OtpPurpose
 import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -30,6 +31,7 @@ class EmailOtpRepositoryImplTest {
         email = "test@test.com",
         otpCode = "123456",
         expiresAt = now.plusSeconds(300),
+        purpose = OtpPurpose.PASSWORD_RESET,
         verified = true,
         failCount = 2,
         createdAt = now,
@@ -39,6 +41,7 @@ class EmailOtpRepositoryImplTest {
         email = "test@test.com",
         otpCode = "123456",
         expiresAt = now.plusSeconds(300),
+        purpose = OtpPurpose.PASSWORD_RESET,
         verified = true,
         failCount = 2,
         createdAt = now,
@@ -59,6 +62,7 @@ class EmailOtpRepositoryImplTest {
 
         assertEquals("test@test.com", result.email)
         assertEquals("123456", result.otpCode)
+        assertEquals(OtpPurpose.PASSWORD_RESET, result.purpose)
         assertEquals(true, result.verified)
         assertEquals(2, result.failCount)
         assertEquals(now, result.createdAt)

@@ -9,6 +9,10 @@ data class ChangePasswordRequest(
     @field:Email(message = "올바른 이메일 형식이어야 합니다.")
     val email: String,
 
+    @field:NotBlank(message = "인증번호는 비어있을 수 없습니다.")
+    @field:Size(min = 6, max = 6, message = "인증번호는 6자리여야 합니다.")
+    val otpCode: String,
+
     @field:NotBlank(message = "비밀번호는 비어있을 수 없습니다.")
     @field:Size(min = 8, max = 16, message = "비밀번호는 최소 8자 이상 16자 이하여야 합니다.")
     val newPassword: String,

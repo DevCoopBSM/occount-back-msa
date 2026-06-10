@@ -1,9 +1,13 @@
 package devcoop.occount.member.application.usecase.password
 
-import devcoop.occount.member.application.exception.EmailNotVerifiedException
-import devcoop.occount.member.application.exception.UserNotFoundException
+import devcoop.occount.member.application.exception.OtpExpiredException
+import devcoop.occount.member.application.exception.OtpLockedException
+import devcoop.occount.member.application.exception.OtpMismatchException
+import devcoop.occount.member.application.exception.OtpNotFoundException
+import devcoop.occount.member.application.otp.OtpPurpose
 import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.output.UserRepository
+import org.slf4j.LoggerFactory
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -14,17 +18,39 @@ class ChangePasswordUseCase(
     private val emailOtpRepository: EmailOtpRepository,
     private val passwordEncoder: PasswordEncoder,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Transactional
     fun changePassword(request: ChangePasswordRequest) {
-        val emailOtp = emailOtpRepository.findValidByEmail(request.email)
-        if (emailOtp == null || !emailOtp.verified) {
-            throw EmailNotVerifiedException()
+        // 1) 비밀번호 변경용으로 발송된 OTP 코드를 변경 요청 시점에 직접 재검증한다.
+        //    (verified 플래그만 신뢰하지 않고 코드를 다시 제시받아, 코드 없이 변경되는 것을 차단)
+        val emailOtp = emailOtpRepository.findByEmailForUpdate(request.email)
+            ?.takeIf { it.purpose == OtpPurpose.PASSWORD_RESET }
+            ?: throw OtpNotFoundException()
+
+        if (emailOtp.isExpired()) {
+            emailOtpRepository.deleteByEmail(request.email)
+            throw OtpExpiredException()
         }
 
-        val user = userRepository.findByEmail(request.email)
-            ?: throw UserNotFoundException()
+        if (emailOtp.isLocked()) {
+            emailOtpRepository.deleteByEmail(request.email)
+            throw OtpLockedException()
+        }
 
-        userRepository.save(user.changePassword(passwordEncoder.encode(request.newPassword)!!))
+        if (emailOtp.otpCode != request.otpCode) {
+            emailOtpRepository.save(emailOtp.incrementFailCount())
+            throw OtpMismatchException()
+        }
+
+        // 2) OTP 검증 통과. 유저 존재 여부와 무관하게 OTP를 소비하고 동일한 응답(204)을 반환해
+        //    가입 여부가 노출되지 않도록 한다(email enumeration 방지).
+        val user = userRepository.findByEmail(request.email)
+        if (user != null) {
+            userRepository.save(user.changePassword(passwordEncoder.encode(request.newPassword)!!))
+        } else {
+            log.warn("비밀번호 변경 요청: 인증은 통과했으나 가입된 유저 없음 - email={}", request.email)
+        }
 
         emailOtpRepository.deleteByEmail(request.email)
     }

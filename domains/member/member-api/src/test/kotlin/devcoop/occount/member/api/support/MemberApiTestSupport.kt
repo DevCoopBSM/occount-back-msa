@@ -2,6 +2,7 @@ package devcoop.occount.member.api.support
 
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.member.application.otp.EmailOtp
+import devcoop.occount.member.application.otp.OtpPurpose
 import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.output.EmailSender
 import devcoop.occount.member.application.output.IdentityVerificationClient
@@ -137,6 +138,15 @@ fun verifiedEmailOtp(email: String, otpCode: String = "123456"): EmailOtp =
         expiresAt = Instant.now().plusSeconds(EmailOtp.OTP_TTL_SECONDS),
         createdAt = Instant.now(),
         verified = true,
+    )
+
+fun passwordResetOtp(email: String, otpCode: String = "123456"): EmailOtp =
+    EmailOtp(
+        email = email,
+        otpCode = otpCode,
+        expiresAt = Instant.now().plusSeconds(EmailOtp.OTP_TTL_SECONDS),
+        purpose = OtpPurpose.PASSWORD_RESET,
+        createdAt = Instant.now(),
     )
 
 private val noopTransactionManager = object : AbstractPlatformTransactionManager() {

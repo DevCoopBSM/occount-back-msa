@@ -38,7 +38,7 @@ class AuthController(
     @PostMapping("/email/send-otp")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun sendEmailOtp(@Valid @RequestBody request: SendEmailOtpRequest) {
-        sendEmailOtpUseCase.send(request.email)
+        sendEmailOtpUseCase.send(request.email, request.purpose)
     }
 
     @PostMapping("/email/verify-otp")

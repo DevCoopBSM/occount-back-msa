@@ -1,7 +1,10 @@
 package devcoop.occount.member.infrastructure.otp
 
+import devcoop.occount.member.application.otp.OtpPurpose
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.time.Instant
@@ -18,6 +21,10 @@ class EmailOtpJpaEntity(
 
     @Column(nullable = false)
     val expiresAt: Instant,
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    val purpose: OtpPurpose = OtpPurpose.REGISTER,
 
     @Column(nullable = false)
     val verified: Boolean = false,

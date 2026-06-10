@@ -2,6 +2,7 @@ package devcoop.occount.member.application.usecase.otp
 
 import devcoop.occount.member.application.exception.OtpRateLimitException
 import devcoop.occount.member.application.otp.EmailOtp
+import devcoop.occount.member.application.otp.OtpPurpose
 import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.output.EmailSender
 import org.springframework.dao.DataIntegrityViolationException
@@ -23,7 +24,7 @@ class SendEmailOtpUseCase(
     private val secureRandom = SecureRandom()
     private val transactionTemplate = TransactionTemplate(transactionManager)
 
-    fun send(email: String) {
+    fun send(email: String, purpose: OtpPurpose = OtpPurpose.REGISTER) {
         val otpCode = transactionTemplate.execute {
             val existing = emailOtpRepository.findByEmailForUpdate(email)
             if (existing != null && existing.isRecentlySent()) {
@@ -39,6 +40,7 @@ class SendEmailOtpUseCase(
                         email = email,
                         otpCode = code,
                         expiresAt = now.plusSeconds(EmailOtp.OTP_TTL_SECONDS),
+                        purpose = purpose,
                         createdAt = now,
                     )
                 )

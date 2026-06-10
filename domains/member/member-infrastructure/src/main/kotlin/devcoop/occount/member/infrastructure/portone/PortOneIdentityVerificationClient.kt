@@ -61,7 +61,12 @@ class PortOneIdentityVerificationClient(
         }
 
         if (response.statusCode() !in 200..299) {
-            log.error("PortOne API 오류 응답 - status={}, body={}", response.statusCode(), response.body())
+            // 응답 body에는 CI·이름·전화·생년월일 등 개인정보가 담길 수 있어 로그에 남기지 않는다.
+            log.error(
+                "PortOne API 오류 응답 - status={}, identityVerificationId={}",
+                response.statusCode(),
+                identityVerificationId,
+            )
             throw IdentityVerificationFailedException()
         }
 
@@ -103,7 +108,8 @@ class PortOneIdentityVerificationClient(
         return try {
             LocalDate.parse(rawBirthDate)
         } catch (e: DateTimeParseException) {
-            log.warn("PortOne 생년월일 파싱 실패 - birthDate={}", rawBirthDate, e)
+            // 생년월일(PII)은 값 자체를 로그에 남기지 않는다.
+            log.warn("PortOne 생년월일 파싱 실패 (값 미기록)", e)
             null
         }
     }

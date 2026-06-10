@@ -2,12 +2,14 @@ package devcoop.occount.member.application.usecase.otp
 
 import devcoop.occount.member.application.exception.OtpRateLimitException
 import devcoop.occount.member.application.otp.EmailOtp
+import devcoop.occount.member.application.otp.OtpPurpose
 import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.output.EmailSender
 import devcoop.occount.member.application.support.FakeEmailOtpRepository
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -59,18 +61,29 @@ class SendEmailOtpUseCaseTest {
     }
 
     @Test
-    @DisplayName("이메일 전송이 실패해도 예외가 전파되지 않는다")
+    @DisplayName("이메일 전송이 실패해도 예외가 전파되지 않고 OTP는 저장된다")
     fun `does not propagate exception when email sending fails`() {
         val repository = FakeEmailOtpRepository()
         val sender = RecordingEmailSender(shouldThrow = true)
         val useCase = SendEmailOtpUseCase(repository, sender, noopTransactionManager)
 
+        // send()는 비동기 전송 실패와 무관하게 정상 반환해야 한다(예외 미전파).
         useCase.send(email)
 
         assertNotNull(repository.findByEmail(email))
         assertTrue(sender.latch.await(2, TimeUnit.SECONDS))
-        // onFailure 로깅 람다가 실행될 시간을 잠시 확보
-        Thread.sleep(100)
+        assertEquals(email, sender.sentTo)
+    }
+
+    @Test
+    @DisplayName("지정한 용도(purpose)로 OTP를 저장한다")
+    fun `saves otp with the given purpose`() {
+        val repository = FakeEmailOtpRepository()
+        val useCase = SendEmailOtpUseCase(repository, RecordingEmailSender(), noopTransactionManager)
+
+        useCase.send(email, OtpPurpose.PASSWORD_RESET)
+
+        assertEquals(OtpPurpose.PASSWORD_RESET, repository.findByEmail(email)?.purpose)
     }
 
     @Test

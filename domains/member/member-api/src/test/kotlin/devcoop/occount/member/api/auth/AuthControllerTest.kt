@@ -12,6 +12,7 @@ import devcoop.occount.member.api.support.testSendEmailOtpUseCase
 import devcoop.occount.member.api.support.testVerifyEmailOtpUseCase
 import devcoop.occount.member.api.support.testVerifyIdentityUseCase
 import devcoop.occount.member.api.support.testChangePasswordUseCase
+import devcoop.occount.member.api.support.passwordResetOtp
 import devcoop.occount.member.api.support.verifiedEmailOtp
 import devcoop.occount.member.application.exception.IdentityVerificationFailedException
 import devcoop.occount.member.application.usecase.identity.VerifyIdentityUseCase
@@ -501,11 +502,11 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("이메일 인증 후 비밀번호 변경 요청이 성공하면 204 No Content를 반환한다")
+    @DisplayName("비밀번호 변경용 OTP 코드와 함께 요청이 성공하면 204 No Content를 반환한다")
     fun `changePassword returns 204 No Content on success`() {
         val emailOtpRepository = FakeEmailOtpRepository(
             initialOtpsByEmail = mapOf(
-                "test@test.com" to verifiedEmailOtp("test@test.com"),
+                "test@test.com" to passwordResetOtp("test@test.com", otpCode = "123456"),
             ),
         )
 
@@ -535,7 +536,7 @@ class AuthControllerTest {
         mockMvc.perform(
             post("/auth/password/change")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"email": "test@test.com", "newPassword": "newPassword1234"}"""),
+                .content("""{"email": "test@test.com", "otpCode": "123456", "newPassword": "newPassword1234"}"""),
         ).andExpect(status().isNoContent)
     }
 
@@ -565,7 +566,7 @@ class AuthControllerTest {
         mockMvc.perform(
             post("/auth/password/change")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"email": "test@test.com", "newPassword": "short"}"""),
+                .content("""{"email": "test@test.com", "otpCode": "123456", "newPassword": "short"}"""),
         ).andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.newPassword").value("비밀번호는 최소 8자 이상 16자 이하여야 합니다."))
     }
