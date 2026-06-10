@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.support.AbstractPlatformTransactionManager
 import org.springframework.transaction.support.DefaultTransactionStatus
+import tools.jackson.databind.PropertyNamingStrategies
 import tools.jackson.module.kotlin.jacksonMapperBuilder
 import java.time.Instant
 
@@ -191,7 +192,12 @@ fun testChangePinUseCase(
 )
 
 fun mockMvc(vararg controllers: Any): MockMvc {
-    val messageConverter = JacksonJsonHttpMessageConverter(jacksonMapperBuilder())
+    // 실제 member-api 설정(spring.jackson.property-naming-strategy: SNAKE_CASE)과 동일한
+    // 직렬화 규칙으로 컨트롤러 계약을 검증한다.
+    val objectMapper = jacksonMapperBuilder()
+        .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+        .build()
+    val messageConverter = JacksonJsonHttpMessageConverter(objectMapper)
     return MockMvcBuilders.standaloneSetup(*controllers)
         .setControllerAdvice(ApiAdviceHandler())
         .setMessageConverters(messageConverter)

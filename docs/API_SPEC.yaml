@@ -82,7 +82,7 @@ paths:
               $ref: '#/components/schemas/VerifyEmailOtpRequest'
             example:
               email: "hong@example.com"
-              otpCode: "384921"
+              otp_code: "384921"
       responses:
         "204":
           description: 인증번호 확인 성공
@@ -130,6 +130,7 @@ paths:
                 user_ci_number: "CI_HASH_VALUE"
                 username: "홍길동"
                 user_phone: "01012345678"
+                birth_date: "2000-01-15"
         "400":
           description: 요청 검증 실패
           content:
@@ -159,13 +160,58 @@ paths:
               user_ci_number: "CI1234567890"
               username: "홍길동"
               user_phone: "010-1234-5678"
+              birth_date: "2000-01-15"
               user_email: "hong@example.com"
               password: "pass1234"
+              pin: "1234"
       responses:
         "201":
           description: 회원가입 성공
         "400":
           description: 요청 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/auth/password/change:
+    post:
+      tags: [Auth]
+      operationId: changePassword
+      summary: 비밀번호 변경 (이메일 인증)
+      description: |
+        이메일 OTP 인증으로 비밀번호를 재설정합니다. (PERMIT_ALL)
+
+        흐름: `send-otp(purpose=PASSWORD_RESET)` → 사용자가 받은 6자리 코드를 본 요청에 그대로 전달.
+        - 변경 시점에 OTP 코드를 직접 재검증하며, PASSWORD_RESET 용도의 OTP만 허용합니다.
+        - 가입 여부 노출 방지를 위해, 인증을 통과하면 해당 이메일의 계정 존재 여부와 무관하게 204를 반환합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+            example:
+              email: "hong@example.com"
+              otp_code: "384921"
+              new_password: "newpass1234"
+      responses:
+        "204":
+          description: 비밀번호 변경 성공 (또는 인증 통과·계정 없음 — 동일 응답)
+        "400":
+          description: 요청 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: 인증번호 불일치 또는 잠금
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: PASSWORD_RESET 용도의 발송된 인증번호 없음
           content:
             application/json:
               schema:
@@ -285,6 +331,76 @@ paths:
                 user_barcode: "BARCODE123"
         "401":
           description: 인증 실패
+
+  /api/v3/users/me:
+    get:
+      tags: [Member]
+      operationId: getMemberInfo
+      summary: 본인 회원정보 조회
+      description: |
+        로그인한 회원 본인의 회원정보를 반환합니다. (AUTHENTICATED)
+        자격증명(비밀번호/PIN)과 CI 등 민감정보는 제외됩니다.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberInfoResponse'
+              example:
+                username: "홍길동"
+                email: "hong@example.com"
+                phone: "010-1234-5678"
+                user_type: "STUDENT"
+                role: "ROLE_USER"
+                cooperative_number: "COOP001"
+                birth_date: "2000-01-15"
+        "401":
+          description: 인증 실패
+        "404":
+          description: 존재하지 않는 유저
+
+  /api/v3/users/pin/change:
+    post:
+      tags: [Member]
+      operationId: changePin
+      summary: PIN 변경 (비밀번호 확인)
+      description: |
+        현재 비밀번호 확인으로 본인을 인증한 뒤 키오스크 결제용 PIN을 변경합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePinRequest'
+            example:
+              password: "pass1234"
+              new_pin: "4321"
+      responses:
+        "204":
+          description: PIN 변경 성공
+        "400":
+          description: 요청 검증 실패 (PIN 형식 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: 인증 실패 또는 현재 비밀번호 불일치
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: 존재하지 않는 유저
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # ───────────────────────────────────────────────
   # Item
@@ -1266,16 +1382,24 @@ components:
           type: string
           format: email
           description: 인증번호를 받을 이메일
+        purpose:
+          type: string
+          enum: [REGISTER, PASSWORD_RESET]
+          default: REGISTER
+          description: |
+            OTP 용도. 미지정 시 회원가입(REGISTER)으로 간주.
+            비밀번호 변경 OTP는 PASSWORD_RESET으로 발송해야 하며,
+            발송 시 고정된 용도로만 소비할 수 있습니다.
 
     VerifyEmailOtpRequest:
       type: object
-      required: [email, otpCode]
+      required: [email, otp_code]
       properties:
         email:
           type: string
           format: email
           description: 인증번호를 받은 이메일
-        otpCode:
+        otp_code:
           type: string
           minLength: 6
           maxLength: 6
@@ -1301,10 +1425,15 @@ components:
         user_phone:
           type: string
           description: 전화번호
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          description: 생년월일 (YYYY-MM-DD). 일부 인증사(예 KG이니시스+카카오)에서는 누락될 수 있음
 
     MemberRegisterRequest:
       type: object
-      required: [user_ci_number, username, user_email, password]
+      required: [user_ci_number, username, user_email, password, pin]
       properties:
         user_ci_number:
           type: string
@@ -1317,6 +1446,11 @@ components:
           type: string
           nullable: true
           description: 전화번호
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          description: 생년월일 (YYYY-MM-DD). 본인인증 응답에서 받은 값을 그대로 전달
         user_email:
           type: string
           format: email
@@ -1326,6 +1460,10 @@ components:
           minLength: 8
           maxLength: 16
           description: 비밀번호 (8~16자)
+        pin:
+          type: string
+          pattern: '^\d{4,6}$'
+          description: 키오스크 결제용 PIN (4~6자리 숫자)
 
     MemberLoginRequest:
       type: object
@@ -1348,6 +1486,37 @@ components:
           type: string
           description: PIN 번호
 
+    ChangePasswordRequest:
+      type: object
+      required: [email, otp_code, new_password]
+      properties:
+        email:
+          type: string
+          format: email
+          description: 비밀번호를 변경할 계정 이메일
+        otp_code:
+          type: string
+          minLength: 6
+          maxLength: 6
+          description: PASSWORD_RESET 용도로 발송·검증된 6자리 인증번호
+        new_password:
+          type: string
+          minLength: 8
+          maxLength: 16
+          description: 새 비밀번호 (8~16자)
+
+    ChangePinRequest:
+      type: object
+      required: [password, new_pin]
+      properties:
+        password:
+          type: string
+          description: 본인 확인용 현재 비밀번호
+        new_pin:
+          type: string
+          pattern: '^\d{4,6}$'
+          description: 새 PIN (4~6자리 숫자)
+
     # ── Member ─────────────────────────────────────
     UserPreOrderInfoResponse:
       type: object
@@ -1355,6 +1524,39 @@ components:
         username:
           type: string
           description: 회원 이름
+
+    MemberInfoResponse:
+      type: object
+      description: 본인 회원정보. 자격증명(password/pin)과 CI 등 민감정보는 제외됨
+      properties:
+        username:
+          type: string
+          description: 이름
+        email:
+          type: string
+          format: email
+          description: 이메일
+        phone:
+          type: string
+          nullable: true
+          description: 전화번호
+        user_type:
+          type: string
+          enum: [STUDENT, PARENT, TEACHER, OTHER]
+          description: 회원 유형
+        role:
+          type: string
+          enum: [ROLE_DEACTIVATED, ROLE_USER, ROLE_MEMBER, ROLE_COOP, ROLE_ADMIN]
+          description: 권한
+        cooperative_number:
+          type: string
+          nullable: true
+          description: 조합원 번호
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          description: 생년월일 (YYYY-MM-DD)
 
     UserBarcodeResponse:
       type: object

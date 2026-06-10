@@ -161,7 +161,7 @@ class AuthControllerTest {
                 .content("""{"email": "not-an-email", "otp_code": "12"}"""),
         ).andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.email").value("올바른 이메일 형식이어야 합니다."))
-            .andExpect(jsonPath("$.otpCode").value("인증번호는 6자리여야 합니다."))
+            .andExpect(jsonPath("$.otp_code").value("인증번호는 6자리여야 합니다."))
     }
     @Test
     @DisplayName("회원가입 요청이 성공하면 201 Created를 반환한다")
@@ -198,10 +198,10 @@ class AuthControllerTest {
                 .content(
                     """
                     {
-                      "userCiNumber": "CI123",
+                      "user_ci_number": "CI123",
                       "username": "홍길동",
-                      "userPhone": null,
-                      "userEmail": "test@test.com",
+                      "user_phone": null,
+                      "user_email": "test@test.com",
                       "password": "password1234",
                       "pin": "123456"
                     }
@@ -245,17 +245,17 @@ class AuthControllerTest {
                 .content(
                     """
                     {
-                      "userCiNumber": "CI123",
+                      "user_ci_number": "CI123",
                       "username": "홍길동",
-                      "userPhone": null,
-                      "userEmail": "invalid-email",
+                      "user_phone": null,
+                      "user_email": "invalid-email",
                       "password": "short",
                       "pin": "123456"
                     }
                     """.trimIndent(),
                 ),
         ).andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.userEmail").value("올바른 이메일 형식이어야 합니다."))
+            .andExpect(jsonPath("$.user_email").value("올바른 이메일 형식이어야 합니다."))
             .andExpect(jsonPath("$.password").value("비밀번호는 최소 8자 이상 16자 이하여야 합니다."))
     }
 
@@ -334,8 +334,8 @@ class AuthControllerTest {
                 .content(
                     """
                     {
-                      "userBarcode": "BARCODE123",
-                      "userPin": "123456"
+                      "user_barcode": "BARCODE123",
+                      "user_pin": "123456"
                     }
                     """.trimIndent(),
                 ),
@@ -416,10 +416,10 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{"identity_verification_id": "test-verification-id"}"""),
         ).andExpect(status().isOk)
-            .andExpect(jsonPath("$.userCiNumber").value("CI_TEST_123"))
+            .andExpect(jsonPath("$.user_ci_number").value("CI_TEST_123"))
             .andExpect(jsonPath("$.username").value("홍길동"))
-            .andExpect(jsonPath("$.userPhone").value("01012345678"))
-            .andExpect(jsonPath("$.birthDate").value("2000-01-15"))
+            .andExpect(jsonPath("$.user_phone").value("01012345678"))
+            .andExpect(jsonPath("$.birth_date").value("2000-01-15"))
     }
 
     @Test
@@ -492,8 +492,8 @@ class AuthControllerTest {
                 .content(
                     """
                     {
-                      "userBarcode": "BARCODE123",
-                      "userPin": "wrong-pin"
+                      "user_barcode": "BARCODE123",
+                      "user_pin": "wrong-pin"
                     }
                     """.trimIndent(),
                 ),
@@ -536,7 +536,7 @@ class AuthControllerTest {
         mockMvc.perform(
             post("/auth/password/change")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"email": "test@test.com", "otpCode": "123456", "newPassword": "newPassword1234"}"""),
+                .content("""{"email": "test@test.com", "otp_code": "123456", "new_password": "newPassword1234"}"""),
         ).andExpect(status().isNoContent)
     }
 
@@ -566,8 +566,8 @@ class AuthControllerTest {
         mockMvc.perform(
             post("/auth/password/change")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"email": "test@test.com", "otpCode": "123456", "newPassword": "short"}"""),
+                .content("""{"email": "test@test.com", "otp_code": "123456", "new_password": "short"}"""),
         ).andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.newPassword").value("비밀번호는 최소 8자 이상 16자 이하여야 합니다."))
+            .andExpect(jsonPath("$.new_password").value("비밀번호는 최소 8자 이상 16자 이하여야 합니다."))
     }
 }
