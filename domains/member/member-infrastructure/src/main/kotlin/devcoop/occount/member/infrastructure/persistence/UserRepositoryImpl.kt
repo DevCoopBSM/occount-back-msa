@@ -4,6 +4,7 @@ import devcoop.occount.member.domain.user.User
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.infrastructure.crypto.CryptoHelper
 import devcoop.occount.member.infrastructure.crypto.UniqueEncryptedValueGenerator
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Repository
@@ -34,16 +35,34 @@ class UserRepositoryImpl(
     }
 
     override fun save(user: User): User {
-        val encryptedPhone = encryptedValueGenerator.generate(user.getPhone(), userJpaRepository::existsByPhone)
-        val encryptedCiNumber = encryptedValueGenerator.generate(user.getCiNumber(), userJpaRepository::existsByUserCiNumber)
+        repeat(MAX_SAVE_ATTEMPTS) {
+            val encryptedPhone = encryptedValueGenerator.generate(user.getPhone(), userJpaRepository::existsByPhone)
+            val encryptedCiNumber = encryptedValueGenerator.generate(user.getCiNumber(), userJpaRepository::existsByUserCiNumber)
 
-        return userJpaRepository.saveAndFlush(
-            UserPersistenceMapper.toEntity(
-                domain = user,
-                encryptedPhone = encryptedPhone,
-                encryptedCiNumber = encryptedCiNumber,
-            ),
-        ).let { UserPersistenceMapper.toDomain(it, cryptoHelper) }
+            try {
+                return userJpaRepository.saveAndFlush(
+                    UserPersistenceMapper.toEntity(
+                        domain = user,
+                        encryptedPhone = encryptedPhone,
+                        encryptedCiNumber = encryptedCiNumber,
+                    ),
+                ).let { UserPersistenceMapper.toDomain(it, cryptoHelper) }
+            } catch (exception: DataIntegrityViolationException) {
+                if (!isSensitiveCiphertextCollision(encryptedPhone, encryptedCiNumber)) {
+                    throw exception
+                }
+            }
+        }
+
+        throw IllegalStateException("Failed to save user with unique encrypted sensitive information.")
+    }
+
+    private fun isSensitiveCiphertextCollision(
+        encryptedPhone: String?,
+        encryptedCiNumber: String?,
+    ): Boolean {
+        return encryptedPhone?.let(userJpaRepository::existsByPhone) == true ||
+            encryptedCiNumber?.let(userJpaRepository::existsByUserCiNumber) == true
     }
 
     override fun findAll(pageable: Pageable): Page<User> {
@@ -63,4 +82,8 @@ class UserRepositoryImpl(
             .replace("_", "\\_")
 
     private val encryptedValueGenerator = UniqueEncryptedValueGenerator(cryptoHelper)
+
+    companion object {
+        private const val MAX_SAVE_ATTEMPTS = 10
+    }
 }

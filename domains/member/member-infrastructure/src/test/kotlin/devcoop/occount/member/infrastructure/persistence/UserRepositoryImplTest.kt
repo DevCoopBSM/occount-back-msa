@@ -2,6 +2,7 @@ package devcoop.occount.member.infrastructure.persistence
 
 import devcoop.occount.member.domain.user.*
 import devcoop.occount.member.infrastructure.crypto.CryptoHelper
+import org.springframework.dao.DataIntegrityViolationException
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -130,6 +131,49 @@ class UserRepositoryImplTest {
         val result = userRepositoryImpl.save(domainToSave)
 
         assertEquals(10L, result.getId())
+        verify(userJpaRepository).saveAndFlush(anyArg())
+    }
+
+    @Test
+    @DisplayName("저장 시점에 민감정보 암호문 unique 충돌이 발생하면 다시 암호화해 저장한다")
+    fun `save retries with re-encrypted sensitive values when saveAndFlush detects ciphertext collision`() {
+        val domainToSave = User(
+            userInfo = UserInfo("홍길동", "010-1234-5678", UserType.STUDENT, null, null),
+            accountInfo = AccountInfo("test@test.com", "encodedPassword", Role.ROLE_USER, "encodedPin"),
+            userSensitiveInfo = UserSensitiveInfo("CI123456"),
+        )
+        val savedEntity = createEntity(id = 10L)
+        `when`(userJpaRepository.existsByPhone(anyArg()))
+            .thenReturn(false)
+            .thenReturn(true)
+            .thenReturn(false)
+        `when`(userJpaRepository.existsByUserCiNumber(anyArg())).thenReturn(false)
+        `when`(userJpaRepository.saveAndFlush(anyArg<UserJpaEntity>()))
+            .thenThrow(DataIntegrityViolationException("duplicated ciphertext"))
+            .thenReturn(savedEntity)
+
+        val result = userRepositoryImpl.save(domainToSave)
+
+        assertEquals(10L, result.getId())
+        verify(userJpaRepository, times(2)).saveAndFlush(anyArg())
+    }
+
+    @Test
+    @DisplayName("민감정보 암호문 충돌이 아닌 저장 실패는 재시도하지 않고 전파한다")
+    fun `save rethrows non sensitive unique violation`() {
+        val domainToSave = User(
+            userInfo = UserInfo("홍길동", "010-1234-5678", UserType.STUDENT, null, null),
+            accountInfo = AccountInfo("test@test.com", "encodedPassword", Role.ROLE_USER, "encodedPin"),
+            userSensitiveInfo = UserSensitiveInfo("CI123456"),
+        )
+        `when`(userJpaRepository.existsByPhone(anyArg())).thenReturn(false)
+        `when`(userJpaRepository.existsByUserCiNumber(anyArg())).thenReturn(false)
+        `when`(userJpaRepository.saveAndFlush(anyArg<UserJpaEntity>()))
+            .thenThrow(DataIntegrityViolationException("duplicated email"))
+
+        assertThrows(DataIntegrityViolationException::class.java) {
+            userRepositoryImpl.save(domainToSave)
+        }
         verify(userJpaRepository).saveAndFlush(anyArg())
     }
 

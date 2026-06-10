@@ -67,6 +67,29 @@ class UserPersistenceMapperTest {
     }
 
     @Test
+    @DisplayName("기존 평문 민감정보를 가진 엔티티도 도메인 객체로 변환된다")
+    fun `toDomain preserves legacy plaintext sensitive values`() {
+        val entity = UserJpaEntity(
+            id = 5L,
+            username = "홍길동",
+            phone = "010-1234-5678",
+            userBarcode = "BARCODE123",
+            userType = UserType.STUDENT,
+            cooperativeNumber = "COOP001",
+            email = "test@test.com",
+            password = "encodedPassword",
+            role = Role.ROLE_USER,
+            pin = "encodedPin",
+            userCiNumber = "CI123456",
+        )
+
+        val domain = UserPersistenceMapper.toDomain(entity, cryptoHelper)
+
+        assertEquals("010-1234-5678", domain.getPhone())
+        assertEquals("CI123456", domain.getCiNumber())
+    }
+
+    @Test
     @DisplayName("도메인 객체를 JPA 엔티티로 변환하면 모든 필드가 올바르게 매핑된다")
     fun `toEntity maps all fields from domain to entity`() {
         val domain = createDomain(id = 5L)

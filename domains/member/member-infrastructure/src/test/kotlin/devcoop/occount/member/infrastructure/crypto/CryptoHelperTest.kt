@@ -35,6 +35,16 @@ class CryptoHelperTest {
     }
 
     @Test
+    @DisplayName("암호문이면 복호화하고 평문이면 그대로 반환한다")
+    fun `decryptIfEncrypted decrypts only encrypted value`() {
+        val encryptedText = cryptoHelper.encrypt("010-1234-5678")
+
+        assertEquals("010-1234-5678", cryptoHelper.decryptIfEncrypted(encryptedText))
+        assertEquals("plainText", cryptoHelper.decryptIfEncrypted("plainText"))
+        assertEquals("ENC:invalid", cryptoHelper.decryptIfEncrypted("ENC:invalid"))
+    }
+
+    @Test
     @DisplayName("길이가 충분한 Base64 envelope라도 GCM 복호화에 실패하면 암호문으로 판단하지 않는다")
     fun `isEncrypted returns false for envelope that cannot be decrypted`() {
         val invalidEnvelope = ByteArray(29) { index -> index.toByte() }
