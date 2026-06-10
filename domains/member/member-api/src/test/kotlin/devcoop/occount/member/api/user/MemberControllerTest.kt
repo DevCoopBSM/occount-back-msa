@@ -74,4 +74,37 @@ class MemberControllerTest {
             .andExpect(status().isUnauthorized)
             .andExpect(jsonPath("$.message").value("잘못된 토큰 형식입니다."))
     }
+
+    @Test
+    fun `find member info returns authenticated user member info response`() {
+        val mockMvc = mockMvc(
+            MemberController(
+                userQueryService = UserQueryService(
+                    FakeUserRepository(
+                        initialUsers = listOf(userFixture(id = 7L, username = "Tester", email = "tester@test.com")),
+                    ),
+                ),
+            ),
+        )
+
+        mockMvc.perform(
+            get("/users/me")
+                .header(AuthHeaders.AUTHENTICATED_USER_ID, "7"),
+        ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.username").value("Tester"))
+            .andExpect(jsonPath("$.email").value("tester@test.com"))
+    }
+
+    @Test
+    fun `find member info returns 401 when authenticated user header is missing`() {
+        val mockMvc = mockMvc(
+            MemberController(
+                userQueryService = UserQueryService(FakeUserRepository()),
+            ),
+        )
+
+        mockMvc.perform(get("/users/me"))
+            .andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$.message").value("잘못된 토큰 형식입니다."))
+    }
 }

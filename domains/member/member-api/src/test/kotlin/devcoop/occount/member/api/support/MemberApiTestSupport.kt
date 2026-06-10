@@ -9,6 +9,7 @@ import devcoop.occount.member.application.output.VerifiedIdentity
 import devcoop.occount.member.application.usecase.identity.VerifyIdentityUseCase
 import devcoop.occount.member.application.usecase.otp.SendEmailOtpUseCase
 import devcoop.occount.member.application.usecase.otp.VerifyEmailOtpUseCase
+import devcoop.occount.member.application.usecase.password.ChangePasswordUseCase
 import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.domain.user.User
@@ -123,6 +124,7 @@ class FakeIdentityVerificationClient(
         ciNumber = "CI_TEST_123",
         username = "홍길동",
         phone = "01012345678",
+        birthDate = java.time.LocalDate.of(2000, 1, 15),
     ),
 ) : IdentityVerificationClient {
     override fun verify(identityVerificationId: String): VerifiedIdentity = response
@@ -160,6 +162,15 @@ fun testVerifyEmailOtpUseCase(emailOtpRepository: EmailOtpRepository) =
     VerifyEmailOtpUseCase(
         emailOtpRepository = emailOtpRepository,
     )
+
+fun testChangePasswordUseCase(
+    userRepository: UserRepository = FakeUserRepository(),
+    emailOtpRepository: EmailOtpRepository = FakeEmailOtpRepository(),
+) = ChangePasswordUseCase(
+    userRepository = userRepository,
+    emailOtpRepository = emailOtpRepository,
+    passwordEncoder = FakePasswordEncoder(),
+)
 
 fun mockMvc(vararg controllers: Any): MockMvc {
     val messageConverter = JacksonJsonHttpMessageConverter(jacksonMapperBuilder())

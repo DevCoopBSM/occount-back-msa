@@ -17,6 +17,7 @@ import kotlin.test.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import java.time.LocalDate
 
 @DisplayName("RegisterUserUseCase 단위 테스트")
 class RegisterUserUseCaseTest {
@@ -24,6 +25,7 @@ class RegisterUserUseCaseTest {
         userCiNumber = "CI123456",
         username = "홍길동",
         userPhone = "010-1234-5678",
+        birthDate = LocalDate.of(2000, 1, 15),
         userEmail = "test@test.com",
         password = "password1234",
         pin = "123456",
