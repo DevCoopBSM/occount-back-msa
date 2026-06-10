@@ -1,5 +1,6 @@
 package devcoop.occount.inquiry.api.inquiry
 
+import devcoop.occount.core.common.auth.AuthPrincipal
 import devcoop.occount.inquiry.application.query.GetInquiryDetailQueryService
 import devcoop.occount.inquiry.application.query.GetInquiryListQueryService
 import devcoop.occount.inquiry.application.shared.InquiryDetailResponse
@@ -20,7 +21,6 @@ import org.mockito.Mockito.`when`
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
-import org.springframework.mock.web.MockHttpServletRequest
 import java.time.LocalDateTime
 
 @DisplayName("InquiryController 단위 테스트")
@@ -39,9 +39,7 @@ class InquiryControllerTest {
         controller = InquiryController(createInquiryUseCase, getInquiryListQueryService, getInquiryDetailQueryService)
     }
 
-    private fun httpRequest(userId: Long = 17L) = MockHttpServletRequest().also {
-        it.addHeader("X-Authenticated-User-Id", userId.toString())
-    }
+    private fun authPrincipal(userId: Long = 17L) = AuthPrincipal(userId)
 
     @Test
     @DisplayName("문의 제출 성공 시 CreateInquiryResponse를 반환한다")
@@ -58,7 +56,7 @@ class InquiryControllerTest {
         )
         `when`(createInquiryUseCase.create(17L, request)).thenReturn(expected)
 
-        val actual = controller.createInquiry(request, httpRequest(17L))
+        val actual = controller.createInquiry(request, authPrincipal(17L))
 
         assertSame(expected, actual)
         verify(createInquiryUseCase).create(17L, request)
@@ -86,7 +84,7 @@ class InquiryControllerTest {
         )
         `when`(getInquiryListQueryService.getList(17L, sanitizedPageable)).thenReturn(expected)
 
-        val actual = controller.getInquiryList(httpRequest(17L), pageable)
+        val actual = controller.getInquiryList(authPrincipal(17L), pageable)
 
         assertSame(expected, actual)
         verify(getInquiryListQueryService).getList(17L, sanitizedPageable)
@@ -107,7 +105,7 @@ class InquiryControllerTest {
         )
         `when`(getInquiryDetailQueryService.getDetail(17L, 1L)).thenReturn(expected)
 
-        val actual = controller.getInquiryDetail(1L, httpRequest(17L))
+        val actual = controller.getInquiryDetail(1L, authPrincipal(17L))
 
         assertSame(expected, actual)
         verify(getInquiryDetailQueryService).getDetail(17L, 1L)

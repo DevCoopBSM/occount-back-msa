@@ -362,13 +362,61 @@ paths:
         "404":
           description: 존재하지 않는 유저
 
-  /api/v3/users/pin/change:
+  /api/v3/users/pin/change-ticket:
     post:
       tags: [Member]
-      operationId: changePin
-      summary: PIN 변경 (비밀번호 확인)
+      operationId: issuePinChangeTicket
+      summary: PIN 변경 1단계 - 비밀번호 확인 및 변경 티켓 발급
       description: |
-        현재 비밀번호 확인으로 본인을 인증한 뒤 키오스크 결제용 PIN을 변경합니다. (AUTHENTICATED)
+        PIN 변경을 위해 현재 비밀번호만 먼저 검증하고, 성공 시 새 PIN 제출 단계
+        (PUT /users/pin)에서 사용할 1회용 변경 티켓 리소스를 생성합니다. 티켓은 발급받은
+        본인에게만 유효하며 짧은 시간(기본 300초) 뒤 만료되고, 사용되면 즉시 폐기됩니다.
+        (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyPasswordForPinChangeRequest'
+            example:
+              password: "pass1234"
+      responses:
+        "201":
+          description: 비밀번호 확인 성공, PIN 변경 티켓 발급
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PinChangeTicketResponse'
+        "400":
+          description: 요청 검증 실패 (비밀번호 누락 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: 인증 실패 또는 현재 비밀번호 불일치
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: 존재하지 않는 유저
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/users/pin:
+    put:
+      tags: [Member]
+      operationId: changePin
+      summary: PIN 변경 2단계 - 새 PIN 제출
+      description: |
+        1단계(POST /users/pin/change-ticket)에서 발급받은 1회용 티켓과 새 PIN으로
+        키오스크 결제용 PIN을 변경합니다. 티켓은 발급받은 본인에게만 유효하며, 변경이
+        완료되면 즉시 소비(폐기)됩니다. (AUTHENTICATED)
       security:
         - BearerAuth: []
       requestBody:
@@ -378,7 +426,7 @@ paths:
             schema:
               $ref: '#/components/schemas/ChangePinRequest'
             example:
-              password: "pass1234"
+              ticket: "qY3k...단계1에서_발급된_티켓"
               new_pin: "4321"
       responses:
         "204":
@@ -390,7 +438,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         "401":
-          description: 인증 실패 또는 현재 비밀번호 불일치
+          description: 인증 실패, 티켓 없음/불일치 또는 티켓 만료
           content:
             application/json:
               schema:
@@ -1505,13 +1553,32 @@ components:
           maxLength: 16
           description: 새 비밀번호 (8~16자)
 
-    ChangePinRequest:
+    VerifyPasswordForPinChangeRequest:
       type: object
-      required: [password, new_pin]
+      required: [password]
       properties:
         password:
           type: string
           description: 본인 확인용 현재 비밀번호
+
+    PinChangeTicketResponse:
+      type: object
+      properties:
+        ticket:
+          type: string
+          description: 새 PIN 제출(PUT /users/pin) 시 사용할 1회용 티켓
+        expires_in:
+          type: integer
+          format: int64
+          description: 티켓 만료까지 남은 시간(초)
+
+    ChangePinRequest:
+      type: object
+      required: [ticket, new_pin]
+      properties:
+        ticket:
+          type: string
+          description: 1단계(POST /users/pin/change-ticket)에서 발급받은 1회용 티켓
         new_pin:
           type: string
           pattern: '^\d{4,6}$'

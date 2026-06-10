@@ -40,6 +40,8 @@ class ApiAdviceHandler {
             ErrorMessage.EXPIRED_TOKEN,
             ErrorMessage.INVALID_PASSWORD,
             ErrorMessage.INVALID_PIN,
+            ErrorMessage.PIN_CHANGE_TICKET_NOT_FOUND,
+            ErrorMessage.PIN_CHANGE_TICKET_EXPIRED,
             ErrorMessage.OTP_EXPIRED,
             ErrorMessage.OTP_MISMATCH,
             ErrorMessage.OTP_LOCKED,
