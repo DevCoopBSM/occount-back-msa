@@ -1,6 +1,7 @@
 package devcoop.occount.inquiry.api.inquiry
 
-import devcoop.occount.core.common.auth.RequestAuthPrincipalResolver
+import devcoop.occount.core.common.auth.AuthPrincipal
+import devcoop.occount.core.common.auth.AuthUser
 import devcoop.occount.inquiry.application.query.GetInquiryDetailQueryService
 import devcoop.occount.inquiry.application.query.GetInquiryListQueryService
 import devcoop.occount.inquiry.application.shared.InquiryDetailResponse
@@ -8,7 +9,6 @@ import devcoop.occount.inquiry.application.shared.InquiryListResponse
 import devcoop.occount.inquiry.application.usecase.create.CreateInquiryRequest
 import devcoop.occount.inquiry.application.usecase.create.CreateInquiryResponse
 import devcoop.occount.inquiry.application.usecase.create.CreateInquiryUseCase
-import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -40,20 +40,18 @@ class InquiryController(
     @ResponseStatus(HttpStatus.CREATED)
     fun createInquiry(
         @Valid @RequestBody request: CreateInquiryRequest,
-        httpRequest: HttpServletRequest,
+        @AuthUser principal: AuthPrincipal,
     ): CreateInquiryResponse {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return createInquiryUseCase.create(userId, request)
+        return createInquiryUseCase.create(principal.userId, request)
     }
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     fun getInquiryList(
-        httpRequest: HttpServletRequest,
+        @AuthUser principal: AuthPrincipal,
         @PageableDefault(size = 20, sort = ["createdAt"], direction = Sort.Direction.DESC) pageable: Pageable,
     ): InquiryListResponse {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return getInquiryListQueryService.getList(userId, sanitizePageable(pageable))
+        return getInquiryListQueryService.getList(principal.userId, sanitizePageable(pageable))
     }
 
     private fun sanitizePageable(pageable: Pageable): Pageable {
@@ -67,9 +65,8 @@ class InquiryController(
     @ResponseStatus(HttpStatus.OK)
     fun getInquiryDetail(
         @PathVariable inquiryId: Long,
-        httpRequest: HttpServletRequest,
+        @AuthUser principal: AuthPrincipal,
     ): InquiryDetailResponse {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return getInquiryDetailQueryService.getDetail(userId, inquiryId)
+        return getInquiryDetailQueryService.getDetail(principal.userId, inquiryId)
     }
 }

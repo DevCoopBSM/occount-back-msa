@@ -1,6 +1,7 @@
 package devcoop.occount.suggestion.api.aripick
 
 import devcoop.occount.core.common.auth.AuthHeaders
+import devcoop.occount.core.common.auth.AuthPrincipalArgumentResolver
 import devcoop.occount.suggestion.api.support.ApiAdviceHandler
 import devcoop.occount.suggestion.application.query.AripickFoodQueryService
 import devcoop.occount.suggestion.application.query.AripickFoodSearchItemResponse
@@ -31,6 +32,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import tools.jackson.databind.PropertyNamingStrategies
+import tools.jackson.module.kotlin.jacksonMapperBuilder
 
 class AripickControllerTest {
     @Test
@@ -45,8 +48,8 @@ class AripickControllerTest {
 
         mockMvc.perform(get("/ari-pick"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.aripickItems.length()").value(1))
-            .andExpect(jsonPath("$.aripickItems[0].proposalId").value(1))
+            .andExpect(jsonPath("$.aripick_items.length()").value(1))
+            .andExpect(jsonPath("$.aripick_items[0].proposal_id").value(1))
     }
 
     @Test
@@ -57,7 +60,7 @@ class AripickControllerTest {
 
         mockMvc.perform(get("/ari-pick/1"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.proposalId").value(1))
+            .andExpect(jsonPath("$.proposal_id").value(1))
             .andExpect(jsonPath("$.name").value("제로콜라"))
     }
 
@@ -76,7 +79,7 @@ class AripickControllerTest {
 
         mockMvc.perform(get("/ari-pick/stats"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.totalProposals").value(10))
+            .andExpect(jsonPath("$.total_proposals").value(10))
             .andExpect(jsonPath("$.approved").value(3))
     }
 
@@ -100,7 +103,7 @@ class AripickControllerTest {
         mockMvc.perform(get("/ari-pick/foods").param("keyword", "신라면"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.items.length()").value(1))
-            .andExpect(jsonPath("$.items[0].typeNSeq").value(14116))
+            .andExpect(jsonPath("$.items[0].type_n_seq").value(14116))
     }
 
     @Test
@@ -143,7 +146,7 @@ class AripickControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{"keyword":"에너지"}"""),
         ).andExpect(status().isCreated)
-            .andExpect(jsonPath("$.keywordId").value(1))
+            .andExpect(jsonPath("$.keyword_id").value(1))
     }
 
     @Test
@@ -164,9 +167,9 @@ class AripickControllerTest {
             post("/ari-pick")
                 .header(AuthHeaders.AUTHENTICATED_USER_ID, "7")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"typeNSeq":14116,"reason":"원함"}"""),
+                .content("""{"type_n_seq":14116,"reason":"원함"}"""),
         ).andExpect(status().isCreated)
-            .andExpect(jsonPath("$.proposalId").value(1))
+            .andExpect(jsonPath("$.proposal_id").value(1))
     }
 
     @Test
@@ -217,7 +220,7 @@ class AripickControllerTest {
                 .header(AuthHeaders.AUTHENTICATED_USER_ID, "7"),
         ).andExpect(status().isOk)
             .andExpect(jsonPath("$.liked").value(true))
-            .andExpect(jsonPath("$.likeCount").value(3))
+            .andExpect(jsonPath("$.like_count").value(3))
     }
 
     private fun mockMvc(
@@ -232,9 +235,15 @@ class AripickControllerTest {
             aripickCommandUseCase = aripickCommandUseCase,
             aripickPolicyUseCase = aripickPolicyUseCase,
         )
-        val converter = JacksonJsonHttpMessageConverter()
+        // 실제 suggestion-api 설정(spring.jackson.property-naming-strategy: SNAKE_CASE)과 동일한
+        // 직렬화 규칙으로 컨트롤러 계약을 검증한다.
+        val objectMapper = jacksonMapperBuilder()
+            .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+            .build()
+        val converter = JacksonJsonHttpMessageConverter(objectMapper)
         return MockMvcBuilders.standaloneSetup(controller)
             .setControllerAdvice(ApiAdviceHandler())
+            .setCustomArgumentResolvers(AuthPrincipalArgumentResolver())
             .setMessageConverters(converter)
             .build()
     }

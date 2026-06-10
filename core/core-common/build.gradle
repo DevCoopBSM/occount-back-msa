@@ -4,4 +4,7 @@ plugins {
 
 dependencies {
     compileOnly 'jakarta.servlet:jakarta.servlet-api'
+    compileOnly 'org.springframework:spring-web'
+    compileOnly 'org.springframework:spring-webmvc'
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
 }
