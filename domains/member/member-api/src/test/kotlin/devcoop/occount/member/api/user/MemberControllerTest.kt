@@ -65,7 +65,7 @@ class MemberControllerTest {
             get("/users/barcode")
                 .header(AuthHeaders.AUTHENTICATED_USER_ID, "7"),
         ).andExpect(status().isOk)
-            .andExpect(jsonPath("$.userBarcode").value("BARCODE-007"))
+            .andExpect(jsonPath("$.user_barcode").value("BARCODE-007"))
     }
 
     @Test
@@ -132,7 +132,7 @@ class MemberControllerTest {
             post("/users/pin/change")
                 .header(AuthHeaders.AUTHENTICATED_USER_ID, "7")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"password": "password1234", "newPin": "4321"}"""),
+                .content("""{"password": "password1234", "new_pin": "4321"}"""),
         ).andExpect(status().isNoContent)
     }
 
@@ -151,7 +151,7 @@ class MemberControllerTest {
             post("/users/pin/change")
                 .header(AuthHeaders.AUTHENTICATED_USER_ID, "7")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"password": "wrong-password", "newPin": "4321"}"""),
+                .content("""{"password": "wrong-password", "new_pin": "4321"}"""),
         ).andExpect(status().isUnauthorized)
             .andExpect(jsonPath("$.message").value("비밀번호가 일치하지 않습니다."))
     }
@@ -171,7 +171,7 @@ class MemberControllerTest {
             post("/users/pin/change")
                 .header(AuthHeaders.AUTHENTICATED_USER_ID, "7")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"password": "password1234", "newPin": "abc"}"""),
+                .content("""{"password": "password1234", "new_pin": "abc"}"""),
         ).andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.newPin").value("PIN은 4~6자리 숫자여야 합니다."))
     }
@@ -188,7 +188,7 @@ class MemberControllerTest {
         mockMvc.perform(
             post("/users/pin/change")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"password": "password1234", "newPin": "4321"}"""),
+                .content("""{"password": "password1234", "new_pin": "4321"}"""),
         ).andExpect(status().isUnauthorized)
             .andExpect(jsonPath("$.message").value("잘못된 토큰 형식입니다."))
     }
