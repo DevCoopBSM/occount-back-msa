@@ -2,9 +2,11 @@ package devcoop.occount.member.application.support
 
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.member.application.output.EmailOtpRepository
+import devcoop.occount.member.application.output.PinChangeTicketRepository
 import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.application.otp.EmailOtp
+import devcoop.occount.member.application.pin.PinChangeTicket
 import devcoop.occount.member.domain.user.User
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -97,6 +99,32 @@ fun verifiedEmailOtp(email: String, otpCode: String = "123456"): EmailOtp =
         createdAt = Instant.now(),
         verified = true,
     )
+
+class FakePinChangeTicketRepository(
+    initialTickets: List<PinChangeTicket> = emptyList(),
+) : PinChangeTicketRepository {
+    private val ticketsByToken = linkedMapOf<String, PinChangeTicket>().apply {
+        initialTickets.forEach { put(it.token, it) }
+    }
+
+    val savedTickets = mutableListOf<PinChangeTicket>()
+
+    override fun save(ticket: PinChangeTicket): PinChangeTicket {
+        ticketsByToken[ticket.token] = ticket
+        savedTickets += ticket
+        return ticket
+    }
+
+    override fun findByToken(token: String): PinChangeTicket? = ticketsByToken[token]
+
+    override fun deleteByToken(token: String) {
+        ticketsByToken.remove(token)
+    }
+
+    override fun deleteByUserId(userId: Long) {
+        ticketsByToken.values.removeIf { it.userId == userId }
+    }
+}
 
 class FakeTokenGenerator : TokenGenerator {
     override fun createAccessToken(userId: Long, role: String): String = "access-$userId-$role"

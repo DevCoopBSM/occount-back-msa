@@ -1,17 +1,21 @@
 package devcoop.occount.member.api.support
 
+import devcoop.occount.core.common.auth.AuthPrincipalArgumentResolver
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.member.application.otp.EmailOtp
 import devcoop.occount.member.application.otp.OtpPurpose
 import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.output.EmailSender
 import devcoop.occount.member.application.output.IdentityVerificationClient
+import devcoop.occount.member.application.output.PinChangeTicketRepository
 import devcoop.occount.member.application.output.VerifiedIdentity
+import devcoop.occount.member.application.pin.PinChangeTicket
 import devcoop.occount.member.application.usecase.identity.VerifyIdentityUseCase
 import devcoop.occount.member.application.usecase.otp.SendEmailOtpUseCase
 import devcoop.occount.member.application.usecase.otp.VerifyEmailOtpUseCase
 import devcoop.occount.member.application.usecase.password.ChangePasswordUseCase
 import devcoop.occount.member.application.usecase.pin.ChangePinUseCase
+import devcoop.occount.member.application.usecase.pin.VerifyPasswordForPinChangeUseCase
 import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.domain.user.User
@@ -122,6 +126,37 @@ class FakeEmailOtpRepository(
     }
 }
 
+class FakePinChangeTicketRepository(
+    initialTickets: List<PinChangeTicket> = emptyList(),
+) : PinChangeTicketRepository {
+    private val ticketsByToken = linkedMapOf<String, PinChangeTicket>().apply {
+        initialTickets.forEach { put(it.token, it) }
+    }
+
+    override fun save(ticket: PinChangeTicket): PinChangeTicket {
+        ticketsByToken[ticket.token] = ticket
+        return ticket
+    }
+
+    override fun findByToken(token: String): PinChangeTicket? = ticketsByToken[token]
+
+    override fun deleteByToken(token: String) {
+        ticketsByToken.remove(token)
+    }
+
+    override fun deleteByUserId(userId: Long) {
+        ticketsByToken.values.removeIf { it.userId == userId }
+    }
+}
+
+fun validPinChangeTicket(token: String, userId: Long): PinChangeTicket =
+    PinChangeTicket(
+        token = token,
+        userId = userId,
+        expiresAt = Instant.now().plusSeconds(PinChangeTicket.TTL_SECONDS),
+        createdAt = Instant.now(),
+    )
+
 class FakeIdentityVerificationClient(
     private val response: VerifiedIdentity = VerifiedIdentity(
         ciNumber = "CI_TEST_123",
@@ -186,8 +221,19 @@ fun testChangePasswordUseCase(
 
 fun testChangePinUseCase(
     userRepository: UserRepository = FakeUserRepository(),
+    pinChangeTicketRepository: PinChangeTicketRepository = FakePinChangeTicketRepository(),
 ) = ChangePinUseCase(
     userRepository = userRepository,
+    pinChangeTicketRepository = pinChangeTicketRepository,
+    passwordEncoder = FakePasswordEncoder(),
+)
+
+fun testVerifyPasswordForPinChangeUseCase(
+    userRepository: UserRepository = FakeUserRepository(),
+    pinChangeTicketRepository: PinChangeTicketRepository = FakePinChangeTicketRepository(),
+) = VerifyPasswordForPinChangeUseCase(
+    userRepository = userRepository,
+    pinChangeTicketRepository = pinChangeTicketRepository,
     passwordEncoder = FakePasswordEncoder(),
 )
 
@@ -200,6 +246,7 @@ fun mockMvc(vararg controllers: Any): MockMvc {
     val messageConverter = JacksonJsonHttpMessageConverter(objectMapper)
     return MockMvcBuilders.standaloneSetup(*controllers)
         .setControllerAdvice(ApiAdviceHandler())
+        .setCustomArgumentResolvers(AuthPrincipalArgumentResolver())
         .setMessageConverters(messageConverter)
         .build()
 }

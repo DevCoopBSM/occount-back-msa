@@ -24,6 +24,8 @@ enum class ErrorMessage(
 
 
     INVALID_PIN("핀번호가 틀렸습니다."),
+    PIN_CHANGE_TICKET_NOT_FOUND("비밀번호 확인이 필요합니다. 비밀번호 확인을 먼저 진행해주세요."),
+    PIN_CHANGE_TICKET_EXPIRED("비밀번호 확인이 만료되었습니다. 비밀번호 확인을 다시 진행해주세요."),
 
 
     ITEM_STOCK_NEGATIVE("요청으로 인해 재고가 부족합니다. 재고 수량을 확인해주세요."),
