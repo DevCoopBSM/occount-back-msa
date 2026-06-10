@@ -13,6 +13,7 @@ class VerifyIdentityUseCase(
             userCiNumber = identity.ciNumber,
             username = identity.username,
             userPhone = identity.phone,
+            birthDate = identity.birthDate,
         )
     }
 }

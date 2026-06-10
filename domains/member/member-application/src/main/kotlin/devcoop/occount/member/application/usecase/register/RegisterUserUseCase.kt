@@ -37,6 +37,7 @@ class RegisterUserUseCase(
                     email = request.userEmail,
                     encodedPassword = passwordEncoder.encode(request.password)!!,
                     encodedPin = passwordEncoder.encode(request.pin)!!,
+                    birthDate = request.birthDate,
                 )
             )
         } catch (_: DataIntegrityViolationException) {

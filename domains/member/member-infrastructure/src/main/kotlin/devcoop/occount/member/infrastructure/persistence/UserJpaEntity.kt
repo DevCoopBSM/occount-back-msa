@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import java.time.LocalDate
 
 @Entity
 @Table(name = "common_user")
@@ -39,4 +40,6 @@ class UserJpaEntity(
     val pin: String = "",
     @field:Column(unique = true)
     val userCiNumber: String? = null,
+    @field:Column
+    val birthDate: LocalDate? = null,
 )

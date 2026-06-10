@@ -10,6 +10,8 @@ import devcoop.occount.member.application.usecase.login.LoginUserUseCase
 import devcoop.occount.member.application.usecase.login.MemberLoginRequest
 import devcoop.occount.member.application.usecase.otp.SendEmailOtpUseCase
 import devcoop.occount.member.application.usecase.otp.VerifyEmailOtpUseCase
+import devcoop.occount.member.application.usecase.password.ChangePasswordRequest
+import devcoop.occount.member.application.usecase.password.ChangePasswordUseCase
 import devcoop.occount.member.application.usecase.register.MemberRegisterRequest
 import devcoop.occount.member.application.usecase.register.RegisterUserUseCase
 import jakarta.servlet.http.HttpServletResponse
@@ -31,6 +33,7 @@ class AuthController(
     private val sendEmailOtpUseCase: SendEmailOtpUseCase,
     private val verifyEmailOtpUseCase: VerifyEmailOtpUseCase,
     private val verifyIdentityUseCase: VerifyIdentityUseCase,
+    private val changePasswordUseCase: ChangePasswordUseCase,
 ) {
     @PostMapping("/email/send-otp")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -54,6 +57,12 @@ class AuthController(
     fun register(@Valid @RequestBody request: MemberRegisterRequest): ResponseEntity<Void> {
         registerUserUseCase.register(request)
         return ResponseEntity.status(HttpStatus.CREATED).build()
+    }
+
+    @PostMapping("/password/change")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun changePassword(@Valid @RequestBody request: ChangePasswordRequest) {
+        changePasswordUseCase.changePassword(request)
     }
 
     @PostMapping("/login")

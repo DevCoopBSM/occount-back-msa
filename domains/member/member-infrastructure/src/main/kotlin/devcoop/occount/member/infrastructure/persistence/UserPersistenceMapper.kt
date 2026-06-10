@@ -15,6 +15,7 @@ object UserPersistenceMapper {
                 userBarcode = entity.userBarcode,
                 userType = entity.userType,
                 cooperativeNumber = entity.cooperativeNumber,
+                birthDate = entity.birthDate,
             ),
             accountInfo = AccountInfo(
                 email = entity.email,
@@ -41,6 +42,7 @@ object UserPersistenceMapper {
             role = domain.getRole(),
             pin = domain.getUserPin(),
             userCiNumber = domain.getCiNumber(),
+            birthDate = domain.getBirthDate(),
         )
     }
 }

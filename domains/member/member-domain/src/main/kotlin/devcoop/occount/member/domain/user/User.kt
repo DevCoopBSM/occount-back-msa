@@ -1,5 +1,7 @@
 package devcoop.occount.member.domain.user
 
+import java.time.LocalDate
+
 data class User(
     private val id: Long = 0L,
     private val userInfo: UserInfo,
@@ -14,6 +16,7 @@ data class User(
     fun getId(): Long = id
     fun getUserPin(): String = accountInfo.pin
     fun getUserBarcode(): String? = userInfo.userBarcode
+    fun getBirthDate(): LocalDate? = userInfo.birthDate
     fun getEmail(): String = accountInfo.email
     fun getPassword(): String = accountInfo.password
     fun getCiNumber(): String? = userSensitiveInfo.ciNumber
@@ -26,6 +29,9 @@ data class User(
 
     fun withBarcode(barcode: String): User = copy(userInfo = userInfo.copy(userBarcode = barcode))
 
+    fun changePassword(encodedPassword: String): User =
+        copy(accountInfo = accountInfo.copy(password = encodedPassword))
+
     companion object {
         fun register(
             userCiNumber: String,
@@ -34,6 +40,7 @@ data class User(
             email: String,
             encodedPassword: String,
             encodedPin: String,
+            birthDate: LocalDate? = null,
         ): User {
             return User(
                 userInfo = UserInfo(
@@ -42,6 +49,7 @@ data class User(
                     userType = UserType.STUDENT,
                     cooperativeNumber = null,
                     userBarcode = null,
+                    birthDate = birthDate,
                 ),
                 accountInfo = AccountInfo(
                     email = email,

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
+import java.time.LocalDate
 
 data class MemberRegisterRequest(
     @field:NotBlank(message = "유저 Ci번호는 비어있을 수 없습니다.")
@@ -14,6 +15,8 @@ data class MemberRegisterRequest(
     val username: String,
 
     val userPhone: String?,
+
+    val birthDate: LocalDate?,
 
     @field:NotBlank(message = "유저 이메일은 비어있을 수 없습니다.")
     @field:Email(message = "올바른 이메일 형식이어야 합니다.")
