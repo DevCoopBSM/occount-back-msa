@@ -9,4 +9,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
     testImplementation project(':domains:suggestion:suggestion-domain')
+    testImplementation 'tools.jackson.core:jackson-databind'
+    testImplementation 'tools.jackson.module:jackson-module-kotlin'
 }

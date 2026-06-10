@@ -103,7 +103,7 @@ class AripickControllerTest {
         mockMvc.perform(get("/ari-pick/foods").param("keyword", "신라면"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.items.length()").value(1))
-            .andExpect(jsonPath("$.items[0].type_n_seq").value(14116))
+            .andExpect(jsonPath("$.items[0].type_nseq").value(14116))
     }
 
     @Test
@@ -167,7 +167,7 @@ class AripickControllerTest {
             post("/ari-pick")
                 .header(AuthHeaders.AUTHENTICATED_USER_ID, "7")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"type_n_seq":14116,"reason":"원함"}"""),
+                .content("""{"type_nseq":14116,"reason":"원함"}"""),
         ).andExpect(status().isCreated)
             .andExpect(jsonPath("$.proposal_id").value(1))
     }
