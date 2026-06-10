@@ -989,7 +989,7 @@ paths:
       description: |
         주문을 생성합니다. (OPTIONAL_AUTH)
 
-        - `X-Kiosk-Id` 헤더가 없으면 기본값 `1`을 사용합니다.
+        - `X-Kiosk-Id` 헤더는 **필수**입니다. 없으면 400을 반환합니다.
         - 토큰이 있으면 회원 주문, 없으면 비회원 주문으로 처리합니다.
         - 요청 즉시 `PROCESSING` 상태로 응답하며, 실제 처리는 비동기로 수행됩니다.
         - 상품 검증, 가격 확정, 재고 차감은 비동기로 처리됩니다.
@@ -999,11 +999,10 @@ paths:
       parameters:
         - name: X-Kiosk-Id
           in: header
-          required: false
-          description: 키오스크 식별자. 없으면 `1`
+          required: true
+          description: 키오스크 식별자 (필수)
           schema:
             type: string
-            default: "1"
           example: "1"
       security:
         - {}
@@ -1294,26 +1293,6 @@ paths:
                 $ref: '#/components/schemas/WalletPointResponse'
               example:
                 point: 3500
-        "401":
-          description: 인증 실패
-
-  /api/v3/wallet/charges:
-    get:
-      tags: [Wallet]
-      operationId: getChargeHistory
-      summary: 포인트 충전 내역 조회
-      description: 로그인한 회원의 전체 포인트 충전/차감 내역을 반환합니다. (AUTHENTICATED)
-      security:
-        - BearerAuth: []
-      responses:
-        "200":
-          description: 조회 성공
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ChargeLogResult'
         "401":
           description: 인증 실패
 
@@ -2026,33 +2005,6 @@ components:
         point:
           type: integer
           description: 현재 포인트 잔액
-
-    ChargeLogResult:
-      type: object
-      properties:
-        chargeId:
-          type: integer
-          format: int64
-        userId:
-          type: integer
-          format: int64
-        chargeDate:
-          type: string
-          format: date-time
-        chargeAmount:
-          type: integer
-          description: 변동 포인트량 (음수면 차감)
-        paymentId:
-          type: integer
-          format: int64
-          nullable: true
-        beforePoint:
-          type: integer
-        afterPoint:
-          type: integer
-        reason:
-          type: string
-          nullable: true
 
     # ── Inquiry ────────────────────────────────────
     CreateInquiryRequest:
