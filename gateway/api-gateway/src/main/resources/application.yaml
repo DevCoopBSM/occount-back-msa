@@ -29,6 +29,18 @@ spring:
               max-connections: 100
               acquire-timeout: 30000
           routes:
+            - id: member-api-otp
+              uri: ${MEMBER_API_URL}
+              predicates:
+                - Path=/api/v3/auth/email/**
+              metadata:
+                response-timeout: 90000
+            - id: member-api-identity
+              uri: ${MEMBER_API_URL}
+              predicates:
+                - Path=/api/v3/auth/identity/**
+              metadata:
+                response-timeout: 35000
             - id: member-api
               uri: ${MEMBER_API_URL}
               predicates:

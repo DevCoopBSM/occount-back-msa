@@ -2,11 +2,21 @@ package devcoop.occount.member.application.support
 
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.member.application.output.EmailOtpRepository
+import devcoop.occount.member.application.output.PinChangeTicketRepository
 import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.application.otp.EmailOtp
+import devcoop.occount.member.application.pin.PinChangeTicket
+import devcoop.occount.member.domain.user.AccountInfo
+import devcoop.occount.member.domain.user.Role
 import devcoop.occount.member.domain.user.User
+import devcoop.occount.member.domain.user.UserInfo
+import devcoop.occount.member.domain.user.UserSensitiveInfo
+import devcoop.occount.member.domain.user.UserType
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.security.crypto.password.PasswordEncoder
 import java.time.Instant
 
@@ -19,17 +29,25 @@ fun userFixture(
     encodedPassword: String = sharedPasswordEncoder.encode("rawPassword"),
     encodedPin: String = sharedPasswordEncoder.encode("123456"),
     barcode: String? = "BARCODE123",
-): User {
-    val user = User.register(
-        userCiNumber = "CI123456",
+    cooperativeNumber: String? = null,
+): User = User(
+    id = id,
+    userInfo = UserInfo(
         username = username,
         phone = "010-1234-5678",
+        userType = UserType.STUDENT,
+        cooperativeNumber = cooperativeNumber,
+        userBarcode = barcode,
+        birthDate = null,
+    ),
+    accountInfo = AccountInfo(
         email = email,
-        encodedPassword = encodedPassword,
-        encodedPin = encodedPin,
-    )
-    return (if (barcode != null) user.withBarcode(barcode) else user).copy(id = id)
-}
+        password = encodedPassword,
+        role = Role.ROLE_USER,
+        pin = encodedPin,
+    ),
+    userSensitiveInfo = UserSensitiveInfo(ciNumber = "CI123456"),
+)
 
 class FakeUserRepository(
     initialUsers: List<User> = emptyList(),
@@ -65,7 +83,26 @@ class FakeUserRepository(
         savedUsers += persistedUser
         return persistedUser
     }
+
+    override fun findAll(pageable: Pageable): Page<User> {
+        val all = usersById.values.toList()
+        val from = (pageable.pageNumber * pageable.pageSize).coerceAtMost(all.size)
+        val to = (from + pageable.pageSize).coerceAtMost(all.size)
+        return PageImpl(all.subList(from, to), pageable, all.size.toLong())
+    }
+
+    override fun searchByKeyword(keyword: String, pageable: Pageable): Page<User> {
+        val matched = usersById.values.filter { it.matchesKeyword(keyword) }
+        val from = (pageable.pageNumber * pageable.pageSize).coerceAtMost(matched.size)
+        val to = (from + pageable.pageSize).coerceAtMost(matched.size)
+        return PageImpl(matched.subList(from, to), pageable, matched.size.toLong())
+    }
 }
+
+internal fun User.matchesKeyword(keyword: String): Boolean =
+    getUsername().contains(keyword) ||
+        getEmail().contains(keyword) ||
+        (getCooperativeNumber()?.contains(keyword) == true)
 
 class FakeEmailOtpRepository(
     initialOtpsByEmail: Map<String, EmailOtp> = emptyMap(),
@@ -94,8 +131,35 @@ fun verifiedEmailOtp(email: String, otpCode: String = "123456"): EmailOtp =
         email = email,
         otpCode = otpCode,
         expiresAt = Instant.now().plusSeconds(EmailOtp.OTP_TTL_SECONDS),
+        createdAt = Instant.now(),
         verified = true,
     )
+
+class FakePinChangeTicketRepository(
+    initialTickets: List<PinChangeTicket> = emptyList(),
+) : PinChangeTicketRepository {
+    private val ticketsByToken = linkedMapOf<String, PinChangeTicket>().apply {
+        initialTickets.forEach { put(it.token, it) }
+    }
+
+    val savedTickets = mutableListOf<PinChangeTicket>()
+
+    override fun save(ticket: PinChangeTicket): PinChangeTicket {
+        ticketsByToken[ticket.token] = ticket
+        savedTickets += ticket
+        return ticket
+    }
+
+    override fun findByToken(token: String): PinChangeTicket? = ticketsByToken[token]
+
+    override fun deleteByToken(token: String) {
+        ticketsByToken.remove(token)
+    }
+
+    override fun deleteByUserId(userId: Long) {
+        ticketsByToken.values.removeIf { it.userId == userId }
+    }
+}
 
 class FakeTokenGenerator : TokenGenerator {
     override fun createAccessToken(userId: Long, role: String): String = "access-$userId-$role"

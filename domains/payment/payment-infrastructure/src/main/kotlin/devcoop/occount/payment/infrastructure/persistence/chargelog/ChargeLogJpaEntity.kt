@@ -24,8 +24,10 @@ class ChargeLogJpaEntity(
     @Enumerated(EnumType.STRING)
     @Column(name = "charge_type", nullable = false)
     private var chargeReason: ChargeReason,
-    @field:Column(name = "detail_reason")
+    @field:Column(name = "detail_reason", length = 255)
     private var detailReason: String? = null,
+    @field:Column(name = "charged_by")
+    private var chargedBy: Long? = null,
 ) {
     fun getChargeId() = chargeId
     fun getUserId() = userId
@@ -34,4 +36,5 @@ class ChargeLogJpaEntity(
     fun getPointTransaction() = pointTransaction
     fun getChargeReason() = chargeReason
     fun getDetailReason() = detailReason
+    fun getChargedBy() = chargedBy
 }

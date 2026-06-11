@@ -12,21 +12,23 @@ import devcoop.occount.member.application.support.duplicateUserSaveException
 import devcoop.occount.member.application.support.verifiedEmailOtp
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import java.time.LocalDate
 
 @DisplayName("RegisterUserUseCase 단위 테스트")
 class RegisterUserUseCaseTest {
-    private val defaultPin = "000000"
-
     private val request = MemberRegisterRequest(
         userCiNumber = "CI123456",
         username = "홍길동",
         userPhone = "010-1234-5678",
+        birthDate = LocalDate.of(2000, 1, 15),
         userEmail = "test@test.com",
         password = "password1234",
+        pin = "123456",
     )
 
     @Test
@@ -44,7 +46,6 @@ class RegisterUserUseCaseTest {
             eventPublisher = eventPublisher,
             passwordEncoder = FakePasswordEncoder(),
             emailOtpRepository = emailOtpRepository,
-            defaultPin = defaultPin,
         )
 
         registerUserUseCase.register(request)
@@ -53,8 +54,9 @@ class RegisterUserUseCaseTest {
         val publishedEvent = eventPublisher.published.single().payload as MemberRegisteredEvent
 
         assertEquals(savedUser.getId(), publishedEvent.userId)
+        assertNull(savedUser.getUserBarcode())
         assertTrue(savedUser.matchesPassword(request.password) { raw, enc -> enc == "encoded:$raw" })
-        assertTrue(savedUser.matchesPin(defaultPin) { raw, enc -> enc == "encoded:$raw" })
+        assertTrue(savedUser.matchesPin(request.pin) { raw, enc -> enc == "encoded:$raw" })
     }
 
     @Test
@@ -70,7 +72,6 @@ class RegisterUserUseCaseTest {
             eventPublisher = FakeEventPublisher(),
             passwordEncoder = FakePasswordEncoder(),
             emailOtpRepository = emailOtpRepository,
-            defaultPin = defaultPin,
         )
 
         assertFailsWith<EmailNotVerifiedException> {
@@ -86,7 +87,6 @@ class RegisterUserUseCaseTest {
             eventPublisher = FakeEventPublisher(),
             passwordEncoder = FakePasswordEncoder(),
             emailOtpRepository = FakeEmailOtpRepository(),
-            defaultPin = defaultPin,
         )
 
         assertFailsWith<EmailNotVerifiedException> {
@@ -103,6 +103,7 @@ class RegisterUserUseCaseTest {
                     email = request.userEmail,
                     otpCode = "123456",
                     expiresAt = Instant.now().minusSeconds(1),
+                    createdAt = Instant.now(),
                     verified = true,
                 ),
             ),
@@ -112,7 +113,6 @@ class RegisterUserUseCaseTest {
             eventPublisher = FakeEventPublisher(),
             passwordEncoder = FakePasswordEncoder(),
             emailOtpRepository = emailOtpRepository,
-            defaultPin = defaultPin,
         )
 
         assertFailsWith<EmailNotVerifiedException> {
@@ -133,11 +133,11 @@ class RegisterUserUseCaseTest {
             eventPublisher = FakeEventPublisher(),
             passwordEncoder = FakePasswordEncoder(),
             emailOtpRepository = emailOtpRepository,
-            defaultPin = defaultPin,
         )
 
         assertFailsWith<UserAlreadyExistsException> {
             registerUserUseCase.register(request)
         }
     }
+
 }

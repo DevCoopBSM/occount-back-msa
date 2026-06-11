@@ -1,5 +1,6 @@
 package devcoop.occount.inquiry.api.inquiry
 
+import devcoop.occount.core.common.auth.AuthPrincipal
 import devcoop.occount.inquiry.application.query.GetInquiryDetailQueryService
 import devcoop.occount.inquiry.application.query.GetInquiryListQueryService
 import devcoop.occount.inquiry.application.shared.InquiryDetailResponse
@@ -17,7 +18,9 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import java.time.LocalDateTime
 
 @DisplayName("InquiryController 단위 테스트")
@@ -36,9 +39,7 @@ class InquiryControllerTest {
         controller = InquiryController(createInquiryUseCase, getInquiryListQueryService, getInquiryDetailQueryService)
     }
 
-    private fun httpRequest(userId: Long = 17L) = MockHttpServletRequest().also {
-        it.addHeader("X-Authenticated-User-Id", userId.toString())
-    }
+    private fun authPrincipal(userId: Long = 17L) = AuthPrincipal(userId)
 
     @Test
     @DisplayName("문의 제출 성공 시 CreateInquiryResponse를 반환한다")
@@ -55,7 +56,7 @@ class InquiryControllerTest {
         )
         `when`(createInquiryUseCase.create(17L, request)).thenReturn(expected)
 
-        val actual = controller.createInquiry(request, httpRequest(17L))
+        val actual = controller.createInquiry(request, authPrincipal(17L))
 
         assertSame(expected, actual)
         verify(createInquiryUseCase).create(17L, request)
@@ -64,6 +65,8 @@ class InquiryControllerTest {
     @Test
     @DisplayName("내 문의 목록 조회 시 InquiryListResponse를 반환한다")
     fun `getInquiryList returns response from query service`() {
+        val pageable = PageRequest.of(0, 20)
+        val sanitizedPageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"))
         val expected = InquiryListResponse(
             inquiries = listOf(
                 InquiryListItemResponse(
@@ -74,13 +77,17 @@ class InquiryControllerTest {
                     createdAt = LocalDateTime.now(),
                 ),
             ),
+            totalCount = 1L,
+            totalPages = 1,
+            currentPage = 0,
+            pageSize = 20,
         )
-        `when`(getInquiryListQueryService.getList(17L)).thenReturn(expected)
+        `when`(getInquiryListQueryService.getList(17L, sanitizedPageable)).thenReturn(expected)
 
-        val actual = controller.getInquiryList(httpRequest(17L))
+        val actual = controller.getInquiryList(authPrincipal(17L), pageable)
 
         assertSame(expected, actual)
-        verify(getInquiryListQueryService).getList(17L)
+        verify(getInquiryListQueryService).getList(17L, sanitizedPageable)
     }
 
     @Test
@@ -98,7 +105,7 @@ class InquiryControllerTest {
         )
         `when`(getInquiryDetailQueryService.getDetail(17L, 1L)).thenReturn(expected)
 
-        val actual = controller.getInquiryDetail(1L, httpRequest(17L))
+        val actual = controller.getInquiryDetail(1L, authPrincipal(17L))
 
         assertSame(expected, actual)
         verify(getInquiryDetailQueryService).getDetail(17L, 1L)

@@ -1,6 +1,7 @@
 package devcoop.occount.suggestion.api.aripick
 
-import devcoop.occount.core.common.auth.RequestAuthPrincipalResolver
+import devcoop.occount.core.common.auth.AuthPrincipal
+import devcoop.occount.core.common.auth.AuthUser
 import devcoop.occount.suggestion.application.query.AripickFoodQueryService
 import devcoop.occount.suggestion.application.query.AripickFoodSearchResponse
 import devcoop.occount.suggestion.application.query.AripickListResponse
@@ -14,7 +15,6 @@ import devcoop.occount.suggestion.application.usecase.aripick.AripickLikeToggleR
 import devcoop.occount.suggestion.application.usecase.aripick.AripickPolicyUseCase
 import devcoop.occount.suggestion.application.usecase.aripick.CreateAripickBlockedKeywordRequest
 import devcoop.occount.suggestion.application.usecase.aripick.CreateAripickRequest
-import jakarta.servlet.http.HttpServletRequest
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
@@ -89,10 +89,9 @@ class AripickController(
     @ResponseStatus(HttpStatus.CREATED)
     fun createAripickItem(
         @RequestBody request: CreateAripickRequest,
-        httpRequest: HttpServletRequest,
+        @AuthUser principal: AuthPrincipal,
     ): AripickResponse {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return aripickCommandUseCase.create(request, userId)
+        return aripickCommandUseCase.create(request, principal.userId)
     }
 
     @PatchMapping("/{proposalId}/approve")
@@ -123,10 +122,9 @@ class AripickController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteAripickItem(
         @PathVariable proposalId: Long,
-        httpRequest: HttpServletRequest,
+        @AuthUser principal: AuthPrincipal,
     ) {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        aripickCommandUseCase.delete(proposalId, userId)
+        aripickCommandUseCase.delete(proposalId, principal.userId)
     }
 
     @DeleteMapping("/{proposalId}/admin")
@@ -141,9 +139,8 @@ class AripickController(
     @ResponseStatus(HttpStatus.OK)
     fun toggleLike(
         @PathVariable proposalId: Long,
-        httpRequest: HttpServletRequest,
+        @AuthUser principal: AuthPrincipal,
     ): AripickLikeToggleResponse {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return aripickCommandUseCase.toggleLike(proposalId, userId)
+        return aripickCommandUseCase.toggleLike(proposalId, principal.userId)
     }
 }

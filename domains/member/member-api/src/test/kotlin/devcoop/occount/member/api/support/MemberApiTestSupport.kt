@@ -1,18 +1,35 @@
 package devcoop.occount.member.api.support
 
+import devcoop.occount.core.common.auth.AuthPrincipalArgumentResolver
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.member.application.otp.EmailOtp
+import devcoop.occount.member.application.otp.OtpPurpose
 import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.output.EmailSender
+import devcoop.occount.member.application.output.IdentityVerificationClient
+import devcoop.occount.member.application.output.PinChangeTicketRepository
+import devcoop.occount.member.application.output.VerifiedIdentity
+import devcoop.occount.member.application.pin.PinChangeTicket
+import devcoop.occount.member.application.usecase.identity.VerifyIdentityUseCase
 import devcoop.occount.member.application.usecase.otp.SendEmailOtpUseCase
 import devcoop.occount.member.application.usecase.otp.VerifyEmailOtpUseCase
+import devcoop.occount.member.application.usecase.password.ChangePasswordUseCase
+import devcoop.occount.member.application.usecase.pin.ChangePinUseCase
+import devcoop.occount.member.application.usecase.pin.VerifyPasswordForPinChangeUseCase
 import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.domain.user.User
-import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.transaction.TransactionDefinition
+import org.springframework.transaction.support.AbstractPlatformTransactionManager
+import org.springframework.transaction.support.DefaultTransactionStatus
+import tools.jackson.databind.PropertyNamingStrategies
 import tools.jackson.module.kotlin.jacksonMapperBuilder
 import java.time.Instant
 
@@ -64,6 +81,24 @@ class FakeUserRepository(
         usersById[persistedUser.getId()] = persistedUser
         return persistedUser
     }
+
+    override fun findAll(pageable: Pageable): Page<User> {
+        val all = usersById.values.toList()
+        val from = (pageable.pageNumber * pageable.pageSize).coerceAtMost(all.size)
+        val to = (from + pageable.pageSize).coerceAtMost(all.size)
+        return PageImpl(all.subList(from, to), pageable, all.size.toLong())
+    }
+
+    override fun searchByKeyword(keyword: String, pageable: Pageable): Page<User> {
+        val matched = usersById.values.filter {
+            it.getUsername().contains(keyword) ||
+                it.getEmail().contains(keyword) ||
+                (it.getCooperativeNumber()?.contains(keyword) == true)
+        }
+        val from = (pageable.pageNumber * pageable.pageSize).coerceAtMost(matched.size)
+        val to = (from + pageable.pageSize).coerceAtMost(matched.size)
+        return PageImpl(matched.subList(from, to), pageable, matched.size.toLong())
+    }
 }
 
 class FakeTokenGenerator : TokenGenerator {
@@ -112,18 +147,83 @@ class FakeEmailOtpRepository(
     }
 }
 
+class FakePinChangeTicketRepository(
+    initialTickets: List<PinChangeTicket> = emptyList(),
+) : PinChangeTicketRepository {
+    private val ticketsByToken = linkedMapOf<String, PinChangeTicket>().apply {
+        initialTickets.forEach { put(it.token, it) }
+    }
+
+    override fun save(ticket: PinChangeTicket): PinChangeTicket {
+        ticketsByToken[ticket.token] = ticket
+        return ticket
+    }
+
+    override fun findByToken(token: String): PinChangeTicket? = ticketsByToken[token]
+
+    override fun deleteByToken(token: String) {
+        ticketsByToken.remove(token)
+    }
+
+    override fun deleteByUserId(userId: Long) {
+        ticketsByToken.values.removeIf { it.userId == userId }
+    }
+}
+
+fun validPinChangeTicket(token: String, userId: Long): PinChangeTicket =
+    PinChangeTicket(
+        token = token,
+        userId = userId,
+        expiresAt = Instant.now().plusSeconds(PinChangeTicket.TTL_SECONDS),
+        createdAt = Instant.now(),
+    )
+
+class FakeIdentityVerificationClient(
+    private val response: VerifiedIdentity = VerifiedIdentity(
+        ciNumber = "CI_TEST_123",
+        username = "홍길동",
+        phone = "01012345678",
+        birthDate = java.time.LocalDate.of(2000, 1, 15),
+    ),
+) : IdentityVerificationClient {
+    override fun verify(identityVerificationId: String): VerifiedIdentity = response
+}
+
 fun verifiedEmailOtp(email: String, otpCode: String = "123456"): EmailOtp =
     EmailOtp(
         email = email,
         otpCode = otpCode,
         expiresAt = Instant.now().plusSeconds(EmailOtp.OTP_TTL_SECONDS),
+        createdAt = Instant.now(),
         verified = true,
     )
+
+fun passwordResetOtp(email: String, otpCode: String = "123456"): EmailOtp =
+    EmailOtp(
+        email = email,
+        otpCode = otpCode,
+        expiresAt = Instant.now().plusSeconds(EmailOtp.OTP_TTL_SECONDS),
+        purpose = OtpPurpose.PASSWORD_RESET,
+        createdAt = Instant.now(),
+    )
+
+private val noopTransactionManager = object : AbstractPlatformTransactionManager() {
+    override fun doGetTransaction(): Any = Object()
+    override fun doBegin(transaction: Any, definition: TransactionDefinition) = Unit
+    override fun doCommit(status: DefaultTransactionStatus) = Unit
+    override fun doRollback(status: DefaultTransactionStatus) = Unit
+}
 
 fun testSendEmailOtpUseCase(emailOtpRepository: EmailOtpRepository) =
     SendEmailOtpUseCase(
         emailOtpRepository = emailOtpRepository,
         emailSender = FakeEmailSender(),
+        transactionManager = noopTransactionManager,
+    )
+
+fun testVerifyIdentityUseCase() =
+    VerifyIdentityUseCase(
+        identityVerificationClient = FakeIdentityVerificationClient(),
     )
 
 fun testVerifyEmailOtpUseCase(emailOtpRepository: EmailOtpRepository) =
@@ -131,10 +231,43 @@ fun testVerifyEmailOtpUseCase(emailOtpRepository: EmailOtpRepository) =
         emailOtpRepository = emailOtpRepository,
     )
 
+fun testChangePasswordUseCase(
+    userRepository: UserRepository = FakeUserRepository(),
+    emailOtpRepository: EmailOtpRepository = FakeEmailOtpRepository(),
+) = ChangePasswordUseCase(
+    userRepository = userRepository,
+    emailOtpRepository = emailOtpRepository,
+    passwordEncoder = FakePasswordEncoder(),
+)
+
+fun testChangePinUseCase(
+    userRepository: UserRepository = FakeUserRepository(),
+    pinChangeTicketRepository: PinChangeTicketRepository = FakePinChangeTicketRepository(),
+) = ChangePinUseCase(
+    userRepository = userRepository,
+    pinChangeTicketRepository = pinChangeTicketRepository,
+    passwordEncoder = FakePasswordEncoder(),
+)
+
+fun testVerifyPasswordForPinChangeUseCase(
+    userRepository: UserRepository = FakeUserRepository(),
+    pinChangeTicketRepository: PinChangeTicketRepository = FakePinChangeTicketRepository(),
+) = VerifyPasswordForPinChangeUseCase(
+    userRepository = userRepository,
+    pinChangeTicketRepository = pinChangeTicketRepository,
+    passwordEncoder = FakePasswordEncoder(),
+)
+
 fun mockMvc(vararg controllers: Any): MockMvc {
-    val messageConverter = JacksonJsonHttpMessageConverter(jacksonMapperBuilder())
+    // 실제 member-api 설정(spring.jackson.property-naming-strategy: SNAKE_CASE)과 동일한
+    // 직렬화 규칙으로 컨트롤러 계약을 검증한다.
+    val objectMapper = jacksonMapperBuilder()
+        .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+        .build()
+    val messageConverter = JacksonJsonHttpMessageConverter(objectMapper)
     return MockMvcBuilders.standaloneSetup(*controllers)
         .setControllerAdvice(ApiAdviceHandler())
+        .setCustomArgumentResolvers(AuthPrincipalArgumentResolver())
         .setMessageConverters(messageConverter)
         .build()
 }

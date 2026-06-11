@@ -2,6 +2,8 @@ package devcoop.occount.inquiry.infrastructure.persistence
 
 import devcoop.occount.inquiry.application.output.InquiryRepository
 import devcoop.occount.inquiry.domain.inquiry.Inquiry
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 
 @Component
@@ -13,8 +15,8 @@ class InquiryRepositoryAdapter(
         return InquiryPersistenceMapper.toDomain(inquiryJpaRepository.save(entity))
     }
 
-    override fun findAllByUserId(userId: Long): List<Inquiry> =
-        inquiryJpaRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
+    override fun findPageByUserId(userId: Long, pageable: Pageable): Page<Inquiry> =
+        inquiryJpaRepository.findAllByUserId(userId, pageable)
             .map(InquiryPersistenceMapper::toDomain)
 
     override fun findById(id: Long): Inquiry? =

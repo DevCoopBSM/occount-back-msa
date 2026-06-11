@@ -6,10 +6,10 @@ import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.member.application.event.MemberRegisteredEvent
 import devcoop.occount.member.application.exception.EmailNotVerifiedException
 import devcoop.occount.member.application.exception.UserAlreadyExistsException
+import devcoop.occount.member.application.otp.OtpPurpose
 import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.domain.user.User
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -21,13 +21,11 @@ class RegisterUserUseCase(
     private val eventPublisher: EventPublisher,
     private val passwordEncoder: PasswordEncoder,
     private val emailOtpRepository: EmailOtpRepository,
-    @param:Value("\${app.default-pin}")
-    private val defaultPin: String,
 ) {
     @Transactional
     fun register(request: MemberRegisterRequest) {
         val emailOtp = emailOtpRepository.findValidByEmail(request.userEmail)
-        if (emailOtp == null || !emailOtp.verified) {
+        if (emailOtp == null || !emailOtp.verified || emailOtp.purpose != OtpPurpose.REGISTER) {
             throw EmailNotVerifiedException()
         }
 
@@ -39,7 +37,8 @@ class RegisterUserUseCase(
                     phone = request.userPhone,
                     email = request.userEmail,
                     encodedPassword = passwordEncoder.encode(request.password)!!,
-                    encodedPin = passwordEncoder.encode(defaultPin)!!,
+                    encodedPin = passwordEncoder.encode(request.pin)!!,
+                    birthDate = request.birthDate,
                 )
             )
         } catch (_: DataIntegrityViolationException) {

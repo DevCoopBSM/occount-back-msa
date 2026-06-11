@@ -2,11 +2,16 @@ package devcoop.occount.member.api.auth
 
 import devcoop.occount.member.api.auth.dto.SendEmailOtpRequest
 import devcoop.occount.member.api.auth.dto.VerifyEmailOtpRequest
+import devcoop.occount.member.api.auth.dto.VerifyIdentityRequest
+import devcoop.occount.member.application.usecase.identity.VerifyIdentityResponse
+import devcoop.occount.member.application.usecase.identity.VerifyIdentityUseCase
 import devcoop.occount.member.application.usecase.login.KioskLoginRequest
 import devcoop.occount.member.application.usecase.login.LoginUserUseCase
 import devcoop.occount.member.application.usecase.login.MemberLoginRequest
 import devcoop.occount.member.application.usecase.otp.SendEmailOtpUseCase
 import devcoop.occount.member.application.usecase.otp.VerifyEmailOtpUseCase
+import devcoop.occount.member.application.usecase.password.ChangePasswordRequest
+import devcoop.occount.member.application.usecase.password.ChangePasswordUseCase
 import devcoop.occount.member.application.usecase.register.MemberRegisterRequest
 import devcoop.occount.member.application.usecase.register.RegisterUserUseCase
 import jakarta.servlet.http.HttpServletResponse
@@ -27,11 +32,13 @@ class AuthController(
     private val registerUserUseCase: RegisterUserUseCase,
     private val sendEmailOtpUseCase: SendEmailOtpUseCase,
     private val verifyEmailOtpUseCase: VerifyEmailOtpUseCase,
+    private val verifyIdentityUseCase: VerifyIdentityUseCase,
+    private val changePasswordUseCase: ChangePasswordUseCase,
 ) {
     @PostMapping("/email/send-otp")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun sendEmailOtp(@Valid @RequestBody request: SendEmailOtpRequest) {
-        sendEmailOtpUseCase.send(request.email)
+        sendEmailOtpUseCase.send(request.email, request.purpose)
     }
 
     @PostMapping("/email/verify-otp")
@@ -40,10 +47,22 @@ class AuthController(
         verifyEmailOtpUseCase.verify(request.email, request.otpCode)
     }
 
+    @PostMapping("/identity/verify")
+    @ResponseStatus(HttpStatus.OK)
+    fun verifyIdentity(@Valid @RequestBody request: VerifyIdentityRequest): VerifyIdentityResponse {
+        return verifyIdentityUseCase.verify(request.identityVerificationId)
+    }
+
     @PostMapping("/register")
     fun register(@Valid @RequestBody request: MemberRegisterRequest): ResponseEntity<Void> {
         registerUserUseCase.register(request)
         return ResponseEntity.status(HttpStatus.CREATED).build()
+    }
+
+    @PostMapping("/password/change")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun changePassword(@Valid @RequestBody request: ChangePasswordRequest) {
+        changePasswordUseCase.changePassword(request)
     }
 
     @PostMapping("/login")

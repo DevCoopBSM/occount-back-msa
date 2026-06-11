@@ -29,6 +29,7 @@ class AuthenticationPolicy {
         rule(HttpMethod.DELETE, "/api/v3/ari-pick/{proposalId}").authenticated()
         rule(HttpMethod.POST, "/api/v3/ari-pick/{proposalId}/like").authenticated()
 
+        rule(HttpMethod.GET, "/api/v3/users").adminOnly()
         rule("/api/v3/users/**").authenticated()
         rule(HttpMethod.POST, "/api/v3/orders").optionalAuth()
         rule(HttpMethod.POST, "/api/v3/orders/{orderId}/cancel").optionalAuth()
@@ -37,6 +38,7 @@ class AuthenticationPolicy {
         rule(HttpMethod.GET, "/api/v3/orders/{orderId}/stream").optionalAuth()
         rule("/api/v3/orders/**").authenticated()
         rule("/api/v3/points/**").authenticated()
+        rule("/api/v3/wallet/admin/**").adminOnly()
         rule("/api/v3/wallet/**").authenticated()
         rule("/api/v3/inquiries/**").authenticated()
 

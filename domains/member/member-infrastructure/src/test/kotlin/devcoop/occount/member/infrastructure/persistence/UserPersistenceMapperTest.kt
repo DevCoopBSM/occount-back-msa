@@ -4,6 +4,7 @@ import devcoop.occount.member.domain.user.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
 
 @DisplayName("UserPersistenceMapper 단위 테스트")
 class UserPersistenceMapperTest {
@@ -20,6 +21,7 @@ class UserPersistenceMapperTest {
         role = Role.ROLE_USER,
         pin = "encodedPin",
         userCiNumber = "CI123456",
+        birthDate = LocalDate.of(2000, 1, 15),
     )
 
     private fun createDomain(id: Long = 1L) = User(
@@ -30,6 +32,7 @@ class UserPersistenceMapperTest {
             userType = UserType.STUDENT,
             cooperativeNumber = "COOP001",
             userBarcode = "BARCODE123",
+            birthDate = LocalDate.of(2000, 1, 15),
         ),
         accountInfo = AccountInfo(
             email = "test@test.com",
@@ -58,6 +61,7 @@ class UserPersistenceMapperTest {
         assertEquals(Role.ROLE_USER, domain.getRole())
         assertEquals("encodedPin", domain.getUserPin())
         assertEquals("CI123456", domain.getCiNumber())
+        assertEquals(LocalDate.of(2000, 1, 15), domain.getBirthDate())
     }
 
     @Test
@@ -78,6 +82,7 @@ class UserPersistenceMapperTest {
         assertEquals(Role.ROLE_USER, entity.role)
         assertEquals("encodedPin", entity.pin)
         assertEquals("CI123456", entity.userCiNumber)
+        assertEquals(LocalDate.of(2000, 1, 15), entity.birthDate)
     }
 
     @Test
@@ -103,5 +108,25 @@ class UserPersistenceMapperTest {
         assertNull(domain.getUserBarcode())
         assertNull(domain.getCooperativeNumber())
         assertNull(domain.getCiNumber())
+        assertNull(domain.getBirthDate())
+    }
+
+    @Test
+    @DisplayName("UserJpaEntity는 인자 없이 생성하면 JPA용 기본값을 가진다")
+    fun `UserJpaEntity has JPA defaults when constructed without arguments`() {
+        val entity = UserJpaEntity()
+
+        assertEquals(0L, entity.id)
+        assertEquals("", entity.username)
+        assertNull(entity.phone)
+        assertNull(entity.userBarcode)
+        assertEquals(UserType.STUDENT, entity.userType)
+        assertNull(entity.cooperativeNumber)
+        assertEquals("", entity.email)
+        assertEquals("", entity.password)
+        assertEquals(Role.ROLE_USER, entity.role)
+        assertEquals("", entity.pin)
+        assertNull(entity.userCiNumber)
+        assertNull(entity.birthDate)
     }
 }

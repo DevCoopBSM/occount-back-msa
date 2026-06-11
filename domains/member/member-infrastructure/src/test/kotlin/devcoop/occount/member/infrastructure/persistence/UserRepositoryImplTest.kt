@@ -5,7 +5,10 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.*
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import java.util.Optional
 
 @DisplayName("UserRepositoryImpl 단위 테스트")
@@ -17,6 +20,9 @@ class UserRepositoryImplTest {
     // Kotlin + 순수 Mockito에서 non-null 타입에 any() 매처를 사용하기 위한 헬퍼
     @Suppress("UNCHECKED_CAST")
     private fun <T> anyArg(): T = any<Any>() as T
+
+    // Kotlin non-null 파라미터에 eq 매처를 안전하게 쓰기 위한 헬퍼 (eq는 null을 반환하므로 원본값으로 폴백)
+    private fun <T> eqArg(value: T): T = eq(value) ?: value
 
     @BeforeEach
     fun setUp() {
@@ -109,7 +115,7 @@ class UserRepositoryImplTest {
     @DisplayName("유저 저장 시 JPA 저장 후 도메인 객체로 변환하여 반환한다")
     fun `save stores entity and returns domain user`() {
         val domainToSave = User(
-            userInfo = UserInfo("홍길동", "010-1234-5678", UserType.STUDENT, null, null),
+            userInfo = UserInfo("홍길동", "010-1234-5678", UserType.STUDENT, null, null, null),
             accountInfo = AccountInfo("test@test.com", "encodedPassword", Role.ROLE_USER, "encodedPin"),
             userSensitiveInfo = UserSensitiveInfo("CI123456"),
         )
@@ -131,5 +137,31 @@ class UserRepositoryImplTest {
 
         assertTrue(result)
         verify(userJpaRepository).existsByEmail("test@test.com")
+    }
+
+    @Test
+    @DisplayName("키워드 검색 시 JPA 레포지토리에 위임하고 도메인 객체로 변환한다")
+    fun `searchByKeyword delegates to JPA repository and maps to domain`() {
+        val pageable = PageRequest.of(0, 10)
+        val page = PageImpl(listOf(createEntity(id = 1L)), pageable, 1L)
+        `when`(userJpaRepository.searchByKeyword(eqArg("홍길동"), anyArg())).thenReturn(page)
+
+        val result = userRepositoryImpl.searchByKeyword("홍길동", pageable)
+
+        assertEquals(1, result.content.size)
+        assertEquals("홍길동", result.content.first().getUsername())
+        verify(userJpaRepository).searchByKeyword(eqArg("홍길동"), anyArg())
+    }
+
+    @Test
+    @DisplayName("키워드의 LIKE 메타문자(% _ 백슬래시)를 이스케이프해 위임한다")
+    fun `searchByKeyword escapes like wildcards before delegating`() {
+        val pageable = PageRequest.of(0, 10)
+        `when`(userJpaRepository.searchByKeyword(anyArg(), anyArg()))
+            .thenReturn(PageImpl(emptyList(), pageable, 0L))
+
+        userRepositoryImpl.searchByKeyword("a%b_c\\d", pageable)
+
+        verify(userJpaRepository).searchByKeyword(eqArg("a\\%b\\_c\\\\d"), anyArg())
     }
 }

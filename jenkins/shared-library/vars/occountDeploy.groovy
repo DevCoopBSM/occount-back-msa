@@ -20,6 +20,7 @@ def call(Map cfg) {
         [path: 'domains/suggestion/', task: ':domains:suggestion:suggestion-bootstrap:bootJar', name: 'suggestion-api', dir: 'domains/suggestion/suggestion-bootstrap', yamlKey: 'suggestionApi'],
         [path: 'domains/order/',   task: ':domains:order:order-bootstrap:bootJar',    name: 'order-api',    dir: 'domains/order/order-bootstrap',      yamlKey: 'orderApi'],
         [path: 'domains/payment/', task: ':domains:payment:payment-bootstrap:bootJar',name: 'payment-api',  dir: 'domains/payment/payment-bootstrap',  yamlKey: 'paymentApi'],
+        [path: 'domains/inquiry/', task: ':domains:inquiry:inquiry-bootstrap:bootJar',name: 'inquiry-api',  dir: 'domains/inquiry/inquiry-bootstrap',  yamlKey: 'inquiryApi'],
     ]
 
     def TRIGGER_ALL_PATHS = [

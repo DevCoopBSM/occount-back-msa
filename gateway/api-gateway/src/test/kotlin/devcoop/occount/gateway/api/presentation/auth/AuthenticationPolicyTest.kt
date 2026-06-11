@@ -15,8 +15,34 @@ class AuthenticationPolicyTest {
     }
 
     @Test
+    fun `user list requires admin`() {
+        assertEquals(AuthenticationRule.Access.ADMIN_ONLY, policy.resolveAccess(HttpMethod.GET, "/api/v3/users"))
+    }
+
+    @Test
+    fun `user sub path still requires authentication`() {
+        assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.GET, "/api/v3/users/me"))
+    }
+
+    @Test
     fun `wallet path requires authentication`() {
         assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.POST, "/api/v3/wallet/charge"))
+    }
+
+    @Test
+    fun `wallet admin charge requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.POST, "/api/v3/wallet/admin/charge"),
+        )
+    }
+
+    @Test
+    fun `wallet admin charge history requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/wallet/admin/charges"),
+        )
     }
 
     @Test

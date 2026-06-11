@@ -42,14 +42,20 @@ jwt:
   secret-key: ${JWT_SECRET_KEY}
 
 app:
-  default-pin: ${DEFAULT_PIN}
+  default-pin: ${DEFAULT_PIN:0000}
   startup-warmup:
     http-endpoints:
       - path: /api/v3/auth/login
         method: POST
         body: '{"email":"warmup@warmup.invalid","password":"x"}'
 
+portone:
+  secret-key: ${PORTONE_SECRET_KEY:}
+
 management:
+  otlp:
+    tracing:
+      endpoint: ${OTLP_ENDPOINT:http://datadog.datadog.svc.cluster.local:4318}
   tracing:
     sampling:
       probability: 1.0
