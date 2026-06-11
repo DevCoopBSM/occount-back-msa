@@ -9,9 +9,11 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.springframework.http.HttpStatus
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.springframework.validation.BindingResult
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 
 @DisplayName("inquiry ApiAdviceHandler 단위 테스트")
 class ApiAdviceHandlerTest {
@@ -56,5 +58,17 @@ class ApiAdviceHandlerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
         assertEquals("제목을 입력해주세요.", response.body?.get("title"))
+    }
+
+    @Test
+    @DisplayName("파라미터 타입 미스매치 시 400 BAD_REQUEST와 파라미터명을 반환한다")
+    fun `handleTypeMismatch returns 400 with parameter name`() {
+        val exception = mock(MethodArgumentTypeMismatchException::class.java)
+        `when`(exception.name).thenReturn("status")
+
+        val response = handler.handleTypeMismatch(exception)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertTrue(response.body?.message?.contains("status") == true)
     }
 }

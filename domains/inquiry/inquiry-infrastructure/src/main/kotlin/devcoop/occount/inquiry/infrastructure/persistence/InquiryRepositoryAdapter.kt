@@ -2,6 +2,7 @@ package devcoop.occount.inquiry.infrastructure.persistence
 
 import devcoop.occount.inquiry.application.output.InquiryRepository
 import devcoop.occount.inquiry.domain.inquiry.Inquiry
+import devcoop.occount.inquiry.domain.inquiry.InquiryStatus
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
@@ -22,4 +23,11 @@ class InquiryRepositoryAdapter(
     override fun findById(id: Long): Inquiry? =
         inquiryJpaRepository.findById(id).orElse(null)
             ?.let(InquiryPersistenceMapper::toDomain)
+
+    override fun findPage(status: InquiryStatus?, pageable: Pageable): Page<Inquiry> =
+        (if (status == null) {
+            inquiryJpaRepository.findAll(pageable)
+        } else {
+            inquiryJpaRepository.findAllByStatus(status, pageable)
+        }).map(InquiryPersistenceMapper::toDomain)
 }
