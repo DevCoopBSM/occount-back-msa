@@ -7,7 +7,12 @@ import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.application.otp.EmailOtp
 import devcoop.occount.member.application.pin.PinChangeTicket
+import devcoop.occount.member.domain.user.AccountInfo
+import devcoop.occount.member.domain.user.Role
 import devcoop.occount.member.domain.user.User
+import devcoop.occount.member.domain.user.UserInfo
+import devcoop.occount.member.domain.user.UserSensitiveInfo
+import devcoop.occount.member.domain.user.UserType
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
@@ -24,17 +29,25 @@ fun userFixture(
     encodedPassword: String = sharedPasswordEncoder.encode("rawPassword"),
     encodedPin: String = sharedPasswordEncoder.encode("123456"),
     barcode: String? = "BARCODE123",
-): User {
-    val user = User.register(
-        userCiNumber = "CI123456",
+    cooperativeNumber: String? = null,
+): User = User(
+    id = id,
+    userInfo = UserInfo(
         username = username,
         phone = "010-1234-5678",
+        userType = UserType.STUDENT,
+        cooperativeNumber = cooperativeNumber,
+        userBarcode = barcode,
+        birthDate = null,
+    ),
+    accountInfo = AccountInfo(
         email = email,
-        encodedPassword = encodedPassword,
-        encodedPin = encodedPin,
-    )
-    return (if (barcode != null) user.withBarcode(barcode) else user).copy(id = id)
-}
+        password = encodedPassword,
+        role = Role.ROLE_USER,
+        pin = encodedPin,
+    ),
+    userSensitiveInfo = UserSensitiveInfo(ciNumber = "CI123456"),
+)
 
 class FakeUserRepository(
     initialUsers: List<User> = emptyList(),
@@ -77,7 +90,19 @@ class FakeUserRepository(
         val to = (from + pageable.pageSize).coerceAtMost(all.size)
         return PageImpl(all.subList(from, to), pageable, all.size.toLong())
     }
+
+    override fun searchByKeyword(keyword: String, pageable: Pageable): Page<User> {
+        val matched = usersById.values.filter { it.matchesKeyword(keyword) }
+        val from = (pageable.pageNumber * pageable.pageSize).coerceAtMost(matched.size)
+        val to = (from + pageable.pageSize).coerceAtMost(matched.size)
+        return PageImpl(matched.subList(from, to), pageable, matched.size.toLong())
+    }
 }
+
+internal fun User.matchesKeyword(keyword: String): Boolean =
+    getUsername().contains(keyword) ||
+        getEmail().contains(keyword) ||
+        (getCooperativeNumber()?.contains(keyword) == true)
 
 class FakeEmailOtpRepository(
     initialOtpsByEmail: Map<String, EmailOtp> = emptyMap(),

@@ -8,8 +8,13 @@ import org.springframework.stereotype.Service
 class AdminUserQueryService(
     private val userRepository: UserRepository,
 ) {
-    fun findAllUsers(pageable: Pageable): AdminUserListResponse {
-        val page = userRepository.findAll(pageable)
+    fun findAllUsers(keyword: String?, pageable: Pageable): AdminUserListResponse {
+        val normalizedKeyword = keyword?.trim()?.takeIf { it.isNotEmpty() }
+        val page = if (normalizedKeyword == null) {
+            userRepository.findAll(pageable)
+        } else {
+            userRepository.searchByKeyword(normalizedKeyword, pageable)
+        }
         return AdminUserListResponse(
             users = page.content.map(AdminUserSummaryResponse::from),
             totalCount = page.totalElements,

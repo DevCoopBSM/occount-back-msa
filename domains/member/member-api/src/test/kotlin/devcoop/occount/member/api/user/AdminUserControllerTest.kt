@@ -56,6 +56,33 @@ class AdminUserControllerTest {
     }
 
     @Test
+    fun `findAllUsers filters by keyword query param`() {
+        val users = listOf(
+            userFixture(id = 1L, username = "김철수", email = "chulsoo@test.com"),
+            userFixture(id = 2L, username = "이영희", email = "younghee@test.com"),
+            userFixture(id = 3L, username = "박철수", email = "park@test.com"),
+        )
+        val mockMvc = mockMvc(controller(users))
+
+        mockMvc.perform(get("/users").param("keyword", "철수"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.users.length()").value(2))
+            .andExpect(jsonPath("$.total_count").value(2))
+            .andExpect(jsonPath("$.users[0].username").value("김철수"))
+            .andExpect(jsonPath("$.users[1].username").value("박철수"))
+    }
+
+    @Test
+    fun `findAllUsers returns full list when keyword is blank`() {
+        val users = (1L..23L).map { userFixture(id = it, email = "user$it@test.com") }
+        val mockMvc = mockMvc(controller(users))
+
+        mockMvc.perform(get("/users").param("keyword", "   "))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.total_count").value(23))
+    }
+
+    @Test
     fun `findAllUsers exposes only safe fields and omits sensitive keys`() {
         val mockMvc = mockMvc(controller(listOf(userFixture(id = 1L, username = "홍길동", barcode = "BARCODE-1"))))
 

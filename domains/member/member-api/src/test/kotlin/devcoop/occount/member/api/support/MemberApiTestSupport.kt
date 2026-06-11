@@ -88,6 +88,17 @@ class FakeUserRepository(
         val to = (from + pageable.pageSize).coerceAtMost(all.size)
         return PageImpl(all.subList(from, to), pageable, all.size.toLong())
     }
+
+    override fun searchByKeyword(keyword: String, pageable: Pageable): Page<User> {
+        val matched = usersById.values.filter {
+            it.getUsername().contains(keyword) ||
+                it.getEmail().contains(keyword) ||
+                (it.getCooperativeNumber()?.contains(keyword) == true)
+        }
+        val from = (pageable.pageNumber * pageable.pageSize).coerceAtMost(matched.size)
+        val to = (from + pageable.pageSize).coerceAtMost(matched.size)
+        return PageImpl(matched.subList(from, to), pageable, matched.size.toLong())
+    }
 }
 
 class FakeTokenGenerator : TokenGenerator {

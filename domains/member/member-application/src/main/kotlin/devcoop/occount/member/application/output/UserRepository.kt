@@ -11,4 +11,5 @@ interface UserRepository {
     fun existsByEmail(userEmail: String): Boolean
     fun save(user: User): User
     fun findAll(pageable: Pageable): Page<User>
+    fun searchByKeyword(keyword: String, pageable: Pageable): Page<User>
 }
