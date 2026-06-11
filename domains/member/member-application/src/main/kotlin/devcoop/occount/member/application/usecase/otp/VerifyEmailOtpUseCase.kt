@@ -12,7 +12,15 @@ import org.springframework.transaction.annotation.Transactional
 class VerifyEmailOtpUseCase(
     private val emailOtpRepository: EmailOtpRepository,
 ) {
-    @Transactional
+    // 실패 처리(만료/잠금 시 삭제, 불일치 시 failCount 증가)는 예외를 던지면서도 반드시 커밋돼야 한다.
+    // 기본 롤백 정책이면 이 write들이 롤백되어 OTP 잠금이 영구히 동작하지 않으므로 noRollbackFor로 제외한다.
+    @Transactional(
+        noRollbackFor = [
+            OtpExpiredException::class,
+            OtpLockedException::class,
+            OtpMismatchException::class,
+        ],
+    )
     fun verify(email: String, otpCode: String) {
         val emailOtp = emailOtpRepository.findByEmailForUpdate(email)
             ?: throw OtpNotFoundException()
