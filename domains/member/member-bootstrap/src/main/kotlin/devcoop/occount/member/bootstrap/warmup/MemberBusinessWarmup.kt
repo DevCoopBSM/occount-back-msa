@@ -33,6 +33,9 @@ class MemberBusinessWarmup(
             loginUserUseCase.login(MemberLoginRequest(WarmupProbe.EMAIL, WarmupProbe.PASSWORD))
         }
         runCatching {
+            // WarmupProbe.BARCODE는 DB에 존재하지 않는 sentinel이어야 한다.
+            // 존재하지 않으면 UserNotFoundException으로 시도 기록 없이 종료되므로,
+            // 키오스크 로그인 실패 카운트가 배포마다 누적돼 잠기는 일이 없다.
             loginUserUseCase.login(KioskLoginRequest(WarmupProbe.BARCODE, WarmupProbe.PIN))
         }
     }
