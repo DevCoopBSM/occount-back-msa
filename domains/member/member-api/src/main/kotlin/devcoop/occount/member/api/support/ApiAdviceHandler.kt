@@ -48,7 +48,9 @@ class ApiAdviceHandler {
             ErrorMessage.EMAIL_NOT_VERIFIED,
             -> HttpStatus.UNAUTHORIZED
 
-            ErrorMessage.OTP_RATE_LIMITED -> HttpStatus.TOO_MANY_REQUESTS
+            ErrorMessage.OTP_RATE_LIMITED,
+            ErrorMessage.KIOSK_LOGIN_LOCKED,
+            -> HttpStatus.TOO_MANY_REQUESTS
 
             ErrorMessage.IDENTITY_VERIFICATION_FAILED -> HttpStatus.BAD_GATEWAY
 

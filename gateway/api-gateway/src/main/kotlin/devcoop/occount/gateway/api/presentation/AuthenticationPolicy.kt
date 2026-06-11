@@ -40,6 +40,7 @@ class AuthenticationPolicy {
         rule("/api/v3/points/**").authenticated()
         rule("/api/v3/wallet/admin/**").adminOnly()
         rule("/api/v3/wallet/**").authenticated()
+        rule("/api/v3/inquiries/admin/**").adminOnly()
         rule("/api/v3/inquiries/**").authenticated()
 
         rule(HttpMethod.POST, "/api/v3/items").adminOnly()

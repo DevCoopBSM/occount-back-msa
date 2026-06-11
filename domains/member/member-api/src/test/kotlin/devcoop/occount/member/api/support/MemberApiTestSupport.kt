@@ -4,9 +4,11 @@ import devcoop.occount.core.common.auth.AuthPrincipalArgumentResolver
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.member.application.otp.EmailOtp
 import devcoop.occount.member.application.otp.OtpPurpose
+import devcoop.occount.member.application.login.KioskLoginAttempt
 import devcoop.occount.member.application.output.EmailOtpRepository
 import devcoop.occount.member.application.output.EmailSender
 import devcoop.occount.member.application.output.IdentityVerificationClient
+import devcoop.occount.member.application.output.KioskLoginAttemptRepository
 import devcoop.occount.member.application.output.PinChangeTicketRepository
 import devcoop.occount.member.application.output.VerifiedIdentity
 import devcoop.occount.member.application.pin.PinChangeTicket
@@ -52,6 +54,25 @@ fun userFixture(
         encodedPin = encodedPin,
     )
     return (if (barcode != null) user.withBarcode(barcode) else user).copy(id = id)
+}
+
+class FakeKioskLoginAttemptRepository(
+    initialAttempts: List<KioskLoginAttempt> = emptyList(),
+) : KioskLoginAttemptRepository {
+    private val attemptsByBarcode = linkedMapOf<String, KioskLoginAttempt>().apply {
+        initialAttempts.forEach { put(it.userBarcode, it) }
+    }
+
+    override fun findByBarcode(userBarcode: String): KioskLoginAttempt? = attemptsByBarcode[userBarcode]
+
+    override fun save(attempt: KioskLoginAttempt): KioskLoginAttempt {
+        attemptsByBarcode[attempt.userBarcode] = attempt
+        return attempt
+    }
+
+    override fun deleteByBarcode(userBarcode: String) {
+        attemptsByBarcode.remove(userBarcode)
+    }
 }
 
 class FakeUserRepository(

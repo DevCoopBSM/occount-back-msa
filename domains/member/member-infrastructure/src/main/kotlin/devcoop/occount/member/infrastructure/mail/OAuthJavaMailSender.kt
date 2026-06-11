@@ -3,8 +3,6 @@ package devcoop.occount.member.infrastructure.mail
 import jakarta.mail.internet.MimeMessage
 import org.slf4j.LoggerFactory
 import org.springframework.mail.javamail.JavaMailSenderImpl
-import java.net.InetSocketAddress
-import java.net.ProxySelector
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -22,15 +20,8 @@ class OAuthJavaMailSender(
     private val logger = LoggerFactory.getLogger(OAuthJavaMailSender::class.java)
     private val httpClient: HttpClient = buildHttpClient()
 
-    private fun buildHttpClient(): HttpClient {
-        val builder = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(60))
-        val proxyHost = System.getenv("HTTPS_PROXY_HOST") ?: System.getProperty("https.proxyHost")
-        val proxyPort = (System.getenv("HTTPS_PROXY_PORT") ?: System.getProperty("https.proxyPort"))?.toIntOrNull()
-        if (proxyHost != null && proxyPort != null) {
-            builder.proxy(ProxySelector.of(InetSocketAddress(proxyHost, proxyPort)))
-        }
-        return builder.build()
-    }
+    private fun buildHttpClient(): HttpClient =
+        HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(60)).build()
 
     @Volatile private var cachedToken: String? = null
     @Volatile private var tokenExpiresAt: Instant = Instant.EPOCH
@@ -44,12 +35,6 @@ class OAuthJavaMailSender(
         props["mail.smtp.auth.mechanisms"] = "XOAUTH2"
         props["mail.smtp.starttls.enable"] = "true"
         props["mail.smtp.ssl.trust"] = "smtp.gmail.com"
-        val proxyHost = System.getenv("HTTPS_PROXY_HOST") ?: System.getProperty("https.proxyHost")
-        val proxyPort = System.getenv("HTTPS_PROXY_PORT") ?: System.getProperty("https.proxyPort")
-        if (proxyHost != null && proxyPort != null) {
-            props["mail.smtp.proxy.host"] = proxyHost
-            props["mail.smtp.proxy.port"] = proxyPort
-        }
     }
 
     override fun doSend(mimeMessages: Array<out MimeMessage>, originalMessages: Array<out Any>?) {

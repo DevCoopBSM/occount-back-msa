@@ -67,6 +67,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        "429":
+          description: 요청 한도 초과 (IP 기준 rate limit)
+          headers:
+            Retry-After:
+              description: 재시도까지 대기 시간(초)
+              schema:
+                type: integer
+              example: 30
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v3/auth/email/verify-otp:
     post:
@@ -100,6 +112,18 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "404":
           description: 발송된 인증번호 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "429":
+          description: 요청 한도 초과 (IP 기준 rate limit)
+          headers:
+            Retry-After:
+              description: 재시도까지 대기 시간(초)
+              schema:
+                type: integer
+              example: 30
           content:
             application/json:
               schema:
@@ -139,6 +163,18 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "502":
           description: PortOne 본인인증 실패 또는 미완료
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "429":
+          description: 요청 한도 초과 (IP 기준 rate limit)
+          headers:
+            Retry-After:
+              description: 재시도까지 대기 시간(초)
+              schema:
+                type: integer
+              example: 30
           content:
             application/json:
               schema:
@@ -251,6 +287,18 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "401":
           description: 이메일 또는 비밀번호 불일치
+        "429":
+          description: 요청 한도 초과 (IP 기준 rate limit)
+          headers:
+            Retry-After:
+              description: 재시도까지 대기 시간(초)
+              schema:
+                type: integer
+              example: 30
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v3/auth/kiosk/login:
     post:
@@ -286,6 +334,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "401":
           description: 바코드 또는 PIN 불일치
+        "429":
+          description: PIN 실패 누적으로 인한 계정(barcode) 잠금 — 잠시 후 다시 시도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # ───────────────────────────────────────────────
   # Member
@@ -1604,6 +1658,90 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/v3/inquiries/admin:
+    get:
+      tags: [Inquiry]
+      operationId: adminGetInquiryList
+      summary: 어드민 전체 문의 조회
+      description: >-
+        관리자가 전체 사용자의 문의를 페이징 조회합니다. (ADMIN_ONLY)
+        기본 10건, 최신순(createdAt DESC). 정렬 가능 필드는 createdAt, status, category.
+        status 쿼리 파라미터로 처리 상태를 필터링할 수 있습니다. 작성자는 user_id 로만 노출됩니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [RECEIVED, IN_PROGRESS, COMPLETED]
+          description: 처리 상태 필터 (미지정 시 전체)
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, default: 0, minimum: 0 }
+        - name: size
+          in: query
+          required: false
+          schema: { type: integer, default: 10, maximum: 100 }
+          description: 페이지 크기 (최대 100으로 제한됨)
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, default: "createdAt,desc" }
+          description: "정렬 (허용 필드 createdAt, status, category — 그 외 무시되고 기본 createdAt DESC 적용)"
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminInquiryListResponse'
+        "400":
+          description: 잘못된 status 값
+        "401":
+          description: 인증 실패
+        "403":
+          description: 관리자 권한 없음
+
+  /api/v3/inquiries/admin/{inquiryId}:
+    get:
+      tags: [Inquiry]
+      operationId: adminGetInquiryDetail
+      summary: 어드민 문의 상세 조회
+      description: >-
+        관리자가 임의 문의의 상세(본문 포함)를 조회합니다. (ADMIN_ONLY)
+        본인 소유 여부와 무관하게 조회되며 작성자 user_id 가 포함됩니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: inquiryId
+          in: path
+          required: true
+          description: 조회할 문의 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminInquiryDetailResponse'
+        "401":
+          description: 인증 실패
+        "403":
+          description: 관리자 권한 없음
+        "404":
+          description: 문의를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 security:
   - BearerAuth: []
 
@@ -2424,6 +2562,69 @@ components:
         inquiry_id:
           type: integer
           format: int64
+        title:
+          type: string
+        content:
+          type: string
+        category:
+          $ref: '#/components/schemas/InquiryCategory'
+        status:
+          $ref: '#/components/schemas/InquiryStatus'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AdminInquiryListResponse:
+      type: object
+      properties:
+        inquiries:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminInquiryListItemResponse'
+        total_count:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+        current_page:
+          type: integer
+          description: 0-based 현재 페이지 번호
+        page_size:
+          type: integer
+
+    AdminInquiryListItemResponse:
+      type: object
+      properties:
+        inquiry_id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+          description: 작성자 회원 id
+        title:
+          type: string
+        category:
+          $ref: '#/components/schemas/InquiryCategory'
+        status:
+          $ref: '#/components/schemas/InquiryStatus'
+        created_at:
+          type: string
+          format: date-time
+
+    AdminInquiryDetailResponse:
+      type: object
+      properties:
+        inquiry_id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+          description: 작성자 회원 id
         title:
           type: string
         content:

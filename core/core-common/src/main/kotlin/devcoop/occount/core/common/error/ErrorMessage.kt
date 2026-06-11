@@ -7,6 +7,7 @@ enum class ErrorMessage(
     INVALID_TOKEN("잘못된 토큰 형식입니다."),
     EXPIRED_TOKEN("만료된 토큰입니다."),
     ACCESS_DENIED("접근 권한이 없습니다."),
+    TOO_MANY_REQUESTS("요청이 너무 많습니다. 잠시 후 다시 시도해주세요."),
 
 
     USER_NOT_FOUND("존재하지 않는 유저입니다."),
@@ -24,6 +25,7 @@ enum class ErrorMessage(
 
 
     INVALID_PIN("핀번호가 틀렸습니다."),
+    KIOSK_LOGIN_LOCKED("로그인 시도 횟수를 초과했습니다. 잠시 후 다시 시도해주세요."),
     PIN_CHANGE_TICKET_NOT_FOUND("비밀번호 확인이 필요합니다. 비밀번호 확인을 먼저 진행해주세요."),
     PIN_CHANGE_TICKET_EXPIRED("비밀번호 확인이 만료되었습니다. 비밀번호 확인을 다시 진행해주세요."),
 
