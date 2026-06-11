@@ -294,16 +294,25 @@ paths:
     get:
       tags: [Member]
       operationId: getAdminUserList
-      summary: 사용자 전체 조회
+      summary: 사용자 전체 조회 / 검색
       description: |
         관리자가 전체 사용자 목록을 페이지 단위로 조회합니다. (ADMIN_ONLY)
 
+        - `keyword` 를 전달하면 이름(`username`)·이메일(`email`)·조합원번호(`cooperative_number`)
+          를 부분일치(OR)로 검색합니다. 공백이거나 생략하면 전체 목록을 조회합니다.
         - 기본 페이지 크기는 10이며 `size` 는 최대 100으로 제한됩니다.
         - 기본 정렬은 `id` 오름차순입니다. 정렬 허용 필드는 `id` 뿐이며, 그 외 필드는 무시되고 기본 정렬이 적용됩니다.
         - 자격증명(비밀번호/PIN)과 CI 등 민감정보는 응답에서 제외됩니다.
       security:
         - BearerAuth: []
       parameters:
+        - name: keyword
+          in: query
+          required: false
+          description: 이름·이메일·조합원번호 부분일치 검색어 (생략 시 전체 조회)
+          schema:
+            type: string
+          example: "홍길동"
         - name: page
           in: query
           required: false

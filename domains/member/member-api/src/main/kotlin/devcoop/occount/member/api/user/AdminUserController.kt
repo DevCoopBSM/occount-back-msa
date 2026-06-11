@@ -9,11 +9,12 @@ import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 /**
- * 관리자 전용 사용자 전체 조회.
+ * 관리자 전용 사용자 조회/검색.
  * 인가는 게이트웨이(GET /api/v3/users → ADMIN_ONLY)에서만 강제하며 다운스트림 재검증은 하지 않는다.
  */
 @RestController
@@ -30,9 +31,10 @@ class AdminUserController(
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     fun findAllUsers(
+        @RequestParam(required = false) keyword: String?,
         @PageableDefault(size = 10, sort = ["id"]) pageable: Pageable,
     ): AdminUserListResponse {
-        return adminUserQueryService.findAllUsers(sanitizePageable(pageable))
+        return adminUserQueryService.findAllUsers(keyword, sanitizePageable(pageable))
     }
 
     private fun sanitizePageable(pageable: Pageable): Pageable {

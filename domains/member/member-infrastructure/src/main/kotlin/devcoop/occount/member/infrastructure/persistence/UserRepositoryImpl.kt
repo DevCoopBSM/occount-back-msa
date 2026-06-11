@@ -39,4 +39,15 @@ class UserRepositoryImpl(
         return userJpaRepository.findAll(pageable)
             .map(UserPersistenceMapper::toDomain)
     }
+
+    override fun searchByKeyword(keyword: String, pageable: Pageable): Page<User> {
+        return userJpaRepository.searchByKeyword(escapeLikePattern(keyword), pageable)
+            .map(UserPersistenceMapper::toDomain)
+    }
+
+    // LIKE 메타문자를 이스케이프해 keyword가 리터럴 부분일치로만 매칭되도록 한다(ESCAPE '\' 와 짝).
+    private fun escapeLikePattern(keyword: String): String =
+        keyword.replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_")
 }
