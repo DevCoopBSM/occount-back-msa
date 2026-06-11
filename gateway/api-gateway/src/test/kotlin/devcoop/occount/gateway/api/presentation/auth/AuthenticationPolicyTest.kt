@@ -38,6 +38,14 @@ class AuthenticationPolicyTest {
     }
 
     @Test
+    fun `wallet admin charge history requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/wallet/admin/charges"),
+        )
+    }
+
+    @Test
     fun `items list path is public`() {
         assertEquals(AuthenticationRule.Access.PERMIT_ALL, policy.resolveAccess(HttpMethod.GET, "/api/v3/items"))
     }
