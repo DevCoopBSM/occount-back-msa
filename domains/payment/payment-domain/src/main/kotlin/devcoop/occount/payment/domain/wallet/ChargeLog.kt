@@ -10,6 +10,7 @@ data class ChargeLog(
     val pointTransaction: PointTransaction,
     val chargeReason: ChargeReason,
     val detailReason: String? = null,
+    val chargedBy: Long? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
