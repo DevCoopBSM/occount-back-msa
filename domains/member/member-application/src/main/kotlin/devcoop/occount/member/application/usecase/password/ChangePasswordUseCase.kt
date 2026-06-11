@@ -20,7 +20,16 @@ class ChangePasswordUseCase(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Transactional
+    // 성공 경로(비밀번호 저장 + OTP 삭제)는 원자성이 필요해 트랜잭션을 유지한다.
+    // 단, 실패 처리(만료/잠금 시 삭제, 불일치 시 failCount 증가)는 예외를 던지면서도 커밋돼야 하므로
+    // 기본 롤백에서 제외한다(제외하지 않으면 OTP 잠금이 동작하지 않는다).
+    @Transactional(
+        noRollbackFor = [
+            OtpExpiredException::class,
+            OtpLockedException::class,
+            OtpMismatchException::class,
+        ],
+    )
     fun changePassword(request: ChangePasswordRequest) {
         // 1) 비밀번호 변경용으로 발송된 OTP 코드를 변경 요청 시점에 직접 재검증한다.
         //    (verified 플래그만 신뢰하지 않고 코드를 다시 제시받아, 코드 없이 변경되는 것을 차단)
