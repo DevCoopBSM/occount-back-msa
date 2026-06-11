@@ -2,6 +2,7 @@ package devcoop.occount.member.api.auth
 
 import devcoop.occount.member.api.support.FakeEventPublisher
 import devcoop.occount.member.api.support.FakeEmailOtpRepository
+import devcoop.occount.member.api.support.FakeKioskLoginAttemptRepository
 import devcoop.occount.member.api.support.FakePasswordEncoder
 import devcoop.occount.member.api.support.FakeTokenGenerator
 import devcoop.occount.member.api.support.FakeUserRepository
@@ -40,6 +41,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),
@@ -72,6 +74,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),
@@ -109,6 +112,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),
@@ -141,6 +145,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),
@@ -178,6 +183,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),
@@ -225,6 +231,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),
@@ -274,6 +281,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(listOf(userFixture())),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),
@@ -314,6 +322,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(listOf(userFixture())),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),
@@ -358,6 +367,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(listOf(userFixture())),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),
@@ -397,6 +407,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),
@@ -432,6 +443,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),
@@ -472,6 +484,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(listOf(userFixture())),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),
@@ -516,6 +529,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),
@@ -549,6 +563,7 @@ class AuthControllerTest {
                     userRepository = FakeUserRepository(),
                     tokenGenerator = FakeTokenGenerator(),
                     passwordEncoder = FakePasswordEncoder(),
+                    kioskLoginAttemptRepository = FakeKioskLoginAttemptRepository(),
                 ),
                 registerUserUseCase = RegisterUserUseCase(
                     userRepository = FakeUserRepository(),

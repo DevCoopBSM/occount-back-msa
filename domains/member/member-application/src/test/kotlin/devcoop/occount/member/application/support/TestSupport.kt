@@ -1,7 +1,9 @@
 package devcoop.occount.member.application.support
 
 import devcoop.occount.core.common.event.EventPublisher
+import devcoop.occount.member.application.login.KioskLoginAttempt
 import devcoop.occount.member.application.output.EmailOtpRepository
+import devcoop.occount.member.application.output.KioskLoginAttemptRepository
 import devcoop.occount.member.application.output.PinChangeTicketRepository
 import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
@@ -158,6 +160,28 @@ class FakePinChangeTicketRepository(
 
     override fun deleteByUserId(userId: Long) {
         ticketsByToken.values.removeIf { it.userId == userId }
+    }
+}
+
+class FakeKioskLoginAttemptRepository(
+    initialAttempts: List<KioskLoginAttempt> = emptyList(),
+) : KioskLoginAttemptRepository {
+    private val attemptsByBarcode = linkedMapOf<String, KioskLoginAttempt>().apply {
+        initialAttempts.forEach { put(it.userBarcode, it) }
+    }
+
+    val savedAttempts = mutableListOf<KioskLoginAttempt>()
+
+    override fun findByBarcode(userBarcode: String): KioskLoginAttempt? = attemptsByBarcode[userBarcode]
+
+    override fun save(attempt: KioskLoginAttempt): KioskLoginAttempt {
+        attemptsByBarcode[attempt.userBarcode] = attempt
+        savedAttempts += attempt
+        return attempt
+    }
+
+    override fun deleteByBarcode(userBarcode: String) {
+        attemptsByBarcode.remove(userBarcode)
     }
 }
 

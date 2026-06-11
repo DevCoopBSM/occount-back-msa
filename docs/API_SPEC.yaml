@@ -67,6 +67,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        "429":
+          description: 요청 한도 초과 (IP 기준 rate limit)
+          headers:
+            Retry-After:
+              description: 재시도까지 대기 시간(초)
+              schema:
+                type: integer
+              example: 30
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v3/auth/email/verify-otp:
     post:
@@ -100,6 +112,18 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "404":
           description: 발송된 인증번호 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "429":
+          description: 요청 한도 초과 (IP 기준 rate limit)
+          headers:
+            Retry-After:
+              description: 재시도까지 대기 시간(초)
+              schema:
+                type: integer
+              example: 30
           content:
             application/json:
               schema:
@@ -139,6 +163,18 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "502":
           description: PortOne 본인인증 실패 또는 미완료
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "429":
+          description: 요청 한도 초과 (IP 기준 rate limit)
+          headers:
+            Retry-After:
+              description: 재시도까지 대기 시간(초)
+              schema:
+                type: integer
+              example: 30
           content:
             application/json:
               schema:
@@ -251,6 +287,18 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "401":
           description: 이메일 또는 비밀번호 불일치
+        "429":
+          description: 요청 한도 초과 (IP 기준 rate limit)
+          headers:
+            Retry-After:
+              description: 재시도까지 대기 시간(초)
+              schema:
+                type: integer
+              example: 30
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v3/auth/kiosk/login:
     post:
@@ -286,6 +334,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "401":
           description: 바코드 또는 PIN 불일치
+        "429":
+          description: PIN 실패 누적으로 인한 계정(barcode) 잠금 — 잠시 후 다시 시도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # ───────────────────────────────────────────────
   # Member
