@@ -1365,6 +1365,57 @@ paths:
         "401":
           description: 인증 실패
 
+  /api/v3/wallet/admin/charge:
+    post:
+      tags: [Wallet]
+      operationId: adminChargeWallets
+      summary: 어드민 다중 회원 포인트 충전
+      description: >-
+        관리자가 여러 회원에게 동일 금액의 포인트를 일괄 충전합니다. (ADMIN_ONLY)
+        사용자별 독립 트랜잭션으로 처리되어 일부가 실패해도 나머지는 충전되며, 결과가 리포트로 반환됩니다.
+        충전한 관리자의 id는 인증 헤더에서 추출되어 충전 로그에 기록됩니다.
+        충전 대상 검색은 GET /api/v3/users (keyword) 를 사용합니다.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminChargeWalletRequest'
+            example:
+              user_ids: [1, 2, 99]
+              amount: 1000
+              reason: "5월 우수회원 보상"
+      responses:
+        "200":
+          description: >-
+            충전 처리 완료. 전체/부분/전체-실패 모두 200으로 응답하므로,
+            클라이언트는 HTTP 상태가 아니라 charged_count/failed_count 와 results 의 status 로 결과를 판정해야 한다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminChargeWalletResponse'
+              example:
+                charged_count: 2
+                failed_count: 1
+                results:
+                  - user_id: 1
+                    status: "CHARGED"
+                    message: null
+                  - user_id: 2
+                    status: "CHARGED"
+                    message: null
+                  - user_id: 99
+                    status: "FAILED"
+                    message: "WALLET_NOT_FOUND"
+        "400":
+          description: 요청 검증 실패 (user_ids 비어있음 / amount 0 이하 / reason 공백)
+        "401":
+          description: 인증 실패
+        "403":
+          description: 관리자 권한 없음
+
   # ───────────────────────────────────────────────
   # Inquiry
   # ───────────────────────────────────────────────
@@ -2137,6 +2188,55 @@ components:
         point:
           type: integer
           description: 현재 포인트 잔액
+
+    AdminChargeWalletRequest:
+      type: object
+      required: [user_ids, amount, reason]
+      properties:
+        user_ids:
+          type: array
+          minItems: 1
+          items:
+            type: integer
+            format: int64
+          description: 충전 대상 회원 id 목록 (비어 있을 수 없음, 중복은 1회만 처리)
+        amount:
+          type: integer
+          minimum: 1
+          description: 충전 금액 (양수)
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 충전 사유 (충전 로그의 detail_reason 으로 저장)
+
+    AdminChargeWalletResponse:
+      type: object
+      properties:
+        charged_count:
+          type: integer
+          description: 충전 성공 건수
+        failed_count:
+          type: integer
+          description: 충전 실패 건수
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminChargeItemResponse'
+
+    AdminChargeItemResponse:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [CHARGED, FAILED]
+        message:
+          type: string
+          nullable: true
+          description: 실패 시 사유 코드 (예 WALLET_NOT_FOUND), 성공 시 null
 
     # ── Inquiry ────────────────────────────────────
     CreateInquiryRequest:

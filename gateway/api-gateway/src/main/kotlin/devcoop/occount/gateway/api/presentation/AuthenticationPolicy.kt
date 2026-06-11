@@ -38,6 +38,7 @@ class AuthenticationPolicy {
         rule(HttpMethod.GET, "/api/v3/orders/{orderId}/stream").optionalAuth()
         rule("/api/v3/orders/**").authenticated()
         rule("/api/v3/points/**").authenticated()
+        rule(HttpMethod.POST, "/api/v3/wallet/admin/charge").adminOnly()
         rule("/api/v3/wallet/**").authenticated()
         rule("/api/v3/inquiries/**").authenticated()
 
