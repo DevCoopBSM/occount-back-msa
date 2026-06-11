@@ -2,6 +2,8 @@ package devcoop.occount.member.infrastructure.persistence
 
 import devcoop.occount.member.domain.user.User
 import devcoop.occount.member.application.output.UserRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -31,5 +33,10 @@ class UserRepositoryImpl(
     override fun save(user: User): User {
         return userJpaRepository.save(UserPersistenceMapper.toEntity(user))
             .let(UserPersistenceMapper::toDomain)
+    }
+
+    override fun findAll(pageable: Pageable): Page<User> {
+        return userJpaRepository.findAll(pageable)
+            .map(UserPersistenceMapper::toDomain)
     }
 }
