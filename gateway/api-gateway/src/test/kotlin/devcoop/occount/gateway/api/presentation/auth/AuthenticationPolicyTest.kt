@@ -46,6 +46,38 @@ class AuthenticationPolicyTest {
     }
 
     @Test
+    fun `inquiry admin list requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/inquiries/admin"),
+        )
+    }
+
+    @Test
+    fun `inquiry admin detail requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/inquiries/admin/1"),
+        )
+    }
+
+    @Test
+    fun `inquiry self path still requires authentication`() {
+        assertEquals(
+            AuthenticationRule.Access.AUTHENTICATED,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/inquiries"),
+        )
+    }
+
+    @Test
+    fun `inquiry user detail requires authentication not admin`() {
+        assertEquals(
+            AuthenticationRule.Access.AUTHENTICATED,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/inquiries/42"),
+        )
+    }
+
+    @Test
     fun `items list path is public`() {
         assertEquals(AuthenticationRule.Access.PERMIT_ALL, policy.resolveAccess(HttpMethod.GET, "/api/v3/items"))
     }
