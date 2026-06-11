@@ -250,6 +250,8 @@ class CompensateOrderPaymentUseCaseTest {
         val saved = mutableListOf<ChargeLog>()
 
         override fun findByPaymentId(paymentId: Long): ChargeLog? = saved.firstOrNull { it.paymentId == paymentId }
+        override fun findAll(pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<ChargeLog> =
+            org.springframework.data.domain.PageImpl(saved.toList(), pageable, saved.size.toLong())
         override fun save(chargeLog: ChargeLog): ChargeLog {
             saved += chargeLog
             return chargeLog
