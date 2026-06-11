@@ -19,6 +19,9 @@ import devcoop.occount.member.application.usecase.pin.VerifyPasswordForPinChange
 import devcoop.occount.member.application.output.TokenGenerator
 import devcoop.occount.member.application.output.UserRepository
 import devcoop.occount.member.domain.user.User
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.web.servlet.MockMvc
@@ -77,6 +80,13 @@ class FakeUserRepository(
         val persistedUser = if (user.getId() == 0L) user.copy(id = nextId++) else user
         usersById[persistedUser.getId()] = persistedUser
         return persistedUser
+    }
+
+    override fun findAll(pageable: Pageable): Page<User> {
+        val all = usersById.values.toList()
+        val from = (pageable.pageNumber * pageable.pageSize).coerceAtMost(all.size)
+        val to = (from + pageable.pageSize).coerceAtMost(all.size)
+        return PageImpl(all.subList(from, to), pageable, all.size.toLong())
     }
 }
 

@@ -290,6 +290,66 @@ paths:
   # ───────────────────────────────────────────────
   # Member
   # ───────────────────────────────────────────────
+  /api/v3/users:
+    get:
+      tags: [Member]
+      operationId: getAdminUserList
+      summary: 사용자 전체 조회
+      description: |
+        관리자가 전체 사용자 목록을 페이지 단위로 조회합니다. (ADMIN_ONLY)
+
+        - 기본 페이지 크기는 10이며 `size` 는 최대 100으로 제한됩니다.
+        - 기본 정렬은 `id` 오름차순입니다. 정렬 허용 필드는 `id` 뿐이며, 그 외 필드는 무시되고 기본 정렬이 적용됩니다.
+        - 자격증명(비밀번호/PIN)과 CI 등 민감정보는 응답에서 제외됩니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: 0부터 시작하는 페이지 번호
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+        - name: size
+          in: query
+          required: false
+          description: 페이지 크기 (최대 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          example: 10
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserListResponse'
+              example:
+                users:
+                  - id: 1
+                    username: "홍길동"
+                    email: "hong@example.com"
+                    phone: "010-1234-5678"
+                    user_type: "STUDENT"
+                    role: "ROLE_USER"
+                    cooperative_number: "COOP001"
+                    user_barcode: "BARCODE123"
+                    birth_date: "2000-01-15"
+                total_count: 23
+                total_pages: 3
+                current_page: 0
+                page_size: 10
+        "401":
+          description: 인증 실패
+        "403":
+          description: 관리자 권한 없음
+
   /api/v3/users/pre-order-info:
     get:
       tags: [Member]
@@ -1651,6 +1711,69 @@ components:
           type: string
           nullable: true
           description: 회원 바코드
+
+    AdminUserListResponse:
+      type: object
+      description: 관리자 사용자 목록. 자격증명(password/pin)과 CI 등 민감정보는 제외됨
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminUserSummaryResponse'
+        total_count:
+          type: integer
+          format: int64
+          description: 전체 사용자 수
+        total_pages:
+          type: integer
+          description: 전체 페이지 수
+        current_page:
+          type: integer
+          description: 현재 페이지 번호 (0부터 시작)
+        page_size:
+          type: integer
+          description: 페이지 크기
+
+    AdminUserSummaryResponse:
+      type: object
+      description: 관리자 목록의 사용자 항목. 비밀번호/PIN/CI 등 민감정보는 제외됨
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 사용자 ID
+        username:
+          type: string
+          description: 이름
+        email:
+          type: string
+          format: email
+          description: 이메일
+        phone:
+          type: string
+          nullable: true
+          description: 전화번호
+        user_type:
+          type: string
+          enum: [STUDENT, PARENT, TEACHER, OTHER]
+          description: 회원 유형
+        role:
+          type: string
+          enum: [ROLE_DEACTIVATED, ROLE_USER, ROLE_MEMBER, ROLE_COOP, ROLE_ADMIN]
+          description: 권한
+        cooperative_number:
+          type: string
+          nullable: true
+          description: 조합원 번호
+        user_barcode:
+          type: string
+          nullable: true
+          description: 회원 바코드
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          description: 생년월일 (YYYY-MM-DD)
 
     # ── Item ───────────────────────────────────────
     ItemListResponse:

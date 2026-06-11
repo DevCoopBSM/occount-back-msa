@@ -9,6 +9,9 @@ import devcoop.occount.member.application.otp.EmailOtp
 import devcoop.occount.member.application.pin.PinChangeTicket
 import devcoop.occount.member.domain.user.User
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.security.crypto.password.PasswordEncoder
 import java.time.Instant
 
@@ -66,6 +69,13 @@ class FakeUserRepository(
         usersById[persistedUser.getId()] = persistedUser
         savedUsers += persistedUser
         return persistedUser
+    }
+
+    override fun findAll(pageable: Pageable): Page<User> {
+        val all = usersById.values.toList()
+        val from = (pageable.pageNumber * pageable.pageSize).coerceAtMost(all.size)
+        val to = (from + pageable.pageSize).coerceAtMost(all.size)
+        return PageImpl(all.subList(from, to), pageable, all.size.toLong())
     }
 }
 
