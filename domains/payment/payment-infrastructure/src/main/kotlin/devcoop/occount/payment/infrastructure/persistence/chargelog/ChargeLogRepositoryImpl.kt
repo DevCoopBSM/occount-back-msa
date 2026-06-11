@@ -2,6 +2,8 @@ package devcoop.occount.payment.infrastructure.persistence.chargelog
 
 import devcoop.occount.payment.application.output.ChargeLogRepository
 import devcoop.occount.payment.domain.wallet.ChargeLog
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -11,6 +13,11 @@ class ChargeLogRepositoryImpl(
     override fun findByPaymentId(paymentId: Long): ChargeLog? {
         return persistenceRepository.findByPaymentId(paymentId)
             ?.let(ChargeLogPersistenceMapper::toDomain)
+    }
+
+    override fun findAll(pageable: Pageable): Page<ChargeLog> {
+        return persistenceRepository.findAll(pageable)
+            .map(ChargeLogPersistenceMapper::toDomain)
     }
 
     override fun save(chargeLog: ChargeLog): ChargeLog {
