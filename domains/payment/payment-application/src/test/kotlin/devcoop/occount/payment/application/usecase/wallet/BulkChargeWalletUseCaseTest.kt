@@ -1,6 +1,6 @@
 package devcoop.occount.payment.application.usecase.wallet
 
-import devcoop.occount.payment.application.exception.WalletNotFoundException
+import devcoop.occount.payment.application.exception.BulkChargeWalletNotFoundException
 import devcoop.occount.payment.application.output.ChargeLogRepository
 import devcoop.occount.payment.application.support.FakeWalletRepository
 import devcoop.occount.payment.application.usecase.wallet.charge.BulkChargeWalletRequest
@@ -74,7 +74,7 @@ class BulkChargeWalletUseCaseTest {
         val chargeLogRepository = FakeChargeLogRepository()
         val useCase = BulkChargeWalletUseCase(walletRepository, chargeLogRepository)
 
-        assertFailsWith<WalletNotFoundException> {
+        val exception = assertFailsWith<BulkChargeWalletNotFoundException> {
             useCase.charge(
                 BulkChargeWalletRequest(
                     userIds = listOf(1L, 2L),
@@ -84,6 +84,7 @@ class BulkChargeWalletUseCaseTest {
             )
         }
 
+        assertEquals("조회할 수 없는 사용자가 포함되어 있습니다.", exception.message)
         assertEquals(emptyList(), walletRepository.savedWallets)
         assertEquals(emptyList(), chargeLogRepository.savedChargeLogs)
     }

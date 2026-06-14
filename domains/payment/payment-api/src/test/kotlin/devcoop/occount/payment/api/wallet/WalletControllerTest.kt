@@ -93,6 +93,26 @@ class WalletControllerTest {
             .andExpect(jsonPath("$.reason").exists())
     }
 
+    @Test
+    fun `bulk charge returns specific message when any user cannot be found`() {
+        val mockMvc = mockMvc(FakeWalletRepository(), FakeChargeLogRepository())
+
+        mockMvc.perform(
+            post("/wallet/point/bulk")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "userIds": [1],
+                      "amount": 50,
+                      "reason": "이벤트 지급"
+                    }
+                    """.trimIndent(),
+                ),
+        ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.message").value("조회할 수 없는 사용자가 포함되어 있습니다."))
+    }
+
     private fun mockMvc(
         walletRepository: FakeWalletRepository,
         chargeLogRepository: FakeChargeLogRepository,

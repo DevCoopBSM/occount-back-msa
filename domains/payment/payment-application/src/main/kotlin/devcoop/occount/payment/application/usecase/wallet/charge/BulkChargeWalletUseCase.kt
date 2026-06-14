@@ -1,6 +1,6 @@
 package devcoop.occount.payment.application.usecase.wallet.charge
 
-import devcoop.occount.payment.application.exception.WalletNotFoundException
+import devcoop.occount.payment.application.exception.BulkChargeWalletNotFoundException
 import devcoop.occount.payment.application.output.ChargeLogRepository
 import devcoop.occount.payment.application.output.WalletRepository
 import devcoop.occount.payment.domain.wallet.ChargeLog
@@ -19,7 +19,7 @@ class BulkChargeWalletUseCase(
         val wallets = request.userIds
             .distinct()
             .map { userId ->
-                walletRepository.findByUserId(userId) ?: throw WalletNotFoundException()
+                walletRepository.findByUserId(userId) ?: throw BulkChargeWalletNotFoundException()
             }
 
         val chargedWallets = wallets.map { wallet ->
