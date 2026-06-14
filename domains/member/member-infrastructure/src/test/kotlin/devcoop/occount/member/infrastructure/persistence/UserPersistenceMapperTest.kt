@@ -23,7 +23,7 @@ class UserPersistenceMapperTest {
         role = Role.ROLE_USER,
         pin = "encodedPin",
         userCiNumber = cryptoHelper.encrypt("CI123456"),
-        birthDate = LocalDate.of(2000, 1, 15),
+        birthDate = cryptoHelper.encrypt("2000-01-15"),
     )
 
     private fun createDomain(id: Long = 1L) = User(
@@ -81,12 +81,14 @@ class UserPersistenceMapperTest {
             role = Role.ROLE_USER,
             pin = "encodedPin",
             userCiNumber = "CI123456",
+            birthDate = "2000-01-15",
         )
 
         val domain = UserPersistenceMapper.toDomain(entity, cryptoHelper)
 
         assertEquals("010-1234-5678", domain.getPhone())
         assertEquals("CI123456", domain.getCiNumber())
+        assertEquals(LocalDate.of(2000, 1, 15), domain.getBirthDate())
     }
 
     @Test
@@ -96,11 +98,13 @@ class UserPersistenceMapperTest {
 
         val encryptedPhone = cryptoHelper.encrypt("010-1234-5678")
         val encryptedCiNumber = cryptoHelper.encrypt("CI123456")
+        val encryptedBirthDate = cryptoHelper.encrypt("2000-01-15")
 
         val entity = UserPersistenceMapper.toEntity(
             domain = domain,
             encryptedPhone = encryptedPhone,
             encryptedCiNumber = encryptedCiNumber,
+            encryptedBirthDate = encryptedBirthDate,
         )
 
         assertEquals(5L, entity.id)
@@ -114,7 +118,7 @@ class UserPersistenceMapperTest {
         assertEquals(Role.ROLE_USER, entity.role)
         assertEquals("encodedPin", entity.pin)
         assertEquals(encryptedCiNumber, entity.userCiNumber)
-        assertEquals(LocalDate.of(2000, 1, 15), entity.birthDate)
+        assertEquals(encryptedBirthDate, entity.birthDate)
     }
 
     @Test

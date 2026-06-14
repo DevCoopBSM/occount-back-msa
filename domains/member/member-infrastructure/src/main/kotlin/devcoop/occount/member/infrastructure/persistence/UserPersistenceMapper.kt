@@ -5,6 +5,7 @@ import devcoop.occount.member.domain.user.AccountInfo
 import devcoop.occount.member.domain.user.UserInfo
 import devcoop.occount.member.domain.user.UserSensitiveInfo
 import devcoop.occount.member.infrastructure.crypto.CryptoHelper
+import java.time.LocalDate
 
 object UserPersistenceMapper {
     fun toDomain(entity: UserJpaEntity, cryptoHelper: CryptoHelper): User {
@@ -16,7 +17,7 @@ object UserPersistenceMapper {
                 userBarcode = entity.userBarcode,
                 userType = entity.userType,
                 cooperativeNumber = entity.cooperativeNumber,
-                birthDate = entity.birthDate,
+                birthDate = decryptBirthDate(entity.birthDate, cryptoHelper),
             ),
             accountInfo = AccountInfo(
                 email = entity.email,
@@ -34,6 +35,7 @@ object UserPersistenceMapper {
         domain: User,
         encryptedPhone: String?,
         encryptedCiNumber: String?,
+        encryptedBirthDate: String?,
     ): UserJpaEntity {
         return UserJpaEntity(
             id = domain.getId(),
@@ -47,7 +49,12 @@ object UserPersistenceMapper {
             role = domain.getRole(),
             pin = domain.getUserPin(),
             userCiNumber = encryptedCiNumber,
-            birthDate = domain.getBirthDate(),
+            birthDate = encryptedBirthDate,
         )
+    }
+
+    private fun decryptBirthDate(value: String?, cryptoHelper: CryptoHelper): LocalDate? {
+        return cryptoHelper.decryptIfEncrypted(value)
+            ?.let(LocalDate::parse)
     }
 }

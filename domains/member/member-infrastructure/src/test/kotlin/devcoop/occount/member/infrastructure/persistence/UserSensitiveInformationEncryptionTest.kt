@@ -51,6 +51,7 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
         val username = "홍길동"
         val phone = "010-1234-5678"
         val ciNumber = "CI123456"
+        val birthDate = LocalDate.of(2000, 1, 15)
 
         val savedUser = userRepository.save(
             User(
@@ -60,7 +61,7 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
                     userType = UserType.STUDENT,
                     cooperativeNumber = null,
                     userBarcode = "BARCODE123",
-                    birthDate = LocalDate.of(2000, 1, 15),
+                    birthDate = birthDate,
                 ),
                 accountInfo = AccountInfo("test@test.com", "encodedPassword", Role.ROLE_USER, "encodedPin"),
                 userSensitiveInfo = UserSensitiveInfo(ciNumber),
@@ -68,7 +69,7 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
         )
 
         val rawValues = jdbcTemplate.queryForMap(
-            "select username, phone, user_ci_number from common_user where id = ?",
+            "select username, phone, user_ci_number, birth_date from common_user where id = ?",
             savedUser.getId(),
         )
         entityManager.clear()
@@ -78,11 +79,14 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
         assertEquals(phone, cryptoHelper.decrypt(rawValues["phone"] as String))
         assertEncrypted(rawValues["user_ci_number"], ciNumber)
         assertEquals(ciNumber, cryptoHelper.decrypt(rawValues["user_ci_number"] as String))
+        assertEncrypted(rawValues["birth_date"], birthDate.toString())
+        assertEquals(birthDate.toString(), cryptoHelper.decrypt(rawValues["birth_date"] as String))
 
         val foundUser = userRepository.findById(savedUser.getId())
         assertEquals(username, foundUser!!.getUsername())
         assertEquals(phone, foundUser.getPhone())
         assertEquals(ciNumber, foundUser.getCiNumber())
+        assertEquals(birthDate, foundUser.getBirthDate())
     }
 
     @Test
@@ -98,13 +102,14 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
         val username = "가입자"
         val phone = "010-9999-8888"
         val ciNumber = "CI-REGISTER-123"
+        val birthDate = LocalDate.of(2001, 2, 16)
 
         registerUserUseCase.register(
             MemberRegisterRequest(
                 userCiNumber = ciNumber,
                 username = username,
                 userPhone = phone,
-                birthDate = LocalDate.of(2001, 2, 16),
+                birthDate = birthDate,
                 userEmail = "register@test.com",
                 password = "password1234",
                 pin = "123456",
@@ -113,7 +118,7 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
         entityManager.flush()
 
         val rawValues = jdbcTemplate.queryForMap(
-            "select username, phone, user_ci_number from common_user where email = ?",
+            "select username, phone, user_ci_number, birth_date from common_user where email = ?",
             "register@test.com",
         )
         entityManager.clear()
@@ -123,11 +128,14 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
         assertEquals(phone, cryptoHelper.decrypt(rawValues["phone"] as String))
         assertEncrypted(rawValues["user_ci_number"], ciNumber)
         assertEquals(ciNumber, cryptoHelper.decrypt(rawValues["user_ci_number"] as String))
+        assertEncrypted(rawValues["birth_date"], birthDate.toString())
+        assertEquals(birthDate.toString(), cryptoHelper.decrypt(rawValues["birth_date"] as String))
 
         val foundUser = userRepository.findByEmail("register@test.com")
         assertEquals(username, foundUser!!.getUsername())
         assertEquals(phone, foundUser.getPhone())
         assertEquals(ciNumber, foundUser.getCiNumber())
+        assertEquals(birthDate, foundUser.getBirthDate())
     }
 
     @Test
@@ -171,6 +179,7 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
                 role = Role.ROLE_USER,
                 pin = "encodedPin",
                 userCiNumber = encryptedCiNumber,
+                birthDate = cryptoHelper.encrypt("2000-01-15"),
             ),
         )
 
@@ -186,6 +195,7 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
                     role = Role.ROLE_USER,
                     pin = "encodedPin",
                     userCiNumber = cryptoHelper.encrypt("CI-UNIQUE-456"),
+                    birthDate = cryptoHelper.encrypt("2000-01-16"),
                 ),
             )
         }

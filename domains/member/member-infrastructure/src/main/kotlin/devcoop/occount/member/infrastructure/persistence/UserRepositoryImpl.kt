@@ -38,6 +38,7 @@ class UserRepositoryImpl(
         repeat(MAX_SAVE_ATTEMPTS) {
             val encryptedPhone = encryptedValueGenerator.generate(user.getPhone(), userJpaRepository::existsByPhone)
             val encryptedCiNumber = encryptedValueGenerator.generate(user.getCiNumber(), userJpaRepository::existsByUserCiNumber)
+            val encryptedBirthDate = cryptoHelper.encrypt(user.getBirthDate()?.toString())
 
             try {
                 return userJpaRepository.saveAndFlush(
@@ -45,6 +46,7 @@ class UserRepositoryImpl(
                         domain = user,
                         encryptedPhone = encryptedPhone,
                         encryptedCiNumber = encryptedCiNumber,
+                        encryptedBirthDate = encryptedBirthDate,
                     ),
                 ).let { UserPersistenceMapper.toDomain(it, cryptoHelper) }
             } catch (exception: DataIntegrityViolationException) {

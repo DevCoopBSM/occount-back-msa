@@ -47,6 +47,7 @@ class UserRepositoryImplTest {
         role = Role.ROLE_USER,
         pin = "encodedPin",
         userCiNumber = cryptoHelper.encrypt("CI123456"),
+        birthDate = cryptoHelper.encrypt("2000-01-15"),
     )
 
     @Test
