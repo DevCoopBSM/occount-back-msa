@@ -20,6 +20,14 @@ class AuthenticationPolicyTest {
     }
 
     @Test
+    fun `wallet bulk charge requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.POST, "/api/v3/wallet/point/bulk"),
+        )
+    }
+
+    @Test
     fun `items list path is public`() {
         assertEquals(AuthenticationRule.Access.PERMIT_ALL, policy.resolveAccess(HttpMethod.GET, "/api/v3/items"))
     }

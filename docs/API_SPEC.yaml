@@ -1014,6 +1014,40 @@ paths:
         "401":
           description: 인증 실패
 
+  /api/v3/wallet/point/bulk:
+    post:
+      tags: [Wallet]
+      operationId: bulkChargeWallets
+      summary: 다수 사용자 포인트 충전
+      description: 관리자가 여러 사용자의 포인트를 동일한 액수만큼 충전합니다. (ADMIN_ONLY)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkChargeWalletRequest'
+            example:
+              userIds: [1, 2, 3]
+              amount: 5000
+              reason: "체육대회 순위권 상금"
+      responses:
+        "204":
+          description: 포인트 충전 성공
+        "400":
+          description: 요청 검증 실패 또는 포인트 지갑을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ValidationErrorResponse'
+                  - $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: 인증 실패
+        "403":
+          description: 관리자 권한 없음
+
   # ───────────────────────────────────────────────
   # Inquiry
   # ───────────────────────────────────────────────
@@ -1486,6 +1520,27 @@ components:
         point:
           type: integer
           description: 현재 포인트 잔액
+
+    BulkChargeWalletRequest:
+      type: object
+      required: [userIds, amount, reason]
+      properties:
+        userIds:
+          type: array
+          minItems: 1
+          description: 충전 대상 사용자 ID 목록
+          items:
+            type: integer
+            format: int64
+        amount:
+          type: integer
+          minimum: 1
+          description: 사용자마다 충전할 포인트
+        reason:
+          type: string
+          minLength: 1
+          pattern: ".*\\S.*"
+          description: 포인트 충전 사유
 
     ChargeLogResult:
       type: object
