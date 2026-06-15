@@ -1,14 +1,21 @@
 package devcoop.occount.order.api.order
 
 import devcoop.occount.core.common.auth.AuthHeaders
+import devcoop.occount.core.common.auth.AuthPrincipal
+import devcoop.occount.core.common.auth.AuthUser
 import devcoop.occount.order.api.sse.OrderSseRegistry
 import devcoop.occount.order.application.query.OrderQueryService
 import devcoop.occount.order.application.query.SalesRankingQueryService
+import devcoop.occount.order.application.shared.OrderHistoryListResponse
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
 import devcoop.occount.order.application.shared.SalesRankingResponse
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -31,6 +38,28 @@ class OrderController(
     private val salesRankingQueryService: SalesRankingQueryService,
     private val orderSseRegistry: OrderSseRegistry,
 ) {
+    companion object {
+        private const val MAX_PAGE_SIZE = 100
+        private val ALLOWED_SORT_FIELDS = setOf("orderId", "createdAt")
+        private val DEFAULT_SORT = Sort.by(Sort.Direction.DESC, "orderId")
+    }
+
+    @GetMapping
+    fun getMyOrders(
+        @AuthUser principal: AuthPrincipal,
+        @PageableDefault(size = 10, sort = ["orderId"], direction = Sort.Direction.DESC) pageable: Pageable,
+    ): ResponseEntity<OrderHistoryListResponse> {
+        val response = orderQueryService.getMyOrders(principal.userId, sanitizePageable(pageable))
+        return ResponseEntity.ok(response)
+    }
+
+    private fun sanitizePageable(pageable: Pageable): Pageable {
+        val cappedSize = minOf(pageable.pageSize, MAX_PAGE_SIZE)
+        val filteredOrders = pageable.sort.filter { it.property in ALLOWED_SORT_FIELDS }.toList()
+        val sanitizedSort = if (filteredOrders.isEmpty()) DEFAULT_SORT else Sort.by(filteredOrders)
+        return PageRequest.of(pageable.pageNumber, cappedSize, sanitizedSort)
+    }
+
     @PostMapping
     fun createOrder(
         @RequestBody orderRequest: OrderRequest,

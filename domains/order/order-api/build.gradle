@@ -8,6 +8,7 @@ dependencies {
     implementation project(':domains:order:order-domain')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.data:spring-data-commons'
 
     testImplementation 'tools.jackson.core:jackson-databind'
     testImplementation 'tools.jackson.module:jackson-module-kotlin'

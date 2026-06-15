@@ -35,6 +35,7 @@ object OrderPersistenceMapper {
             paymentCancellationRequested = entity.isPaymentCancellationRequested(),
             paymentCompensationRequested = entity.isPaymentCompensationRequested(),
             stockCompensationRequested = entity.isStockCompensationRequested(),
+            createdAt = entity.getCreatedAt(),
         )
     }
 
@@ -59,6 +60,7 @@ object OrderPersistenceMapper {
             paymentCancellationRequested = domain.paymentCancellationRequested,
             paymentCompensationRequested = domain.paymentCompensationRequested,
             stockCompensationRequested = domain.stockCompensationRequested,
+            createdAt = domain.createdAt,
             version = version,
         )
 
