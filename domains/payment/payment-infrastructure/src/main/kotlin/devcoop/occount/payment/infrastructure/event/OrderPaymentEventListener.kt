@@ -32,6 +32,8 @@ class OrderPaymentEventListener(
     @KafkaListener(
         topics = [DomainTopics.PAYMENT_COMMANDS],
         groupId = CONSUMER_NAME,
+        // payment.command.v1 은 kioskId 파티셔닝(파티션 6개). 단말별 병렬 처리를 위해 파티션 수만큼 스레드를 둔다.
+        concurrency = "6",
     )
     fun handlePaymentCommand(
         payload: String,

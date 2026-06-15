@@ -14,7 +14,8 @@ class OrderPaymentCancellationEventPublisher(
     fun publish(order: OrderAggregate) {
         eventPublisher.publish(
             topic = DomainTopics.PAYMENT_COMMANDS,
-            key = order.orderId.toString(),
+            // 같은 단말(kioskId)의 결제·취소·보상이 같은 파티션에서 순서대로 처리되도록 kioskId로 파티셔닝.
+            key = order.kioskId,
             eventType = DomainEventTypes.ORDER_PAYMENT_CANCELLATION_REQUESTED,
             payload = OrderPaymentCancellationRequestedEvent(
                 orderId = order.orderId,
