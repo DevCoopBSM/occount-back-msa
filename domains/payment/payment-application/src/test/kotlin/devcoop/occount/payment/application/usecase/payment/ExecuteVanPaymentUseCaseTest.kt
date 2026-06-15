@@ -26,6 +26,9 @@ import devcoop.occount.payment.domain.payment.PaymentType
 import devcoop.occount.payment.domain.wallet.Wallet
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.transaction.TransactionStatus
 import org.springframework.transaction.support.SimpleTransactionStatus
 import java.time.LocalDateTime
@@ -237,7 +240,9 @@ class ExecuteVanPaymentUseCaseTest {
     private class FakePaymentLogRepository : PaymentLogRepository {
         override fun findById(paymentId: Long): PaymentLog? = null
         override fun findByUserId(userId: Long): List<PaymentLog> = emptyList()
+        override fun findByUserId(userId: Long, pageable: Pageable): Page<PaymentLog> = PageImpl(emptyList(), pageable, 0)
         override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<PaymentLog> = emptyList()
+        override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime, pageable: Pageable): Page<PaymentLog> = PageImpl(emptyList(), pageable, 0)
         override fun findByPaymentType(paymentType: PaymentType): List<PaymentLog> = emptyList()
         override fun save(paymentLog: PaymentLog): PaymentLog = paymentLog
         override fun saveAll(paymentLogs: List<PaymentLog>): List<PaymentLog> = paymentLogs

@@ -12,6 +12,7 @@ import devcoop.occount.order.api.support.mockMvc
 import devcoop.occount.order.api.support.orderFixture
 import devcoop.occount.order.application.config.OrderTimeoutConfig
 import devcoop.occount.order.application.support.OrderLifecycleProcessor
+import devcoop.occount.order.application.support.OrderHistoryMapper
 import devcoop.occount.order.application.support.OrderMutationExecutor
 import devcoop.occount.order.application.support.OrderPaymentCancellationEventPublisher
 import devcoop.occount.order.application.support.OrderResponseMapper
@@ -253,6 +254,7 @@ class OrderControllerTest {
                     orderRepository = orderRepository,
                     orderResponseMapper = OrderResponseMapper(),
                     orderStreamEventMapper = OrderStreamEventMapper(),
+                    orderHistoryMapper = OrderHistoryMapper(),
                 ),
                 salesRankingQueryService = SalesRankingQueryService(
                     salesRankingRepository = salesRankingRepository,

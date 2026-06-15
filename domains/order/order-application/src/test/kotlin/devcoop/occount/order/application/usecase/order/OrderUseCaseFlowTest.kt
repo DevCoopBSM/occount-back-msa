@@ -14,6 +14,9 @@ import devcoop.occount.order.domain.order.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import java.time.Instant
 
 class OrderUseCaseFlowTest {
@@ -394,6 +397,9 @@ class OrderUseCaseFlowTest {
             private set
 
         override fun findById(orderId: Long): OrderAggregate? = orders[orderId]
+
+        override fun findByUserId(userId: Long, pageable: Pageable): Page<OrderAggregate> =
+            PageImpl(emptyList(), pageable, 0)
 
         override fun findPersistedById(orderId: Long): PersistedOrder? {
             persistedLookupCount += 1

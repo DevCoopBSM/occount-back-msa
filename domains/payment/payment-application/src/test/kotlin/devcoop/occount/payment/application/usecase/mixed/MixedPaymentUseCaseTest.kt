@@ -17,6 +17,9 @@ import devcoop.occount.payment.application.exception.InvalidPaymentRequestExcept
 import devcoop.occount.payment.application.usecase.payment.MixedPaymentUseCase
 import devcoop.occount.payment.domain.payment.CardType
 import devcoop.occount.payment.domain.payment.PaymentType
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -144,7 +147,9 @@ class MixedPaymentUseCaseTest {
 
         override fun findById(paymentId: Long): PaymentLog? = saved.firstOrNull { it.getPaymentId() == paymentId }
         override fun findByUserId(userId: Long): List<PaymentLog> = saved.filter { it.getUserId() == userId }
+        override fun findByUserId(userId: Long, pageable: Pageable): Page<PaymentLog> = PageImpl(emptyList(), pageable, 0)
         override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<PaymentLog> = saved
+        override fun findByUserIdAndPaymentDateBetween(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime, pageable: Pageable): Page<PaymentLog> = PageImpl(emptyList(), pageable, 0)
         override fun findByPaymentType(paymentType: PaymentType): List<PaymentLog> = saved.filter { it.getPaymentType() == paymentType }
         override fun save(paymentLog: PaymentLog): PaymentLog { saved += paymentLog; return paymentLog }
         override fun saveAll(paymentLogs: List<PaymentLog>): List<PaymentLog> { saved += paymentLogs; return paymentLogs }

@@ -1159,6 +1159,67 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "401":
           description: 잘못된 토큰
+    get:
+      tags: [Order]
+      operationId: getMyOrders
+      summary: 내 주문 내역 조회 (결제 정보 포함)
+      description: >-
+        로그인 사용자 본인의 주문 내역을 페이징 조회합니다. (AUTHENTICATED)
+        각 주문에는 주문 상품 목록(lines)과 결제 정보(payment)가 함께 포함됩니다.
+        결제 정보는 주문 처리 시 주문에 기록된 결과(결제 로그 ID, 사용 포인트, 카드 결제액, 거래 ID, 승인 번호)입니다.
+        기본 10건, 최신순(orderId DESC). 정렬 가능 필드는 orderId, createdAt
+        (허용 외 필드는 무시되고 기본 정렬이 적용됩니다).
+        사용자 식별은 게이트웨이가 주입하는 `X-Authenticated-User-Id` 헤더로 수행됩니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, default: 0, minimum: 0 }
+          description: 0-based 페이지 번호
+        - name: size
+          in: query
+          required: false
+          schema: { type: integer, default: 10, maximum: 100 }
+          description: 페이지 크기 (최대 100으로 제한됨)
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, default: "orderId,desc" }
+          description: "정렬 (허용 필드 orderId, createdAt — 그 외 무시되고 기본 orderId DESC 적용)"
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderHistoryListResponse'
+              example:
+                orders:
+                  - order_id: 1001
+                    status: "COMPLETED"
+                    order_date: "2026-06-11T09:00:00Z"
+                    total_amount: 4500
+                    lines:
+                      - item_id: 1
+                        item_name_snapshot: "삼각김밥"
+                        unit_price: 1500
+                        quantity: 3
+                        total_price: 4500
+                    payment:
+                      payment_log_id: 5001
+                      payment_status: "SUCCEEDED"
+                      points_used: 500
+                      card_amount: 4000
+                      transaction_id: "TXN-20260611-0001"
+                      approval_number: "00012345"
+                total_count: 23
+                total_pages: 3
+                current_page: 0
+                page_size: 10
+        "401":
+          description: 인증 실패
 
   /api/v3/orders/statistics/sales-ranking:
     get:
@@ -1525,6 +1586,84 @@ paths:
           description: 인증 실패
         "403":
           description: 관리자 권한 없음
+
+  # ───────────────────────────────────────────────
+  # Payment
+  # ───────────────────────────────────────────────
+  /api/v3/payments/history:
+    get:
+      tags: [Payment]
+      operationId: getPaymentHistory
+      summary: 내 결제 내역 조회
+      description: >-
+        로그인 사용자 본인의 결제 내역(결제 로그)을 페이징 조회합니다. (AUTHENTICATED)
+        `start_date`/`end_date` 를 **둘 다** 지정하면 해당 기간으로 필터링하며,
+        하나만 지정하거나 둘 다 생략하면 전체 기간을 조회합니다.
+        기본 10건, 최신순(paymentDate DESC). 정렬 가능 필드는 paymentId, paymentDate
+        (허용 외 필드는 무시되고 기본 정렬이 적용됩니다).
+        결제 수단에 따라 포인트 결제는 point_transaction 이, 카드 결제는 card_info/transaction_info 가 채워집니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, default: 0, minimum: 0 }
+          description: 0-based 페이지 번호
+        - name: size
+          in: query
+          required: false
+          schema: { type: integer, default: 10, maximum: 100 }
+          description: 페이지 크기 (최대 100으로 제한됨)
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, default: "paymentDate,desc" }
+          description: "정렬 (허용 필드 paymentId, paymentDate — 그 외 무시되고 기본 paymentDate DESC 적용)"
+        - name: start_date
+          in: query
+          required: false
+          schema: { type: string, format: date-time }
+          description: "조회 시작 일시 (ISO-8601, end_date 와 함께 지정해야 적용)"
+          example: "2026-06-01T00:00:00"
+        - name: end_date
+          in: query
+          required: false
+          schema: { type: string, format: date-time }
+          description: "조회 종료 일시 (ISO-8601, start_date 와 함께 지정해야 적용)"
+          example: "2026-06-30T23:59:59"
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentHistoryListResponse'
+              example:
+                payments:
+                  - payment_id: 5001
+                    user_id: 1
+                    payment_date: "2026-06-11T09:00:00"
+                    payment_type: "CARD"
+                    total_amount: 4500
+                    point_transaction:
+                      before_point: 500
+                      change_amount: -500
+                      after_point: 0
+                    card_info:
+                      issuer_name: "신한카드"
+                      card_brand: "VISA"
+                    transaction_info:
+                      approval_number: "00012345"
+                      transaction_id: "TXN-20260611-0001"
+                      amount: 4000
+                    event_type: "NONE"
+                total_count: 42
+                total_pages: 5
+                current_page: 0
+                page_size: 10
+        "401":
+          description: 인증 실패
 
   # ───────────────────────────────────────────────
   # Inquiry
@@ -2375,6 +2514,103 @@ components:
         - COMPENSATION_FAILED
         - TIMED_OUT
 
+    OrderStepStatus:
+      type: string
+      description: |
+        주문 단계(결제/재고)별 진행 상태.
+        - `PENDING` — 대기
+        - `SUCCEEDED` — 성공
+        - `FAILED` — 실패
+        - `COMPENSATED` — 보상(환불/복원) 완료
+        - `COMPENSATION_FAILED` — 보상 실패
+      enum:
+        - PENDING
+        - SUCCEEDED
+        - FAILED
+        - COMPENSATED
+        - COMPENSATION_FAILED
+
+    OrderHistoryListResponse:
+      type: object
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderHistoryItem'
+        total_count:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+        current_page:
+          type: integer
+          description: 0-based 현재 페이지 번호
+        page_size:
+          type: integer
+
+    OrderHistoryItem:
+      type: object
+      properties:
+        order_id:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        order_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: 주문 생성 일시 (created_at 도입 이전 주문은 null)
+        total_amount:
+          type: integer
+          description: 총 결제 금액
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderLineResult'
+        payment:
+          $ref: '#/components/schemas/OrderPaymentInfo'
+
+    OrderLineResult:
+      type: object
+      properties:
+        item_id:
+          type: integer
+          format: int64
+        item_name_snapshot:
+          type: string
+          description: 주문 시점 상품명 스냅샷
+        unit_price:
+          type: integer
+        quantity:
+          type: integer
+        total_price:
+          type: integer
+
+    OrderPaymentInfo:
+      type: object
+      description: 주문에 기록된 결제 결과 (결제 도메인 동기 조회 없이 주문 자체에 비정규화된 값)
+      properties:
+        payment_log_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: 결제 로그 ID (결제 미완료 시 null)
+        payment_status:
+          $ref: '#/components/schemas/OrderStepStatus'
+        points_used:
+          type: integer
+          description: 사용한 포인트
+        card_amount:
+          type: integer
+          description: 카드 결제 금액
+        transaction_id:
+          type: string
+          nullable: true
+        approval_number:
+          type: string
+          nullable: true
+
     # ── Wallet ─────────────────────────────────────
     WalletPointResponse:
       type: object
@@ -2486,6 +2722,117 @@ components:
           type: integer
         after_point:
           type: integer
+
+    # ── Payment ────────────────────────────────────
+    PaymentHistoryListResponse:
+      type: object
+      properties:
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentLogResult'
+        total_count:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+        current_page:
+          type: integer
+          description: 0-based 현재 페이지 번호
+        page_size:
+          type: integer
+
+    PaymentLogResult:
+      type: object
+      properties:
+        payment_id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+          nullable: true
+        payment_date:
+          type: string
+          format: date-time
+        payment_type:
+          $ref: '#/components/schemas/PaymentType'
+        total_amount:
+          type: integer
+        point_transaction:
+          allOf:
+            - $ref: '#/components/schemas/PointTransactionResult'
+          nullable: true
+          description: 포인트 결제 시 채워짐
+        card_info:
+          allOf:
+            - $ref: '#/components/schemas/CardResult'
+          nullable: true
+          description: 카드 결제 시 채워짐
+        transaction_info:
+          allOf:
+            - $ref: '#/components/schemas/TransactionResult'
+          nullable: true
+          description: 카드 결제 승인 상세
+        event_type:
+          $ref: '#/components/schemas/EventType'
+
+    PointTransactionResult:
+      type: object
+      properties:
+        before_point:
+          type: integer
+        change_amount:
+          type: integer
+        after_point:
+          type: integer
+
+    CardResult:
+      type: object
+      properties:
+        acquirer_code: { type: string, nullable: true }
+        acquirer_name: { type: string, nullable: true }
+        issuer_code: { type: string, nullable: true }
+        issuer_name: { type: string, nullable: true }
+        card_type: { type: string, nullable: true }
+        card_category: { type: string, nullable: true }
+        card_name: { type: string, nullable: true }
+        card_brand: { type: string, nullable: true }
+
+    TransactionResult:
+      type: object
+      properties:
+        message_number: { type: string, nullable: true }
+        type_code: { type: string, nullable: true }
+        card_number: { type: string, nullable: true }
+        amount: { type: integer, nullable: true }
+        installment_months: { type: integer, nullable: true }
+        cancel_type: { type: string, nullable: true }
+        approval_number: { type: string, nullable: true }
+        approval_date: { type: string, nullable: true }
+        approval_time: { type: string, nullable: true }
+        transaction_id: { type: string, nullable: true }
+        terminal_id: { type: string, nullable: true }
+        merchant_number: { type: string, nullable: true }
+        reject_code: { type: string, nullable: true }
+        reject_message: { type: string, nullable: true }
+
+    PaymentType:
+      type: string
+      description: 결제 수단 (POINT 포인트, CARD 카드, MIXED 포인트+카드)
+      enum:
+        - POINT
+        - CARD
+        - MIXED
+
+    EventType:
+      type: string
+      nullable: true
+      description: 결제 이벤트 유형
+      enum:
+        - NONE
+        - PROMOTION
+        - SPECIAL_SALE
 
     # ── Inquiry ────────────────────────────────────
     CreateInquiryRequest:

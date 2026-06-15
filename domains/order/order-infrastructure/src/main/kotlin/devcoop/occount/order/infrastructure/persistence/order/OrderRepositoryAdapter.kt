@@ -8,7 +8,9 @@ import devcoop.occount.order.application.shared.SalesRankingType
 import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderStatus
 import devcoop.occount.order.domain.order.isFinalForClient
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -21,6 +23,10 @@ class OrderRepositoryAdapter(
     @Transactional(readOnly = true)
     override fun findById(orderId: Long): OrderAggregate? =
         orderJpaRepository.findById(orderId).orElse(null)?.let(OrderPersistenceMapper::toDomain)
+
+    @Transactional(readOnly = true)
+    override fun findByUserId(userId: Long, pageable: Pageable): Page<OrderAggregate> =
+        orderJpaRepository.findByUserId(userId, pageable).map(OrderPersistenceMapper::toDomain)
 
     @Transactional(readOnly = true)
     override fun findPersistedById(orderId: Long): PersistedOrder? =

@@ -14,6 +14,9 @@ import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderStatus
 import devcoop.occount.order.domain.order.RequestedOrderLine
 import devcoop.occount.order.domain.order.isFinalForClient
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
@@ -47,6 +50,15 @@ class FakeOrderRepository(
     private var nextId = (ordersById.keys.maxOrNull() ?: 0L) + 1L
 
     override fun findById(orderId: Long): OrderAggregate? = ordersById[orderId]
+
+    override fun findByUserId(userId: Long, pageable: Pageable): Page<OrderAggregate> {
+        val matched = ordersById.values
+            .filter { it.userId == userId }
+            .sortedByDescending(OrderAggregate::orderId)
+        val from = (pageable.pageNumber * pageable.pageSize).coerceAtMost(matched.size)
+        val to = (from + pageable.pageSize).coerceAtMost(matched.size)
+        return PageImpl(matched.subList(from, to), pageable, matched.size.toLong())
+    }
 
     override fun findPersistedById(orderId: Long): PersistedOrder? {
         val order = ordersById[orderId] ?: return null
