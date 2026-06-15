@@ -17,8 +17,13 @@ class FakeChargeLogRepository(
     override fun findByPaymentId(paymentId: Long): ChargeLog? =
         savedLogs.firstOrNull { it.paymentId == paymentId }
 
-    override fun findAll(pageable: Pageable): Page<ChargeLog> {
-        val sorted = applySort(savedLogs.toList(), pageable.sort)
+    override fun findAll(pageable: Pageable): Page<ChargeLog> = paginate(savedLogs.toList(), pageable)
+
+    override fun findByUserId(userId: Long, pageable: Pageable): Page<ChargeLog> =
+        paginate(savedLogs.filter { it.userId == userId }, pageable)
+
+    private fun paginate(source: List<ChargeLog>, pageable: Pageable): Page<ChargeLog> {
+        val sorted = applySort(source, pageable.sort)
         val from = (pageable.pageNumber * pageable.pageSize).coerceAtMost(sorted.size)
         val to = (from + pageable.pageSize).coerceAtMost(sorted.size)
         return PageImpl(sorted.subList(from, to), pageable, sorted.size.toLong())

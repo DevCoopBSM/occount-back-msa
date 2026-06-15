@@ -1587,6 +1587,59 @@ paths:
         "403":
           description: 관리자 권한 없음
 
+  /api/v3/wallet/charges:
+    get:
+      tags: [Wallet]
+      operationId: getMyChargeHistory
+      summary: 내 충전 내역 조회
+      description: >-
+        로그인 사용자 본인의 포인트 충전 내역을 페이징 조회합니다. (AUTHENTICATED)
+        토큰의 사용자 id 로만 필터링하며 임의 사용자 조회는 불가합니다.
+        기본 10건, 최신순(chargeId DESC). 정렬 가능 필드는 chargeId, chargeDate
+        (Spring Data 정렬 규약상 엔티티 프로퍼티명을 사용하며, 허용 외 필드는 무시되고 기본 정렬이 적용됩니다).
+        충전을 수행한 어드민 id(charged_by) 등 감사용 필드는 노출하지 않습니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, default: 0, minimum: 0 }
+          description: 0-based 페이지 번호
+        - name: size
+          in: query
+          required: false
+          schema: { type: integer, default: 10, maximum: 100 }
+          description: 페이지 크기 (최대 100으로 제한됨)
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, default: "chargeId,desc" }
+          description: "정렬 (허용 필드 chargeId, chargeDate — 그 외 무시되고 기본 chargeId DESC 적용)"
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargeHistoryListResponse'
+              example:
+                charges:
+                  - charge_id: 120
+                    charge_date: "2026-06-11T09:00:00"
+                    charge_reason: "PURCHASE"
+                    detail_reason: "포인트 충전"
+                    payment_id: 5001
+                    before_point: 0
+                    change_amount: 1000
+                    after_point: 1000
+                total_count: 12
+                total_pages: 2
+                current_page: 0
+                page_size: 10
+        "401":
+          description: 인증 실패
+
   # ───────────────────────────────────────────────
   # Payment
   # ───────────────────────────────────────────────
@@ -2711,6 +2764,53 @@ components:
           format: int64
           nullable: true
           description: 충전을 수행한 어드민 id (시스템/사용자 충전은 null)
+        payment_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: 결제 연동 충전인 경우 결제 id (그 외 null)
+        before_point:
+          type: integer
+        change_amount:
+          type: integer
+        after_point:
+          type: integer
+
+    ChargeHistoryListResponse:
+      type: object
+      properties:
+        charges:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserChargeLogResponse'
+        total_count:
+          type: integer
+          format: int64
+          description: 본인 충전 내역 전체 건수
+        total_pages:
+          type: integer
+        current_page:
+          type: integer
+          description: 0-based 현재 페이지 번호
+        page_size:
+          type: integer
+
+    UserChargeLogResponse:
+      type: object
+      description: 사용자 본인 충전 내역 항목 (감사용 charged_by, 본인 user_id 는 노출하지 않음)
+      properties:
+        charge_id:
+          type: integer
+          format: int64
+        charge_date:
+          type: string
+          format: date-time
+        charge_reason:
+          type: string
+          enum: [EVENT, REWARD, PURCHASE, REFUND, ADMIN]
+        detail_reason:
+          type: string
+          nullable: true
         payment_id:
           type: integer
           format: int64

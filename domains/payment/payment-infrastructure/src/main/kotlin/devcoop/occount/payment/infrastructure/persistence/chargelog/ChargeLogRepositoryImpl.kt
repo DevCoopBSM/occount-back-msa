@@ -20,6 +20,11 @@ class ChargeLogRepositoryImpl(
             .map(ChargeLogPersistenceMapper::toDomain)
     }
 
+    override fun findByUserId(userId: Long, pageable: Pageable): Page<ChargeLog> {
+        return persistenceRepository.findByUserId(userId, pageable)
+            .map(ChargeLogPersistenceMapper::toDomain)
+    }
+
     override fun save(chargeLog: ChargeLog): ChargeLog {
         return persistenceRepository.save(ChargeLogPersistenceMapper.toEntity(chargeLog))
             .let(ChargeLogPersistenceMapper::toDomain)
