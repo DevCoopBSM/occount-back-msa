@@ -117,6 +117,13 @@ class AdminWalletControllerTest {
             val to = (from + pageable.pageSize).coerceAtMost(sorted.size)
             return PageImpl(sorted.subList(from, to), pageable, sorted.size.toLong())
         }
+        override fun findByUserId(userId: Long, pageable: Pageable): Page<ChargeLog> {
+            val filtered = logs.filter { it.userId == userId }
+            val sorted = sortDescById(filtered, pageable)
+            val from = (pageable.pageNumber * pageable.pageSize).coerceAtMost(sorted.size)
+            val to = (from + pageable.pageSize).coerceAtMost(sorted.size)
+            return PageImpl(sorted.subList(from, to), pageable, sorted.size.toLong())
+        }
         override fun save(chargeLog: ChargeLog): ChargeLog = chargeLog
         override fun saveAll(chargeLogs: List<ChargeLog>): List<ChargeLog> = chargeLogs
 
