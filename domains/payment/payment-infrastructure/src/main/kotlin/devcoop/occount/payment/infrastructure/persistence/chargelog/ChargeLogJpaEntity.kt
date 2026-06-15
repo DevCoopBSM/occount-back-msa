@@ -6,7 +6,10 @@ import org.hibernate.annotations.CreationTimestamp
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "charge_log")
+@Table(
+    name = "charge_log",
+    indexes = [Index(name = "idx_charge_log_user_id", columnList = "user_id, charge_id")],
+)
 class ChargeLogJpaEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
