@@ -44,4 +44,6 @@ class UserJpaEntity(
     val userCiNumber: String? = null,
     @field:Column(length = 512)
     val birthDate: String? = null,
+    @field:Column
+    val studentNumber: String? = null,
 )

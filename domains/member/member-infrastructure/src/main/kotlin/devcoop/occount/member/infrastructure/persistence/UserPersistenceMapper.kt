@@ -18,6 +18,7 @@ object UserPersistenceMapper {
                 userType = entity.userType,
                 cooperativeNumber = entity.cooperativeNumber,
                 birthDate = decryptBirthDate(entity.birthDate, cryptoHelper),
+                studentNumber = entity.studentNumber,
             ),
             accountInfo = AccountInfo(
                 email = entity.email,
@@ -50,6 +51,7 @@ object UserPersistenceMapper {
             pin = domain.getUserPin(),
             userCiNumber = encryptedCiNumber,
             birthDate = encryptedBirthDate,
+            studentNumber = domain.getStudentNumber(),
         )
     }
 

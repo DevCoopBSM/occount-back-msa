@@ -17,6 +17,7 @@ data class User(
     fun getUserPin(): String = accountInfo.pin
     fun getUserBarcode(): String? = userInfo.userBarcode
     fun getBirthDate(): LocalDate? = userInfo.birthDate
+    fun getStudentNumber(): String? = userInfo.studentNumber
     fun getEmail(): String = accountInfo.email
     fun getPassword(): String = accountInfo.password
     fun getCiNumber(): String? = userSensitiveInfo.ciNumber
