@@ -19,7 +19,6 @@ class UserJpaEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0L,
-    @Convert(converter = CryptoConverter::class)
     @field:Column(nullable = false, length = 512)
     val username: String = "",
     @field:Column(length = 512, unique = true)
@@ -42,6 +41,7 @@ class UserJpaEntity(
     val pin: String = "",
     @field:Column(length = 512, unique = true)
     val userCiNumber: String? = null,
+    @Convert(converter = CryptoConverter::class)
     @field:Column(length = 512)
     val birthDate: String? = null,
     @field:Column
