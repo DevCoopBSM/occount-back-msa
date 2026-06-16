@@ -36,6 +36,17 @@ data class User(
     fun changePin(encodedPin: String): User =
         copy(accountInfo = accountInfo.copy(pin = encodedPin))
 
+    /**
+     * 기본 회원(ROLE_USER)을 조합원(ROLE_MEMBER)으로 승격한다. 첫 출자 확정 시 호출된다.
+     * 이미 ROLE_USER 가 아니면(조합원·관리자 등) 변경 없이 그대로 반환한다(멱등).
+     */
+    fun promoteToMember(): User =
+        if (accountInfo.role == Role.ROLE_USER) {
+            copy(accountInfo = accountInfo.copy(role = Role.ROLE_MEMBER))
+        } else {
+            this
+        }
+
     companion object {
         fun register(
             userCiNumber: String,
