@@ -18,7 +18,12 @@ spec:
     - name: ndots
       value: "1"
   nodeSelector:
-    kubernetes.io/hostname: worker-1
+    workload.devcoop.io/role: cicd
+  tolerations:
+  - key: dedicated
+    operator: Equal
+    value: cicd
+    effect: NoSchedule
   containers:
   - name: gradle
     image: ${HARBOR_URL}/base/gradle:8.5-jdk21-alpine
