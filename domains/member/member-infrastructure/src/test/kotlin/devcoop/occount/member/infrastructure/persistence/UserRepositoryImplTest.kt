@@ -47,7 +47,8 @@ class UserRepositoryImplTest {
         role = Role.ROLE_USER,
         pin = "encodedPin",
         userCiNumber = cryptoHelper.encrypt("CI123456"),
-        birthDate = cryptoHelper.encrypt("2000-01-15"),
+        // birth_date 는 @Convert(CryptoConverter)가 영속 경계에서 암호화하므로, JPA 미개입 단위 테스트에서는 평문을 보관한다.
+        birthDate = "2000-01-15",
     )
 
     @Test

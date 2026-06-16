@@ -23,7 +23,8 @@ class UserPersistenceMapperTest {
         role = Role.ROLE_USER,
         pin = "encodedPin",
         userCiNumber = cryptoHelper.encrypt("CI123456"),
-        birthDate = cryptoHelper.encrypt("2000-01-15"),
+        // birth_date 는 @Convert(CryptoConverter)가 영속 경계에서 암호화하므로, JPA 미개입 단위 테스트에서는 평문을 보관한다.
+        birthDate = "2000-01-15",
     )
 
     private fun createDomain(id: Long = 1L) = User(
@@ -98,13 +99,11 @@ class UserPersistenceMapperTest {
 
         val encryptedPhone = cryptoHelper.encrypt("010-1234-5678")
         val encryptedCiNumber = cryptoHelper.encrypt("CI123456")
-        val encryptedBirthDate = cryptoHelper.encrypt("2000-01-15")
 
         val entity = UserPersistenceMapper.toEntity(
             domain = domain,
             encryptedPhone = encryptedPhone,
             encryptedCiNumber = encryptedCiNumber,
-            encryptedBirthDate = encryptedBirthDate,
         )
 
         assertEquals(5L, entity.id)
@@ -118,7 +117,8 @@ class UserPersistenceMapperTest {
         assertEquals(Role.ROLE_USER, entity.role)
         assertEquals("encodedPin", entity.pin)
         assertEquals(encryptedCiNumber, entity.userCiNumber)
-        assertEquals(encryptedBirthDate, entity.birthDate)
+        // toEntity 는 birth_date 를 평문으로 채우고, 실제 암호화는 @Convert(CryptoConverter)가 영속 시 수행한다.
+        assertEquals("2000-01-15", entity.birthDate)
     }
 
     @Test
