@@ -1,5 +1,8 @@
-package devcoop.occount.core.common.auth
+package devcoop.occount.web.auth
 
+import devcoop.occount.core.common.auth.AuthPrincipal
+import devcoop.occount.core.common.auth.AuthUser
+import devcoop.occount.core.common.auth.InvalidAuthenticatedRequestException
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.core.MethodParameter
 import org.springframework.web.bind.support.WebDataBinderFactory

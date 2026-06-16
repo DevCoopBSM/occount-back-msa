@@ -1,7 +1,7 @@
 package devcoop.occount.inquiry.api.inquiry
 
 import devcoop.occount.core.common.auth.AuthHeaders
-import devcoop.occount.core.common.auth.AuthPrincipalArgumentResolver
+import devcoop.occount.web.auth.AuthPrincipalArgumentResolver
 import devcoop.occount.inquiry.application.query.GetInquiryDetailQueryService
 import devcoop.occount.inquiry.application.query.GetInquiryListQueryService
 import devcoop.occount.inquiry.application.shared.InquiryListItemResponse

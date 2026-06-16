@@ -1,4 +1,4 @@
-package devcoop.occount.core.common.auth
+package devcoop.occount.web.auth
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
 import org.springframework.context.annotation.Configuration

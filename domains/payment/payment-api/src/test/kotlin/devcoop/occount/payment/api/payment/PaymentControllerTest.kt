@@ -1,7 +1,7 @@
 package devcoop.occount.payment.api.payment
 
 import devcoop.occount.core.common.auth.AuthHeaders
-import devcoop.occount.core.common.auth.AuthPrincipalArgumentResolver
+import devcoop.occount.web.auth.AuthPrincipalArgumentResolver
 import devcoop.occount.payment.api.support.ApiAdviceHandler
 import devcoop.occount.payment.application.output.PaymentLogRepository
 import devcoop.occount.payment.application.query.paymentlog.GetPaymentHistoryQueryService
