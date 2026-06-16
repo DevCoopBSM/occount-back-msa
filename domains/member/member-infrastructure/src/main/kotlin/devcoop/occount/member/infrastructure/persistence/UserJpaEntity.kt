@@ -1,8 +1,10 @@
 package devcoop.occount.member.infrastructure.persistence
 
+import devcoop.occount.member.infrastructure.crypto.CryptoConverter
 import devcoop.occount.member.domain.user.Role
 import devcoop.occount.member.domain.user.UserType
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -39,6 +41,7 @@ class UserJpaEntity(
     val pin: String = "",
     @field:Column(length = 512, unique = true)
     val userCiNumber: String? = null,
+    @Convert(converter = CryptoConverter::class)
     @field:Column(length = 512)
     val birthDate: String? = null,
     @field:Column

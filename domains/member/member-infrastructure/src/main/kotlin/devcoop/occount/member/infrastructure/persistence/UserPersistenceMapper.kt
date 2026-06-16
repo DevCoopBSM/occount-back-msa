@@ -17,7 +17,7 @@ object UserPersistenceMapper {
                 userBarcode = entity.userBarcode,
                 userType = entity.userType,
                 cooperativeNumber = entity.cooperativeNumber,
-                birthDate = decryptBirthDate(entity.birthDate, cryptoHelper),
+                birthDate = entity.birthDate?.let(LocalDate::parse),
                 studentNumber = entity.studentNumber,
             ),
             accountInfo = AccountInfo(
@@ -36,7 +36,6 @@ object UserPersistenceMapper {
         domain: User,
         encryptedPhone: String?,
         encryptedCiNumber: String?,
-        encryptedBirthDate: String?,
     ): UserJpaEntity {
         return UserJpaEntity(
             id = domain.getId(),
@@ -50,13 +49,8 @@ object UserPersistenceMapper {
             role = domain.getRole(),
             pin = domain.getUserPin(),
             userCiNumber = encryptedCiNumber,
-            birthDate = encryptedBirthDate,
+            birthDate = domain.getBirthDate()?.toString(),
             studentNumber = domain.getStudentNumber(),
         )
-    }
-
-    private fun decryptBirthDate(value: String?, cryptoHelper: CryptoHelper): LocalDate? {
-        return cryptoHelper.decryptIfEncrypted(value)
-            ?.let(LocalDate::parse)
     }
 }
