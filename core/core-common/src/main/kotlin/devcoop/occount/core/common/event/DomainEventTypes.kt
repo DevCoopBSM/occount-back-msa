@@ -15,4 +15,5 @@ object DomainEventTypes {
     const val ITEM_STOCK_COMPENSATION_REQUESTED = "ItemStockCompensationRequestedEvent"
     const val ITEM_STOCK_COMPENSATED = "ItemStockCompensatedEvent"
     const val ITEM_STOCK_COMPENSATION_FAILED = "ItemStockCompensationFailedEvent"
+    const val INVESTMENT_REGISTERED = "InvestmentRegisteredEvent"
 }

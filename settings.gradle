@@ -32,6 +32,12 @@ include 'domains:payment:payment-api'
 include 'domains:payment:payment-infrastructure'
 include 'domains:payment:payment-bootstrap'
 
+include 'domains:investment:investment-domain'
+include 'domains:investment:investment-application'
+include 'domains:investment:investment-api'
+include 'domains:investment:investment-infrastructure'
+include 'domains:investment:investment-bootstrap'
+
 
 include 'domains:inquiry:inquiry-domain'
 include 'domains:inquiry:inquiry-application'

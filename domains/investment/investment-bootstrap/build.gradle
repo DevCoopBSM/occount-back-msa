@@ -1,0 +1,24 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+bootJar {
+    archiveFileName.set('investment-api.jar')
+}
+
+dependencies {
+    implementation project(':domains:investment:investment-api')
+    implementation project(':domains:investment:investment-application')
+    implementation project(':domains:investment:investment-domain')
+    implementation project(':domains:investment:investment-infrastructure')
+    implementation project(':modules:db')
+    implementation project(':modules:kafka')
+    implementation project(':modules:observability')
+    implementation project(':modules:warmup')
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'tools.jackson.module:jackson-module-kotlin'
+
+    runtimeOnly 'com.mysql:mysql-connector-j'
+}

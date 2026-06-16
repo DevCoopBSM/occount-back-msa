@@ -42,6 +42,9 @@ class AuthenticationPolicy {
         rule("/api/v3/points/**").authenticated()
         rule("/api/v3/wallet/admin/**").adminOnly()
         rule("/api/v3/wallet/**").authenticated()
+        rule(HttpMethod.POST, "/api/v3/investments/webhooks/portone").permitAll()
+        rule("/api/v3/investments/admin/**").adminOnly()
+        rule("/api/v3/investments/**").authenticated()
         rule("/api/v3/inquiries/admin/**").adminOnly()
         rule("/api/v3/inquiries/**").authenticated()
 

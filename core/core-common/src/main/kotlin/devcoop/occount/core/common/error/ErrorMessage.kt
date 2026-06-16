@@ -82,5 +82,14 @@ enum class ErrorMessage(
     INQUIRY_NOT_FOUND("문의 정보를 찾을 수 없습니다."),
     INQUIRY_ACCESS_DENIED("해당 문의에 접근할 수 없습니다."),
 
+    INVALID_INVESTMENT_AMOUNT("유효하지 않은 출자 금액입니다."),
+    INVESTMENT_NOT_FOUND("출자 정보를 찾을 수 없습니다."),
+    INVESTMENT_ACCESS_DENIED("해당 출자 정보에 접근할 수 없습니다."),
+    INVESTMENT_ALREADY_CONFIRMED("이미 확정된 출자입니다."),
+    PENDING_INVESTMENT_NOT_FOUND("대기 중인 출자 요청을 찾을 수 없습니다."),
+    INVESTMENT_AMOUNT_MISMATCH("결제 금액이 출자 요청 금액과 일치하지 않습니다."),
+    INVESTMENT_PAYMENT_LOOKUP_FAILED("결제 정보를 조회하지 못했습니다."),
+    INVESTMENT_WEBHOOK_VERIFICATION_FAILED("웹훅 검증에 실패했습니다."),
+
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다."),
 }

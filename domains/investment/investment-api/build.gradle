@@ -1,0 +1,16 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    implementation project(':domains:investment:investment-application')
+    implementation project(':core:core-common')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.data:spring-data-commons'
+
+    testImplementation project(':domains:investment:investment-domain')
+    testImplementation 'tools.jackson.core:jackson-databind'
+    testImplementation 'tools.jackson.module:jackson-module-kotlin'
+}

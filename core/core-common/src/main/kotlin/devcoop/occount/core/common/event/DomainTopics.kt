@@ -7,4 +7,5 @@ object DomainTopics {
     const val PAYMENT_EVENTS = "payment.event.v1"
     const val ITEM_EVENTS = "item.event.stock.v1"
     const val ITEM_STOCK_COMPENSATION_REQUESTED = "item.command.compensation.v1"
+    const val INVESTMENT_REGISTERED = "investment.event.registered.v1"
 }

@@ -63,6 +63,10 @@ spring:
               uri: ${PAYMENT_API_URL}
               predicates:
                 - Path=/api/v3/wallet/**
+            - id: investment-api
+              uri: ${INVESTMENT_API_URL}
+              predicates:
+                - Path=/api/v3/investments/**
             - id: inquiry-api
               uri: ${INQUIRY_API_URL}
               predicates:
