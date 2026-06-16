@@ -24,6 +24,17 @@ spec:
     image: ${HARBOR_URL}/base/gradle:8.5-jdk21-alpine
     command: ['sleep']
     args: ['infinity']
+    env:
+    # 컨테이너 메모리 한도(4Gi) 안에 빌드 JVM을 묶는다. (--no-daemon이라 GRADLE_OPTS가 빌드 JVM에 적용)
+    # Kotlin을 in-process로 컴파일해 별도 데몬 프로세스가 한도를 넘지 않게 한다.
+    - name: GRADLE_OPTS
+      value: "-Xmx4g -Dkotlin.compiler.execution.strategy=in-process"
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 500m
+      limits:
+        memory: 6Gi
     volumeMounts:
     - name: gradle-cache
       mountPath: /home/gradle/.gradle
@@ -31,6 +42,12 @@ spec:
     image: gcr.io/kaniko-project/executor:debug
     command: ['sleep']
     args: ['infinity']
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: 250m
+      limits:
+        memory: 3Gi
     volumeMounts:
     - name: harbor-creds
       mountPath: /kaniko/.docker
@@ -38,8 +55,18 @@ spec:
     image: ${HARBOR_URL}/base/alpine-git:2.43.0
     command: ['sleep']
     args: ['infinity']
+    resources:
+      requests:
+        memory: 64Mi
+      limits:
+        memory: 256Mi
   - name: jnlp
     image: ${HARBOR_URL}/base/inbound-agent:3355.v388858a_47b_33-16
+    resources:
+      requests:
+        memory: 256Mi
+      limits:
+        memory: 512Mi
   volumes:
   - name: harbor-creds
     secret:
