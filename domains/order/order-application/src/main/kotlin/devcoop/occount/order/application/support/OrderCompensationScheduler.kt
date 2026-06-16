@@ -63,7 +63,8 @@ class OrderCompensationScheduler(
         log.info("결제 보상 요청 이벤트 발행 - 주문={}", order.orderId)
         eventPublisher.publish(
             topic = DomainTopics.PAYMENT_COMMANDS,
-            key = order.orderId.toString(),
+            // 같은 단말(kioskId)의 결제·취소·보상이 같은 파티션에서 순서대로 처리되도록 kioskId로 파티셔닝.
+            key = order.kioskId,
             eventType = DomainEventTypes.ORDER_PAYMENT_COMPENSATION_REQUESTED,
             payload = OrderPaymentCompensationRequestedEvent(
                 orderId = order.orderId,

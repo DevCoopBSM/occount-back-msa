@@ -1,6 +1,7 @@
 package devcoop.occount.member.infrastructure.persistence
 
 import devcoop.occount.member.domain.user.*
+import devcoop.occount.member.infrastructure.crypto.CryptoHelper
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -8,11 +9,12 @@ import java.time.LocalDate
 
 @DisplayName("UserPersistenceMapper 단위 테스트")
 class UserPersistenceMapperTest {
+    private val cryptoHelper = CryptoHelper("12345678901234567890123456789012")
 
     private fun createEntity(id: Long = 1L) = UserJpaEntity(
         id = id,
         username = "홍길동",
-        phone = "010-1234-5678",
+        phone = cryptoHelper.encrypt("010-1234-5678"),
         userBarcode = "BARCODE123",
         userType = UserType.STUDENT,
         cooperativeNumber = "COOP001",
@@ -20,8 +22,8 @@ class UserPersistenceMapperTest {
         password = "encodedPassword",
         role = Role.ROLE_USER,
         pin = "encodedPin",
-        userCiNumber = "CI123456",
-        birthDate = LocalDate.of(2000, 1, 15),
+        userCiNumber = cryptoHelper.encrypt("CI123456"),
+        birthDate = cryptoHelper.encrypt("2000-01-15"),
     )
 
     private fun createDomain(id: Long = 1L) = User(
@@ -48,7 +50,7 @@ class UserPersistenceMapperTest {
     fun `toDomain maps all fields from entity to domain`() {
         val entity = createEntity(id = 5L)
 
-        val domain = UserPersistenceMapper.toDomain(entity)
+        val domain = UserPersistenceMapper.toDomain(entity, cryptoHelper)
 
         assertEquals(5L, domain.getId())
         assertEquals("홍길동", domain.getUsername())
@@ -65,15 +67,49 @@ class UserPersistenceMapperTest {
     }
 
     @Test
+    @DisplayName("기존 평문 민감정보를 가진 엔티티도 도메인 객체로 변환된다")
+    fun `toDomain preserves legacy plaintext sensitive values`() {
+        val entity = UserJpaEntity(
+            id = 5L,
+            username = "홍길동",
+            phone = "010-1234-5678",
+            userBarcode = "BARCODE123",
+            userType = UserType.STUDENT,
+            cooperativeNumber = "COOP001",
+            email = "test@test.com",
+            password = "encodedPassword",
+            role = Role.ROLE_USER,
+            pin = "encodedPin",
+            userCiNumber = "CI123456",
+            birthDate = "2000-01-15",
+        )
+
+        val domain = UserPersistenceMapper.toDomain(entity, cryptoHelper)
+
+        assertEquals("010-1234-5678", domain.getPhone())
+        assertEquals("CI123456", domain.getCiNumber())
+        assertEquals(LocalDate.of(2000, 1, 15), domain.getBirthDate())
+    }
+
+    @Test
     @DisplayName("도메인 객체를 JPA 엔티티로 변환하면 모든 필드가 올바르게 매핑된다")
     fun `toEntity maps all fields from domain to entity`() {
         val domain = createDomain(id = 5L)
 
-        val entity = UserPersistenceMapper.toEntity(domain)
+        val encryptedPhone = cryptoHelper.encrypt("010-1234-5678")
+        val encryptedCiNumber = cryptoHelper.encrypt("CI123456")
+        val encryptedBirthDate = cryptoHelper.encrypt("2000-01-15")
+
+        val entity = UserPersistenceMapper.toEntity(
+            domain = domain,
+            encryptedPhone = encryptedPhone,
+            encryptedCiNumber = encryptedCiNumber,
+            encryptedBirthDate = encryptedBirthDate,
+        )
 
         assertEquals(5L, entity.id)
         assertEquals("홍길동", entity.username)
-        assertEquals("010-1234-5678", entity.phone)
+        assertEquals(encryptedPhone, entity.phone)
         assertEquals("BARCODE123", entity.userBarcode)
         assertEquals(UserType.STUDENT, entity.userType)
         assertEquals("COOP001", entity.cooperativeNumber)
@@ -81,8 +117,8 @@ class UserPersistenceMapperTest {
         assertEquals("encodedPassword", entity.password)
         assertEquals(Role.ROLE_USER, entity.role)
         assertEquals("encodedPin", entity.pin)
-        assertEquals("CI123456", entity.userCiNumber)
-        assertEquals(LocalDate.of(2000, 1, 15), entity.birthDate)
+        assertEquals(encryptedCiNumber, entity.userCiNumber)
+        assertEquals(encryptedBirthDate, entity.birthDate)
     }
 
     @Test
@@ -102,7 +138,7 @@ class UserPersistenceMapperTest {
             userCiNumber = null,
         )
 
-        val domain = UserPersistenceMapper.toDomain(entity)
+        val domain = UserPersistenceMapper.toDomain(entity, cryptoHelper)
 
         assertNull(domain.getPhone())
         assertNull(domain.getUserBarcode())

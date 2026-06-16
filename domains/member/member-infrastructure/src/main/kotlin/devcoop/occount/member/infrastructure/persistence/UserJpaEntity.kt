@@ -1,8 +1,10 @@
 package devcoop.occount.member.infrastructure.persistence
 
+import devcoop.occount.member.infrastructure.crypto.CryptoConverter
 import devcoop.occount.member.domain.user.Role
 import devcoop.occount.member.domain.user.UserType
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -10,7 +12,6 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import java.time.LocalDate
 
 @Entity
 @Table(name = "common_user")
@@ -18,9 +19,10 @@ class UserJpaEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0L,
-    @field:Column(nullable = false)
+    @Convert(converter = CryptoConverter::class)
+    @field:Column(nullable = false, length = 512)
     val username: String = "",
-    @field:Column(unique = true)
+    @field:Column(length = 512, unique = true)
     val phone: String? = null,
     @field:Column(unique = true)
     val userBarcode: String? = null,
@@ -38,8 +40,10 @@ class UserJpaEntity(
     val role: Role = Role.ROLE_USER,
     @field:Column(nullable = false)
     val pin: String = "",
-    @field:Column(unique = true)
+    @field:Column(length = 512, unique = true)
     val userCiNumber: String? = null,
+    @field:Column(length = 512)
+    val birthDate: String? = null,
     @field:Column
-    val birthDate: LocalDate? = null,
+    val studentNumber: String? = null,
 )

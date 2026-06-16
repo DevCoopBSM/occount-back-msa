@@ -2,28 +2,32 @@ package devcoop.occount.member.infrastructure.persistence
 
 import devcoop.occount.member.domain.user.User
 import devcoop.occount.member.application.output.UserRepository
+import devcoop.occount.member.infrastructure.crypto.CryptoHelper
+import devcoop.occount.member.infrastructure.crypto.UniqueEncryptedValueGenerator
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Repository
 
 @Repository
 class UserRepositoryImpl(
-    private val userJpaRepository: UserJpaRepository
+    private val userJpaRepository: UserJpaRepository,
+    private val cryptoHelper: CryptoHelper,
 ) : UserRepository {
     override fun findById(id: Long): User? {
         return userJpaRepository.findById(id)
-            .map(UserPersistenceMapper::toDomain)
+            .map { UserPersistenceMapper.toDomain(it, cryptoHelper) }
             .orElse(null)
     }
 
     override fun findByUserBarcode(userBarcode: String): User? {
         return userJpaRepository.findByUserBarcode(userBarcode)
-            ?.let(UserPersistenceMapper::toDomain)
+            ?.let { UserPersistenceMapper.toDomain(it, cryptoHelper) }
     }
 
     override fun findByEmail(userEmail: String): User? {
         return userJpaRepository.findByEmail(userEmail)
-            ?.let(UserPersistenceMapper::toDomain)
+            ?.let { UserPersistenceMapper.toDomain(it, cryptoHelper) }
     }
 
     override fun existsByEmail(userEmail: String): Boolean {
@@ -31,18 +35,46 @@ class UserRepositoryImpl(
     }
 
     override fun save(user: User): User {
-        return userJpaRepository.save(UserPersistenceMapper.toEntity(user))
-            .let(UserPersistenceMapper::toDomain)
+        repeat(MAX_SAVE_ATTEMPTS) {
+            val encryptedPhone = encryptedValueGenerator.generate(user.getPhone(), userJpaRepository::existsByPhone)
+            val encryptedCiNumber = encryptedValueGenerator.generate(user.getCiNumber(), userJpaRepository::existsByUserCiNumber)
+            val encryptedBirthDate = cryptoHelper.encrypt(user.getBirthDate()?.toString())
+
+            try {
+                return userJpaRepository.saveAndFlush(
+                    UserPersistenceMapper.toEntity(
+                        domain = user,
+                        encryptedPhone = encryptedPhone,
+                        encryptedCiNumber = encryptedCiNumber,
+                        encryptedBirthDate = encryptedBirthDate,
+                    ),
+                ).let { UserPersistenceMapper.toDomain(it, cryptoHelper) }
+            } catch (exception: DataIntegrityViolationException) {
+                if (!isSensitiveCiphertextCollision(encryptedPhone, encryptedCiNumber)) {
+                    throw exception
+                }
+            }
+        }
+
+        throw IllegalStateException("Failed to save user with unique encrypted sensitive information.")
+    }
+
+    private fun isSensitiveCiphertextCollision(
+        encryptedPhone: String?,
+        encryptedCiNumber: String?,
+    ): Boolean {
+        return encryptedPhone?.let(userJpaRepository::existsByPhone) == true ||
+            encryptedCiNumber?.let(userJpaRepository::existsByUserCiNumber) == true
     }
 
     override fun findAll(pageable: Pageable): Page<User> {
         return userJpaRepository.findAll(pageable)
-            .map(UserPersistenceMapper::toDomain)
+            .map { UserPersistenceMapper.toDomain(it, cryptoHelper) }
     }
 
     override fun searchByKeyword(keyword: String, pageable: Pageable): Page<User> {
         return userJpaRepository.searchByKeyword(escapeLikePattern(keyword), pageable)
-            .map(UserPersistenceMapper::toDomain)
+            .map { UserPersistenceMapper.toDomain(it, cryptoHelper) }
     }
 
     // LIKE 메타문자를 이스케이프해 keyword가 리터럴 부분일치로만 매칭되도록 한다(ESCAPE '\' 와 짝).
@@ -50,4 +82,10 @@ class UserRepositoryImpl(
         keyword.replace("\\", "\\\\")
             .replace("%", "\\%")
             .replace("_", "\\_")
+
+    private val encryptedValueGenerator = UniqueEncryptedValueGenerator(cryptoHelper)
+
+    companion object {
+        private const val MAX_SAVE_ATTEMPTS = 10
+    }
 }

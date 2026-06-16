@@ -13,7 +13,6 @@ import devcoop.occount.member.domain.user.User
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 
 @Service
 class RegisterUserUseCase(
@@ -22,7 +21,6 @@ class RegisterUserUseCase(
     private val passwordEncoder: PasswordEncoder,
     private val emailOtpRepository: EmailOtpRepository,
 ) {
-    @Transactional
     fun register(request: MemberRegisterRequest) {
         val emailOtp = emailOtpRepository.findValidByEmail(request.userEmail)
         if (emailOtp == null || !emailOtp.verified || emailOtp.purpose != OtpPurpose.REGISTER) {

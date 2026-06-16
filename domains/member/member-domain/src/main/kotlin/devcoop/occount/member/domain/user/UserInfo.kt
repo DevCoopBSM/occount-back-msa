@@ -9,4 +9,5 @@ data class UserInfo(
     val cooperativeNumber: String?,
     val userBarcode: String?,
     val birthDate: LocalDate?,
+    val studentNumber: String? = null,
 )

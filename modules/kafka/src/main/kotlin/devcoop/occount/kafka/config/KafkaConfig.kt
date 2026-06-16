@@ -17,6 +17,10 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaProducerFactory
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.core.ProducerFactory
+import org.apache.kafka.common.TopicPartition
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer
+import org.springframework.kafka.listener.DefaultErrorHandler
+import org.springframework.util.backoff.FixedBackOff
 
 @EnableKafka
 @Configuration
@@ -49,9 +53,20 @@ class KafkaConfig {
     @Bean
     fun kafkaListenerContainerFactory(
         kafkaConsumerFactory: ConsumerFactory<String, String>,
+        kafkaTemplate: KafkaTemplate<String, String>,
     ): ConcurrentKafkaListenerContainerFactory<String, String> =
         ConcurrentKafkaListenerContainerFactory<String, String>().apply {
             setConsumerFactory(kafkaConsumerFactory)
+            // 처리 실패 메시지는 재시도하지 않고(0회) 즉시 <topic>.DLT 로 격리한다.
+            // 기본 핸들러(FixedBackOff(0, 9))가 죽은 결제를 10회 재시도하며 단일 파티션
+            // 컨슈머를 통째로 막던 head-of-line 블로킹을 방지한다.
+            val recoverer = DeadLetterPublishingRecoverer(kafkaTemplate) { record, _ ->
+                TopicPartition("${record.topic()}.DLT", -1)
+            }.apply {
+                // DLT 전송이 실패해도(토픽 부재 등) 컨슈머를 재시도로 막지 않는다(로그 후 진행).
+                setFailIfSendResultIsError(false)
+            }
+            setCommonErrorHandler(DefaultErrorHandler(recoverer, FixedBackOff(0L, 0L)))
         }
 
     @Bean

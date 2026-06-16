@@ -12,6 +12,8 @@ interface UserJpaRepository : JpaRepository<UserJpaEntity, Long> {
     fun findByUserBarcode(userBarcode: String): UserJpaEntity?
     fun findByEmail(userEmail: String): UserJpaEntity?
     fun existsByEmail(userEmail: String): Boolean
+    fun existsByPhone(phone: String): Boolean
+    fun existsByUserCiNumber(userCiNumber: String): Boolean
 
     /**
      * username/email/cooperativeNumber 부분일치(OR) 검색.
