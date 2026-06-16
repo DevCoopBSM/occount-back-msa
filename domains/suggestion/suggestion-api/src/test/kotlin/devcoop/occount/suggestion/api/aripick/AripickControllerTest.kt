@@ -1,7 +1,7 @@
 package devcoop.occount.suggestion.api.aripick
 
 import devcoop.occount.core.common.auth.AuthHeaders
-import devcoop.occount.core.common.auth.AuthPrincipalArgumentResolver
+import devcoop.occount.web.auth.AuthPrincipalArgumentResolver
 import devcoop.occount.suggestion.api.support.ApiAdviceHandler
 import devcoop.occount.suggestion.application.query.AripickFoodQueryService
 import devcoop.occount.suggestion.application.query.AripickFoodSearchItemResponse

@@ -1,7 +1,7 @@
 package devcoop.occount.order.api.order
 
 import devcoop.occount.core.common.auth.AuthHeaders
-import devcoop.occount.core.common.auth.AuthPrincipalArgumentResolver
+import devcoop.occount.web.auth.AuthPrincipalArgumentResolver
 import devcoop.occount.order.api.sse.DefaultOrderSseEmitterSupport
 import devcoop.occount.order.api.sse.OrderSseRegistry
 import devcoop.occount.order.api.support.ApiAdviceHandler
