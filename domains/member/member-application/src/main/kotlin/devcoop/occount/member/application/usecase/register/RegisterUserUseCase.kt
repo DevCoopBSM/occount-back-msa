@@ -13,6 +13,7 @@ import devcoop.occount.member.domain.user.User
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class RegisterUserUseCase(
@@ -21,6 +22,10 @@ class RegisterUserUseCase(
     private val passwordEncoder: PasswordEncoder,
     private val emailOtpRepository: EmailOtpRepository,
 ) {
+    // 회원 저장 + OTP 삭제 + 가입 이벤트(아웃박스) 발행은 원자적이어야 하며,
+    // 파생 삭제 쿼리(deleteByEmail)는 트랜잭션을 요구한다. save는 saveAndFlush라
+    // 중복 이메일은 트랜잭션 내에서도 즉시 DataIntegrityViolation으로 감지된다.
+    @Transactional
     fun register(request: MemberRegisterRequest) {
         val emailOtp = emailOtpRepository.findValidByEmail(request.userEmail)
         if (emailOtp == null || !emailOtp.verified || emailOtp.purpose != OtpPurpose.REGISTER) {
