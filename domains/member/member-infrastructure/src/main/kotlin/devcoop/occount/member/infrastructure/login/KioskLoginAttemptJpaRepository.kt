@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
-import kotlin.time.Instant
+import java.time.Instant
 
 interface KioskLoginAttemptJpaRepository : JpaRepository<KioskLoginAttemptJpaEntity, String> {
     fun findByUserBarcode(userBarcode: String): KioskLoginAttemptJpaEntity?
