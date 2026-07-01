@@ -26,8 +26,8 @@ interface KioskLoginAttemptJpaRepository : JpaRepository<KioskLoginAttemptJpaEnt
     )
     fun upsert(
         @Param("userBarcode") userBarcode: String,
-        @Param("fail_count") failCount: Int,
-        @Param("locked_until") lockedUntil: Instant?,
-        @Param("updated_at") updatedAt: Instant,
+        @Param("failCount") failCount: Int,
+        @Param("lockedUntil") lockedUntil: Instant?,
+        @Param("updatedAt") updatedAt: Instant,
     )
 }

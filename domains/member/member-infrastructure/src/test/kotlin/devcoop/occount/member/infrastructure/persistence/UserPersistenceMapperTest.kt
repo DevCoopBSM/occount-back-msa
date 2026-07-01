@@ -98,13 +98,10 @@ class UserPersistenceMapperTest {
 
         val encryptedPhone = cryptoHelper.encrypt("010-1234-5678")
         val encryptedCiNumber = cryptoHelper.encrypt("CI123456")
-        val encryptedBirthDate = cryptoHelper.encrypt("2000-01-15")
-
         val entity = UserPersistenceMapper.toEntity(
             domain = domain,
             encryptedPhone = encryptedPhone,
             encryptedCiNumber = encryptedCiNumber,
-            encryptedBirthDate = encryptedBirthDate,
         )
 
         assertEquals(5L, entity.id)
@@ -118,7 +115,7 @@ class UserPersistenceMapperTest {
         assertEquals(Role.ROLE_USER, entity.role)
         assertEquals("encodedPin", entity.pin)
         assertEquals(encryptedCiNumber, entity.userCiNumber)
-        assertEquals(encryptedBirthDate, entity.birthDate)
+        assertEquals("2000-01-15", entity.birthDate)
     }
 
     @Test
