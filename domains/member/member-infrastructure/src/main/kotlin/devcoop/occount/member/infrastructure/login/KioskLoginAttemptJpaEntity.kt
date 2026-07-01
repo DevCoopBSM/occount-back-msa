@@ -10,16 +10,16 @@ import java.time.Instant
 @Table(name = "kiosk_login_attempt")
 class KioskLoginAttemptJpaEntity(
     @Id
-    @Column(nullable = false, unique = true)
+    @Column(name = "user_barcode", nullable = false, unique = true)
     val userBarcode: String,
 
-    @Column(nullable = false)
+    @Column(name = "fail_count", nullable = false)
     val failCount: Int = 0,
 
-    @Column(nullable = true)
+    @Column(name = "locked_until", nullable = true)
     val lockedUntil: Instant? = null,
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     val updatedAt: Instant = Instant.now(),
 ) {
     protected constructor() : this(userBarcode = "")
