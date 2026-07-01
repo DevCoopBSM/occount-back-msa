@@ -14,7 +14,13 @@ class KioskLoginAttemptRepositoryImpl(
     }
 
     override fun save(attempt: KioskLoginAttempt): KioskLoginAttempt {
-        return kioskLoginAttemptJpaRepository.save(attempt.toEntity()).toDomain()
+        kioskLoginAttemptJpaRepository.upsert(
+            userBarcode = attempt.userBarcode,
+            failCount = attempt.failCount,
+            lockedUntil = attempt.lockedUntil,
+            updatedAt = attempt.updatedAt,
+        )
+        return attempt
     }
 
     override fun deleteByBarcode(userBarcode: String) {

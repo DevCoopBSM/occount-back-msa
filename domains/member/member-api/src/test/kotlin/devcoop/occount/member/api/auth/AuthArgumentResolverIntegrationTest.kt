@@ -3,7 +3,7 @@ package devcoop.occount.member.api.auth
 import devcoop.occount.core.common.auth.AuthHeaders
 import devcoop.occount.core.common.auth.AuthPrincipal
 import devcoop.occount.core.common.auth.AuthUser
-import devcoop.occount.core.common.auth.AuthWebMvcConfig
+import devcoop.occount.web.auth.AuthWebMvcConfig
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.context.annotation.Bean

@@ -3,8 +3,5 @@ plugins {
 }
 
 dependencies {
-    compileOnly 'jakarta.servlet:jakarta.servlet-api'
-    compileOnly 'org.springframework:spring-web'
-    compileOnly 'org.springframework:spring-webmvc'
-    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
+    // 프레임워크 의존이 없는 순수 공통 모듈. 서블릿/웹 어댑터는 modules:web 으로 분리되었다.
 }

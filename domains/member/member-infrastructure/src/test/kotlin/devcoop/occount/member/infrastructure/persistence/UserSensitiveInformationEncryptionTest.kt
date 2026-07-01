@@ -74,7 +74,8 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
         )
         entityManager.clear()
 
-        assertEncrypted(rawValues["username"], username)
+        // username 은 암호화 대상에서 제외되어 평문으로 저장된다(@Convert 미적용).
+        assertEquals(username, rawValues["username"])
         assertEncrypted(rawValues["phone"], phone)
         assertEquals(phone, cryptoHelper.decrypt(rawValues["phone"] as String))
         assertEncrypted(rawValues["user_ci_number"], ciNumber)
@@ -123,7 +124,8 @@ class UserSensitiveInformationEncryptionTest @Autowired constructor(
         )
         entityManager.clear()
 
-        assertEncrypted(rawValues["username"], username)
+        // username 은 암호화 대상에서 제외되어 평문으로 저장된다(@Convert 미적용).
+        assertEquals(username, rawValues["username"])
         assertEncrypted(rawValues["phone"], phone)
         assertEquals(phone, cryptoHelper.decrypt(rawValues["phone"] as String))
         assertEncrypted(rawValues["user_ci_number"], ciNumber)

@@ -1,6 +1,6 @@
 package devcoop.occount.member.api.support
 
-import devcoop.occount.core.common.auth.AuthPrincipalArgumentResolver
+import devcoop.occount.web.auth.AuthPrincipalArgumentResolver
 import devcoop.occount.core.common.event.EventPublisher
 import devcoop.occount.member.application.otp.EmailOtp
 import devcoop.occount.member.application.otp.OtpPurpose
