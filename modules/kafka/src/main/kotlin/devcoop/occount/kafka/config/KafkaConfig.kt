@@ -1,9 +1,7 @@
 package devcoop.occount.kafka.config
 
-import devcoop.occount.core.common.event.DomainTopics
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.instrumentation.kafkaclients.v2_6.KafkaTelemetry
-import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -14,7 +12,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
-import org.springframework.kafka.config.TopicBuilder
 import org.springframework.kafka.core.ConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaProducerFactory
@@ -31,19 +28,6 @@ class KafkaConfig {
 
     @Value("\${spring.kafka.bootstrap-servers}")
     private lateinit var bootstrapServers: String
-
-    /**
-     * `payment.command.v1` 은 kioskId 파티셔닝으로 VAN 단말별 병렬 결제를 처리한다(consumer concurrency=6).
-     * 파티션 수를 코드로 선언해 강제한다 — auto-create 로 두면 기본 1파티션이 되어 concurrency 가
-     * 무력화되고 단일 컨슈머 head-of-line 블로킹으로 전 키오스크 결제가 지연된다(2026-06/2026-07 인시던트).
-     * KafkaAdmin 은 파티션을 늘리기만 하므로(줄이지 않음) 기존 토픽에도 안전하게 적용된다.
-     */
-    @Bean
-    fun paymentCommandTopic(): NewTopic =
-        TopicBuilder.name(DomainTopics.PAYMENT_COMMANDS)
-            .partitions(6)
-            .replicas(1)
-            .build()
 
     @Bean
     fun producerFactory(openTelemetry: ObjectProvider<OpenTelemetry>): ProducerFactory<String, String> {
