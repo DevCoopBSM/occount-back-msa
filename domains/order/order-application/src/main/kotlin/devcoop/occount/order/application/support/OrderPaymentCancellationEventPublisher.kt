@@ -13,8 +13,10 @@ class OrderPaymentCancellationEventPublisher(
 ) {
     fun publish(order: OrderAggregate) {
         eventPublisher.publish(
-            topic = DomainTopics.PAYMENT_COMMANDS,
-            // 같은 단말(kioskId)의 결제·취소·보상이 같은 파티션에서 순서대로 처리되도록 kioskId로 파티셔닝.
+            // 결제 커맨드(payment.command.v1)와 분리된 전용 토픽으로 발행한다.
+            // 같은 토픽이면 취소가 진행 중 결제(30초 블로킹) 뒤에 큐잉되어 단말 중단이 늦는다.
+            // 별도 토픽·리스너 스레드에서 처리해야 결제 대기 중 즉시 단말을 중단시킬 수 있다.
+            topic = DomainTopics.PAYMENT_CANCEL_COMMANDS,
             key = order.kioskId,
             eventType = DomainEventTypes.ORDER_PAYMENT_CANCELLATION_REQUESTED,
             payload = OrderPaymentCancellationRequestedEvent(
