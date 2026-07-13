@@ -41,8 +41,13 @@
 - **예외 — `payment.command.v1` (VAN 결제 단말 병목 대응):**
   - 키 = **`kioskId`** (애그리거트가 아니라 물리적 경합 자원인 VAN 단말 단위). 같은 단말 결제는 직렬, 다른 단말은 병렬.
   - **partitions=6**, 컨슈머 `concurrency=6`.
-  - 사유: VAN 카드결제는 동기식(타임아웃 30초)이라, partitions=1이면 한 단말의 느린/실패 결제가 단일 컨슈머를 막아(head-of-line) 전 키오스크 결제가 멈춘다(2026-06 인시던트). kioskId 파티셔닝으로 단말 간 격리.
+  - 사유: VAN 카드결제는 동기식(타임아웃 30초)이라, partitions=1이면 한 단말의 느린/실패 결제가 단일 컨슈머를 막아(head-of-line) 전 키오스크 결제가 멈춘다(2026-06, 2026-07 인시던트). kioskId 파티셔닝으로 단말 간 격리.
   - 결과 이벤트(`payment.event.v1` 등)는 여전히 `orderId` 키 — 변경 대상은 커맨드 토픽뿐.
+  - ⚠️ **파티션 수는 운영에서 보장한다.** 이 앱들은 KafkaAdmin 이 기동하지 않아(코드의 `NewTopic` 빈이 적용되지 않음) 토픽 파티션을 코드로 강제할 수 없다. auto-create 는 기본 1파티션이므로, 토픽 신규 생성/이전 시 반드시 아래로 6파티션을 맞춘다(파티션은 늘리기만 가능, 축소 불가):
+    ```
+    kafka-topics --bootstrap-server <broker> --alter --topic payment.command.v1 --partitions 6
+    ```
+    lag=0 인 저부하 시간대에 수행한다(키 재매핑되므로 인플라이트 메시지 없을 때 안전).
 
 ## 에러 처리 (재시도·DLT)
 
