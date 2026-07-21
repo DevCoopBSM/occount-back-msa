@@ -1457,6 +1457,68 @@ paths:
         "409":
           description: 취소 불가 상태의 주문
 
+  /api/v3/orders/{orderId}/receipt:
+    get:
+      tags: [Order]
+      operationId: getOrderReceipt
+      summary: 주문 영수증 조회
+      description: |
+        완료된 주문의 영수증 정보를 조회합니다. (OPTIONAL_AUTH)
+
+        - 회원 주문은 로그인 사용자와 주문의 `user_id`가 같아야 조회할 수 있습니다.
+        - 비회원 주문은 주문을 생성한 키오스크와 동일한 `X-Kiosk-Id` 여야 조회할 수 있습니다.
+        - `COMPLETED` 주문만 영수증 조회가 가능합니다.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: 영수증을 조회할 주문 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1001
+        - name: X-Kiosk-Id
+          in: header
+          required: false
+          description: 비회원 주문 접근 검증에 사용하는 키오스크 식별자
+          schema:
+            type: string
+          example: "kiosk-1"
+      security:
+        - {}
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 영수증 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptResponse'
+              example:
+                order_id: 1001
+                order_status: "COMPLETED"
+                items:
+                  - item_id: 101
+                    item_name: "아메리카노"
+                    unit_price: 3000
+                    quantity: 2
+                    total_price: 6000
+                payment:
+                  type: "CARD"
+                  total_amount: 6000
+                  points_used: 0
+                  card_amount: 6000
+                  approval_number: "12345678"
+                  transaction_id: "TX-123"
+        "401":
+          description: 잘못된 토큰
+        "403":
+          description: 주문 소유자 또는 주문 생성 키오스크가 아님
+        "404":
+          description: 주문을 찾을 수 없음
+        "409":
+          description: 영수증 조회가 불가능한 주문 상태
+
   # ───────────────────────────────────────────────
   # Wallet
   # ───────────────────────────────────────────────
@@ -2469,6 +2531,79 @@ components:
           nullable: true
           description: 실패/취소 사유
 
+    ReceiptResponse:
+      type: object
+      properties:
+        order_id:
+          type: integer
+          format: int64
+          description: 주문 ID
+        order_status:
+          $ref: '#/components/schemas/OrderStatus'
+        items:
+          type: array
+          description: 주문 당시 상품 스냅샷
+          items:
+            $ref: '#/components/schemas/ReceiptItemResponse'
+        payment:
+          $ref: '#/components/schemas/ReceiptPaymentResponse'
+
+    ReceiptItemResponse:
+      type: object
+      properties:
+        item_id:
+          type: integer
+          format: int64
+          description: 상품 ID
+        item_name:
+          type: string
+          description: 주문 당시 상품명
+        unit_price:
+          type: integer
+          description: 주문 당시 상품 단가
+        quantity:
+          type: integer
+          description: 주문 수량
+        total_price:
+          type: integer
+          description: 상품별 합계 금액
+
+    ReceiptPaymentResponse:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ReceiptPaymentType'
+        total_amount:
+          type: integer
+          description: 주문 총 결제 금액
+        points_used:
+          type: integer
+          description: 사용 포인트
+        card_amount:
+          type: integer
+          description: 카드 결제 금액
+        approval_number:
+          type: string
+          nullable: true
+          description: 카드 승인번호. 포인트 결제만 사용한 경우 null
+        transaction_id:
+          type: string
+          nullable: true
+          description: 카드 거래 식별자. 포인트 결제만 사용한 경우 null
+
+    ReceiptPaymentType:
+      type: string
+      description: |
+        영수증 결제 유형.
+
+        - `POINT`: `points_used > 0 && card_amount == 0`
+        - `CARD`: `points_used == 0 && card_amount > 0`
+        - `MIXED`: `points_used > 0 && card_amount > 0`
+      enum:
+        - POINT
+        - CARD
+        - MIXED
+        
     SalesRankingResponse:
       type: object
       required:
