@@ -5,5 +5,4 @@ data class ItemLookupResponse(
     val name: String,
     val barcode: String?,
     val price: Int,
-    val isActive: Boolean = true,
 )

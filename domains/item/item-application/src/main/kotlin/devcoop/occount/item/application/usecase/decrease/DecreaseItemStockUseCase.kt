@@ -57,7 +57,6 @@ class DecreaseItemStockUseCase(
             val updatedItems = mutableListOf<Item>()
             val confirmedItems = requestedItems.map { (itemId, quantity) ->
                 val item = itemsById[itemId] ?: throw ItemNotFoundException()
-                if (!item.isActive()) throw ItemNotFoundException()
 
                 val updatedItem = item.decreaseQuantity(quantity)
                 updatedItems += updatedItem
