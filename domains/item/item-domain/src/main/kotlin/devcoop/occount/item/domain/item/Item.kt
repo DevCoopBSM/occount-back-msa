@@ -4,7 +4,6 @@ data class Item(
     private val itemId: Long = 0L,
     private val itemInfo: ItemInfo,
     private val stock: Stock = Stock(),
-    private val isActive: Boolean = true,
     private val catalogVersion: Long = 0L,
     private val stockVersion: Long = 0L,
 ) {
@@ -14,7 +13,6 @@ data class Item(
     fun getPrice() = itemInfo.price()
     fun getBarcode() = itemInfo.barcode()
     fun getQuantity() = stock.getQuantity()
-    fun isActive() = isActive
     fun getCatalogVersion() = catalogVersion
     fun getStockVersion() = stockVersion
 
@@ -42,10 +40,6 @@ data class Item(
             itemInfo = itemInfo,
             stock = this.stock,
         )
-    }
-
-    fun deactivate(): Item {
-        return copy(isActive = false)
     }
 
     fun hasSameCatalog(itemInfo: ItemInfo): Boolean {
