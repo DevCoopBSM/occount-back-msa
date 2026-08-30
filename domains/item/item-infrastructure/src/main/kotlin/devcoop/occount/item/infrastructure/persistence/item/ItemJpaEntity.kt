@@ -19,8 +19,6 @@ class ItemJpaEntity(
     private var itemInfo: ItemInfoJpaEmbeddable,
     @Embedded
     private var stock: StockJpaEmbeddable = StockJpaEmbeddable(),
-    @field:Column(name = "is_active", nullable = false)
-    private var isActive: Boolean = true,
     @field:Column(name = "catalog_version", nullable = false)
     private var catalogVersion: Long = 0L,
     @field:Column(name = "stock_version", nullable = false)
@@ -29,7 +27,6 @@ class ItemJpaEntity(
     fun getItemId() = itemId
     fun getItemInfo() = itemInfo
     fun getStock() = stock
-    fun isActive() = isActive
     fun getCatalogVersion() = catalogVersion
     fun getStockVersion() = stockVersion
 }

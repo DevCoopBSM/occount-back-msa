@@ -16,7 +16,6 @@ object ItemPersistenceMapper {
                 barcode = itemInfoEntity.getBarcode(),
             ),
             stock = Stock(quantity = entity.getStock().getQuantity()),
-            isActive = entity.isActive(),
             catalogVersion = entity.getCatalogVersion(),
             stockVersion = entity.getStockVersion(),
         )
@@ -34,7 +33,6 @@ object ItemPersistenceMapper {
             stock = StockJpaEmbeddable(
                 quantity = domain.getQuantity(),
             ),
-            isActive = domain.isActive(),
             catalogVersion = domain.getCatalogVersion(),
             stockVersion = domain.getStockVersion(),
         )
