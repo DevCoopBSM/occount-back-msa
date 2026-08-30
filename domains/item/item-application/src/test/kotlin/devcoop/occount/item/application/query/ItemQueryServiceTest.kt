@@ -10,11 +10,10 @@ import org.junit.jupiter.api.Test
 
 class ItemQueryServiceTest {
     @Test
-    fun `get all items returns active items`() {
+    fun `get all items returns all items`() {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(
                 itemFixture(itemId = 1L, name = "Snack"),
-                itemFixture(itemId = 2L, name = "Inactive", isActive = false),
             ),
         )
         val itemQueryService = ItemQueryService(itemRepository)
@@ -35,12 +34,11 @@ class ItemQueryServiceTest {
     }
 
     @Test
-    fun `get items without barcode returns only active items without barcode`() {
+    fun `get items without barcode returns items without barcode`() {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(
                 itemFixture(itemId = 1L, name = "Snack"),
                 itemFixture(itemId = 2L, name = "Drink", barcode = "88012341234"),
-                itemFixture(itemId = 3L, name = "Inactive", isActive = false),
             ),
         )
         val itemQueryService = ItemQueryService(itemRepository)
@@ -52,13 +50,12 @@ class ItemQueryServiceTest {
     }
 
     @Test
-    fun `search items returns active items matching name`() {
+    fun `search items returns items matching name`() {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(
                 itemFixture(itemId = 1L, name = "초코 과자"),
                 itemFixture(itemId = 2L, name = "딸기 우유"),
                 itemFixture(itemId = 3L, name = "초코 우유"),
-                itemFixture(itemId = 4L, name = "초코 비활성", isActive = false),
             ),
         )
         val itemQueryService = ItemQueryService(itemRepository)

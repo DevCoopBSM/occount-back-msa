@@ -19,11 +19,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 class ItemControllerTest {
     @Test
-    fun `get all items returns active item list`() {
+    fun `get all items returns item list`() {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(
                 itemFixture(itemId = 1L, name = "Snack", quantity = 3),
-                itemFixture(itemId = 2L, name = "Hidden", isActive = false),
             ),
         )
         val mockMvc = mockMvc(controller(itemRepository))
@@ -77,13 +76,12 @@ class ItemControllerTest {
     }
 
     @Test
-    fun `search items returns matching active items`() {
+    fun `search items returns matching items`() {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(
                 itemFixture(itemId = 1L, name = "초코 과자"),
                 itemFixture(itemId = 2L, name = "딸기 우유"),
                 itemFixture(itemId = 3L, name = "초코 우유"),
-                itemFixture(itemId = 4L, name = "초코 비활성", isActive = false),
             ),
         )
         val mockMvc = mockMvc(controller(itemRepository))

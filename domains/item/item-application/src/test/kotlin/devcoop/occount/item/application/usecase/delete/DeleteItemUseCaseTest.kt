@@ -3,13 +3,13 @@ package devcoop.occount.item.application.usecase.delete
 import devcoop.occount.item.application.support.FakeItemRepository
 import devcoop.occount.item.application.support.itemFixture
 import devcoop.occount.item.domain.item.ItemNotFoundException
-import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
 class DeleteItemUseCaseTest {
     @Test
-    fun `delete deactivates item`() {
+    fun `delete removes item`() {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(itemFixture(itemId = 1L)),
         )
@@ -17,7 +17,7 @@ class DeleteItemUseCaseTest {
 
         deleteItemUseCase.delete(1L)
 
-        assertFalse(itemRepository.findById(1L)!!.isActive())
+        assertNull(itemRepository.findById(1L))
     }
 
     @Test
