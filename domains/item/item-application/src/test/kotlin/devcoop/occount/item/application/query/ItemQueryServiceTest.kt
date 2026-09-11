@@ -49,7 +49,7 @@ class ItemQueryServiceTest {
 
         assertEquals(1, result.items.size)
         assertEquals("Snack", result.items.single().name)
-        assertEquals(Category.잡화, result.items.single().category)
+        assertEquals("잡화", result.items.single().category)
     }
 
     @Test
