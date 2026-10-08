@@ -18,6 +18,7 @@ object ItemMapper {
         return ItemLookupResponse(
             itemId = item.getItemId(),
             name = item.getName(),
+            category = item.getCategory().name,
             barcode = item.getBarcode(),
             price = item.getPrice(),
         )

@@ -37,7 +37,7 @@ class ItemQueryServiceTest {
     fun `get items without barcode returns items without barcode`() {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(
-                itemFixture(itemId = 1L, name = "Snack"),
+                itemFixture(itemId = 1L, name = "Snack", category = Category.잡화),
                 itemFixture(itemId = 2L, name = "Drink", barcode = "88012341234"),
             ),
         )
@@ -47,6 +47,7 @@ class ItemQueryServiceTest {
 
         assertEquals(1, result.items.size)
         assertEquals("Snack", result.items.single().name)
+        assertEquals("잡화", result.items.single().category)
     }
 
     @Test

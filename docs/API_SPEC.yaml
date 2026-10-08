@@ -2266,6 +2266,9 @@ components:
           format: int64
         name:
           type: string
+        category:
+          type: string
+          description: 상품 카테고리
         barcode:
           type: string
           nullable: true
