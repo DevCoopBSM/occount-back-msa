@@ -122,6 +122,14 @@ class AuthenticationPolicyTest {
     }
 
     @Test
+    fun `order receipt allows optional auth`() {
+        assertEquals(
+            AuthenticationRule.Access.OPTIONAL_AUTH,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/orders/order-1/receipt"),
+        )
+    }
+    
+    @Test
     fun `order sales ranking requires authentication`() {
         assertEquals(
             AuthenticationRule.Access.AUTHENTICATED,

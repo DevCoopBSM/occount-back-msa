@@ -11,7 +11,11 @@ import devcoop.occount.order.application.output.OrderStatusNotifier
 import devcoop.occount.order.application.shared.OrderStreamEvent
 import devcoop.occount.order.application.shared.SalesRankingType
 import devcoop.occount.order.domain.order.OrderAggregate
+import devcoop.occount.order.domain.order.OrderLine
+import devcoop.occount.order.domain.order.OrderPayment
+import devcoop.occount.order.domain.order.OrderPaymentResult
 import devcoop.occount.order.domain.order.OrderStatus
+import devcoop.occount.order.domain.order.OrderStepStatus
 import devcoop.occount.order.domain.order.RequestedOrderLine
 import devcoop.occount.order.domain.order.isFinalForClient
 import org.springframework.data.domain.Page
@@ -28,7 +32,12 @@ fun orderFixture(
     userId: Long? = 7L,
     kioskId: String = "kiosk-1",
     requestedLines: List<RequestedOrderLine> = listOf(RequestedOrderLine(itemId = 1L, quantity = 1)),
+    lines: List<OrderLine> = emptyList(),
+    payment: OrderPayment = OrderPayment(totalAmount = lines.sumOf(OrderLine::totalPrice)),
     status: OrderStatus = OrderStatus.PROCESSING,
+    paymentStatus: OrderStepStatus = OrderStepStatus.PENDING,
+    stockStatus: OrderStepStatus = OrderStepStatus.PENDING,
+    paymentResult: OrderPaymentResult = OrderPaymentResult(),
     expiresAt: Instant = Instant.now().plusSeconds(30),
 ): OrderAggregate =
     OrderAggregate.create(
@@ -36,7 +45,15 @@ fun orderFixture(
         requestedLines = requestedLines,
         kioskId = kioskId,
         expiresAt = expiresAt,
-    ).copy(orderId = orderId, status = status)
+    ).copy(
+        orderId = orderId,
+        lines = lines,
+        payment = payment,
+        status = status,
+        paymentStatus = paymentStatus,
+        stockStatus = stockStatus,
+        paymentResult = paymentResult,
+    )
 
 class FakeOrderRepository(
     initialOrders: List<OrderAggregate> = emptyList(),

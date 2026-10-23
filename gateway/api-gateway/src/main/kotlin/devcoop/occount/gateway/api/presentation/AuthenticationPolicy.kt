@@ -35,6 +35,7 @@ class AuthenticationPolicy {
         rule(HttpMethod.GET, "/api/v3/orders").authenticated()
         rule(HttpMethod.POST, "/api/v3/orders/{orderId}/cancel").optionalAuth()
         rule(HttpMethod.GET, "/api/v3/orders/sales-ranking").authenticated()
+        rule(HttpMethod.GET, "/api/v3/orders/{orderId}/receipt").optionalAuth()
         rule(HttpMethod.GET, "/api/v3/orders/{orderId}").optionalAuth()
         rule(HttpMethod.GET, "/api/v3/orders/{orderId}/stream").optionalAuth()
         rule("/api/v3/orders/**").authenticated()

@@ -17,13 +17,19 @@ import devcoop.occount.order.application.support.OrderMutationExecutor
 import devcoop.occount.order.application.support.OrderPaymentCancellationEventPublisher
 import devcoop.occount.order.application.support.OrderResponseMapper
 import devcoop.occount.order.application.support.OrderStreamEventMapper
+import devcoop.occount.order.application.support.ReceiptResponseMapper
 import devcoop.occount.order.application.query.OrderQueryService
+import devcoop.occount.order.application.query.receipt.GetReceiptQueryService
 import devcoop.occount.order.application.query.SalesRankingQueryParser
 import devcoop.occount.order.application.query.SalesRankingQueryService
 import devcoop.occount.order.application.output.SalesRankingItem
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
+import devcoop.occount.order.domain.order.OrderLine
+import devcoop.occount.order.domain.order.OrderPayment
+import devcoop.occount.order.domain.order.OrderPaymentResult
 import devcoop.occount.order.domain.order.OrderStatus
+import devcoop.occount.order.domain.order.OrderStepStatus
 import org.hamcrest.Matchers.containsString
 import org.springframework.test.web.servlet.MockMvc
 import org.junit.jupiter.api.DisplayName
@@ -115,6 +121,60 @@ class OrderControllerTest {
         mockMvc.perform(get("/orders/999"))
             .andExpect(status().isNotFound)
             .andExpect(jsonPath("$.message").value("주문 정보를 찾을 수 없습니다."))
+    }
+
+    @Test
+    @DisplayName("완료된 주문의 영수증을 조회하면 상품 스냅샷과 결제 정보를 반환한다")
+    fun `getReceipt returns receipt for completed order`() {
+        val mockMvc = buildMockMvc(
+            initialOrders = listOf(receiptOrderFixture()),
+        )
+
+        mockMvc.perform(
+            get("/orders/1/receipt")
+                .header(AuthHeaders.AUTHENTICATED_USER_ID, "7"),
+        ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.orderId").value(1))
+            .andExpect(jsonPath("$.orderStatus").value(OrderStatus.COMPLETED.name))
+            .andExpect(jsonPath("$.items[0].itemId").value(101))
+            .andExpect(jsonPath("$.items[0].itemName").value("Americano"))
+            .andExpect(jsonPath("$.items[0].unitPrice").value(2000))
+            .andExpect(jsonPath("$.items[0].quantity").value(2))
+            .andExpect(jsonPath("$.items[0].totalPrice").value(4000))
+            .andExpect(jsonPath("$.payment.type").value("CARD"))
+            .andExpect(jsonPath("$.payment.totalAmount").value(4000))
+            .andExpect(jsonPath("$.payment.pointsUsed").value(0))
+            .andExpect(jsonPath("$.payment.cardAmount").value(4000))
+            .andExpect(jsonPath("$.payment.approvalNumber").value("ap-1"))
+            .andExpect(jsonPath("$.payment.transactionId").value("tx-1"))
+    }
+
+    @Test
+    @DisplayName("다른 사용자가 영수증을 조회하면 403을 반환한다")
+    fun `getReceipt returns 403 for different member`() {
+        val mockMvc = buildMockMvc(
+            initialOrders = listOf(receiptOrderFixture()),
+        )
+
+        mockMvc.perform(
+            get("/orders/1/receipt")
+                .header(AuthHeaders.AUTHENTICATED_USER_ID, "999"),
+        ).andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.message").value("해당 주문에 접근할 수 없습니다."))
+    }
+
+    @Test
+    @DisplayName("완료되지 않은 주문의 영수증을 조회하면 409를 반환한다")
+    fun `getReceipt returns 409 for non completed order`() {
+        val mockMvc = buildMockMvc(
+            initialOrders = listOf(receiptOrderFixture(status = OrderStatus.PROCESSING)),
+        )
+
+        mockMvc.perform(
+            get("/orders/1/receipt")
+                .header(AuthHeaders.AUTHENTICATED_USER_ID, "7"),
+        ).andExpect(status().isConflict)
+            .andExpect(jsonPath("$.message").value("현재 상태에서는 영수증을 조회할 수 없습니다."))
     }
 
     @Test
@@ -256,11 +316,42 @@ class OrderControllerTest {
                     orderStreamEventMapper = OrderStreamEventMapper(),
                     orderHistoryMapper = OrderHistoryMapper(),
                 ),
+                getReceiptQueryService = GetReceiptQueryService(
+                    orderRepository = orderRepository,
+                    receiptResponseMapper = ReceiptResponseMapper(),
+                ),
                 salesRankingQueryService = SalesRankingQueryService(
                     salesRankingRepository = salesRankingRepository,
                     salesRankingQueryParser = SalesRankingQueryParser(),
                 ),
                 orderSseRegistry = OrderSseRegistry(DefaultOrderSseEmitterSupport()),
+            ),
+        )
+    }
+
+    private fun receiptOrderFixture(status: OrderStatus = OrderStatus.COMPLETED): devcoop.occount.order.domain.order.OrderAggregate {
+        return orderFixture(
+            orderId = 1L,
+            userId = 7L,
+            status = status,
+            paymentStatus = if (status == OrderStatus.COMPLETED) OrderStepStatus.SUCCEEDED else OrderStepStatus.PENDING,
+            stockStatus = if (status == OrderStatus.COMPLETED) OrderStepStatus.SUCCEEDED else OrderStepStatus.PENDING,
+            lines = listOf(
+                OrderLine(
+                    itemId = 101L,
+                    itemNameSnapshot = "Americano",
+                    unitPrice = 2000,
+                    quantity = 2,
+                    totalPrice = 4000,
+                ),
+            ),
+            payment = OrderPayment(totalAmount = 4000),
+            paymentResult = OrderPaymentResult(
+                paymentLogId = 10L,
+                pointsUsed = 0,
+                cardAmount = 4000,
+                approvalNumber = "ap-1",
+                transactionId = "tx-1",
             ),
         )
     }
