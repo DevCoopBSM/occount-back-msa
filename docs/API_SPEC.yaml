@@ -1116,7 +1116,8 @@ paths:
         - 토큰이 있으면 회원 주문, 없으면 비회원 주문으로 처리합니다.
         - 요청 즉시 `PROCESSING` 상태로 응답하며, 실제 처리는 비동기로 수행됩니다.
         - 상품 검증, 가격 확정, 재고 차감은 비동기로 처리됩니다.
-        - 재고 부족 또는 상품 검증 실패 시 최종 상태는 `FAILED` 입니다.
+        - 재고가 0개이거나 음수여도 주문 및 결제를 진행하며, 차감 후 재고는 음수가 될 수 있습니다.
+        - 상품 검증 실패 시 최종 상태는 `FAILED` 입니다. 결제 실패 또는 주문 취소 시 차감한 수량을 복원합니다.
         - 최종 결과는 `GET /api/v3/orders/{orderId}/stream` (SSE) 로 실시간 수신하거나,
           `GET /api/v3/orders/{orderId}` 를 폴링하여 확인합니다.
       parameters:
@@ -1301,7 +1302,7 @@ paths:
       description: |
         주문 상태를 단건 조회합니다. (PERMIT_ALL)
 
-        - 재고 부족, 상품 미존재 등 재고 단계 실패는 `FAILED` 로 종료됩니다.
+        - 재고 부족만으로는 실패하지 않습니다. 상품 미존재 등 재고 단계 실패는 `FAILED` 로 종료됩니다.
         - 최종 상태: `COMPLETED`, `FAILED`, `CANCELLED`, `COMPENSATION_FAILED`, `TIMED_OUT`
         - 실시간 상태 수신이 필요한 경우 `GET /api/v3/orders/{orderId}/stream` (SSE) 를 사용하세요.
       parameters:
@@ -1396,7 +1397,7 @@ paths:
                   summary: 주문 실패
                   value: |
                     event: failed
-                    data: {"order_id": 1001, "failure_reason": "재고 부족"}
+                    data: {"order_id": 1001, "failure_reason": "현재 등록되지 않은 상품입니다."}
 
                 cancelled:
                   summary: 주문 취소 완료
@@ -2546,7 +2547,7 @@ components:
 
         **최종 상태** (SSE 연결이 자동 종료됨):
         - `COMPLETED` — 주문 완료
-        - `FAILED` — 주문 실패 (재고 부족, 상품 미존재 등)
+        - `FAILED` — 주문 실패 (상품 미존재, 결제 실패 등; 재고 부족만으로는 실패하지 않음)
         - `CANCELLED` — 주문 취소 완료
         - `COMPENSATION_FAILED` — 보상 트랜잭션 실패
         - `TIMED_OUT` — 처리 시간 초과
