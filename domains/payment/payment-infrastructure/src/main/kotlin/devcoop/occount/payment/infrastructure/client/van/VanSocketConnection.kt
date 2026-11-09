@@ -56,8 +56,14 @@ class VanSocketConnection(
     fun send(data: ByteArray) {
         synchronized(this) {
             val currentSocket = socket ?: throw IOException("VAN 서버 연결 실패")
-            currentSocket.getOutputStream().write(data)
-            currentSocket.getOutputStream().flush()
+            try {
+                currentSocket.getOutputStream().write(data)
+                currentSocket.getOutputStream().flush()
+            } catch (e: IOException) {
+                // write 실패 시 죽은 소켓을 폐기해 다음 ensureConnected()가 재사용하지 못하게 한다.
+                close()
+                throw e
+            }
         }
     }
 

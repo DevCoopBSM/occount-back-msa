@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 data class ContributionWithdrawalRequestResponse(
     val id: Long,
     val userId: Long,
-    val amount: Int,
+    val amount: Long,
     val bankName: String?,
     val accountNumber: String?,
     val accountHolder: String?,
@@ -15,6 +15,8 @@ data class ContributionWithdrawalRequestResponse(
     val status: ContributionWithdrawalRequestStatus,
     val rejectionReason: String?,
     val requestedAt: LocalDateTime,
+    val processedBy: Long?,
+    val processedAt: LocalDateTime?,
 ) {
     companion object {
         fun from(request: ContributionWithdrawalRequest): ContributionWithdrawalRequestResponse {
@@ -29,6 +31,8 @@ data class ContributionWithdrawalRequestResponse(
                 status = request.status,
                 rejectionReason = request.rejectionReason,
                 requestedAt = request.requestedAt,
+                processedBy = request.processedBy,
+                processedAt = request.processedAt,
             )
         }
     }

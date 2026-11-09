@@ -107,7 +107,7 @@ class ExecuteVanPaymentUseCase(
         transactionTemplate.executeWithoutResult {
             orderPaymentExecutionRepository.markCompleted(event.orderId)
             eventPublisher.publish(
-                topic = DomainTopics.PAYMENT_COMPLETED,
+                topic = DomainTopics.PAYMENT_EVENTS,
                 key = event.orderId.toString(),
                 eventType = DomainEventTypes.PAYMENT_COMPLETED,
                 payload = PaymentCompletedEvent(
@@ -147,7 +147,7 @@ class ExecuteVanPaymentUseCase(
 
     private fun publishFailed(event: OrderPaymentRequestedEvent, reason: String) {
         eventPublisher.publish(
-            topic = DomainTopics.PAYMENT_FAILED,
+            topic = DomainTopics.PAYMENT_EVENTS,
             key = event.orderId.toString(),
             eventType = DomainEventTypes.PAYMENT_FAILED,
             payload = PaymentFailedEvent(

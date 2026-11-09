@@ -19,7 +19,7 @@ class GetMyContributionAccountQueryServiceTest {
 
         val response = queryService.getAccount(userId = 1L)
 
-        assertEquals(10000, response.balance)
+        assertEquals(10000L, response.balance)
     }
 
     @Test
@@ -29,6 +29,6 @@ class GetMyContributionAccountQueryServiceTest {
 
         val response = queryService.getAccount(userId = 1L)
 
-        assertEquals(0, response.balance)
+        assertEquals(0L, response.balance)
     }
 }

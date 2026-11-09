@@ -10,7 +10,7 @@ data class AdminContributionDepositRequestResponse(
     val userId: Long,
     val username: String?,
     val userEmail: String?,
-    val amount: Int,
+    val amount: Long,
     val depositorName: String?,
     val bankName: String?,
     val proofImageUrl: String?,
@@ -18,6 +18,8 @@ data class AdminContributionDepositRequestResponse(
     val status: ContributionDepositRequestStatus,
     val rejectionReason: String?,
     val requestedAt: LocalDateTime,
+    val processedBy: Long?,
+    val processedAt: LocalDateTime?,
 ) {
     companion object {
         fun from(request: ContributionDepositRequest, user: User?): AdminContributionDepositRequestResponse {
@@ -34,6 +36,8 @@ data class AdminContributionDepositRequestResponse(
                 status = request.status,
                 rejectionReason = request.rejectionReason,
                 requestedAt = request.requestedAt,
+                processedBy = request.processedBy,
+                processedAt = request.processedAt,
             )
         }
     }

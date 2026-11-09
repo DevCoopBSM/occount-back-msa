@@ -46,7 +46,14 @@ class CancelPendingOrderPaymentUseCaseTest {
             error("not used in this test")
         }
 
-        override fun refund(transactionId: String?, approvalNumber: String?, approvalDate: String, amount: Int, kioskId: String): VanResult {
+        override fun refund(
+            transactionId: String?,
+            approvalNumber: String?,
+            approvalDate: String,
+            amount: Int,
+            items: List<ItemCommand>,
+            kioskId: String,
+        ): VanResult {
             error("not used in this test")
         }
 

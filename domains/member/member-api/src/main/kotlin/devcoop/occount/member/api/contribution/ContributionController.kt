@@ -1,6 +1,7 @@
 package devcoop.occount.member.api.contribution
 
-import devcoop.occount.core.common.auth.RequestAuthPrincipalResolver
+import devcoop.occount.core.common.auth.AuthPrincipal
+import devcoop.occount.core.common.auth.AuthUser
 import devcoop.occount.member.application.query.ContributionAccountResponse
 import devcoop.occount.member.application.query.ContributionDepositRequestListResponse
 import devcoop.occount.member.application.query.ContributionWithdrawalRequestListResponse
@@ -24,7 +25,6 @@ import devcoop.occount.member.application.usecase.contribution.SubmitContributio
 import devcoop.occount.member.application.usecase.contribution.SubmitContributionWithdrawalRequestUseCase
 import devcoop.occount.member.domain.contribution.ContributionDepositRequestStatus
 import devcoop.occount.member.domain.contribution.ContributionWithdrawalRequestStatus
-import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -55,11 +55,10 @@ class ContributionController(
     @PostMapping("/deposit-requests")
     @ResponseStatus(HttpStatus.CREATED)
     fun submitDepositRequest(
-        httpRequest: HttpServletRequest,
+        @AuthUser principal: AuthPrincipal,
         @Valid @RequestBody request: SubmitContributionDepositRequest,
     ): ContributionDepositRequestResponse {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return submitContributionDepositRequestUseCase.submit(userId, request)
+        return submitContributionDepositRequestUseCase.submit(principal.userId, request)
     }
 
     @GetMapping("/deposit-requests")
@@ -72,38 +71,39 @@ class ContributionController(
     }
 
     @GetMapping("/deposit-requests/my")
-    fun getMyDepositRequests(httpRequest: HttpServletRequest): ContributionDepositRequestListResponse {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return getMyContributionDepositRequestsQueryService.findAll(userId)
+    fun getMyDepositRequests(@AuthUser principal: AuthPrincipal): ContributionDepositRequestListResponse {
+        return getMyContributionDepositRequestsQueryService.findAll(principal.userId)
     }
 
     @GetMapping("/account/my")
-    fun getMyAccount(httpRequest: HttpServletRequest): ContributionAccountResponse {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return getMyContributionAccountQueryService.getAccount(userId)
+    fun getMyAccount(@AuthUser principal: AuthPrincipal): ContributionAccountResponse {
+        return getMyContributionAccountQueryService.getAccount(principal.userId)
     }
 
     @PatchMapping("/deposit-requests/{requestId}/approve")
-    fun approveDepositRequest(@PathVariable requestId: Long): ContributionDepositRequestResponse {
-        return approveContributionDepositRequestUseCase.approve(requestId)
+    fun approveDepositRequest(
+        @PathVariable requestId: Long,
+        @AuthUser principal: AuthPrincipal,
+    ): ContributionDepositRequestResponse {
+        return approveContributionDepositRequestUseCase.approve(requestId, principal.userId)
     }
 
     @PatchMapping("/deposit-requests/{requestId}/reject")
     fun rejectDepositRequest(
         @PathVariable requestId: Long,
+        @AuthUser principal: AuthPrincipal,
         @Valid @RequestBody(required = false) request: RejectContributionRequest?,
     ): ContributionDepositRequestResponse {
-        return rejectContributionDepositRequestUseCase.reject(requestId, request ?: RejectContributionRequest())
+        return rejectContributionDepositRequestUseCase.reject(requestId, principal.userId, request)
     }
 
     @PostMapping("/withdrawal-requests")
     @ResponseStatus(HttpStatus.CREATED)
     fun submitWithdrawalRequest(
-        httpRequest: HttpServletRequest,
+        @AuthUser principal: AuthPrincipal,
         @Valid @RequestBody request: SubmitContributionWithdrawalRequest,
     ): ContributionWithdrawalRequestResponse {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return submitContributionWithdrawalRequestUseCase.submit(userId, request)
+        return submitContributionWithdrawalRequestUseCase.submit(principal.userId, request)
     }
 
     @GetMapping("/withdrawal-requests")
@@ -116,21 +116,24 @@ class ContributionController(
     }
 
     @GetMapping("/withdrawal-requests/my")
-    fun getMyWithdrawalRequests(httpRequest: HttpServletRequest): ContributionWithdrawalRequestListResponse {
-        val userId = RequestAuthPrincipalResolver.resolve(httpRequest).userId
-        return getMyContributionWithdrawalRequestsQueryService.findAll(userId)
+    fun getMyWithdrawalRequests(@AuthUser principal: AuthPrincipal): ContributionWithdrawalRequestListResponse {
+        return getMyContributionWithdrawalRequestsQueryService.findAll(principal.userId)
     }
 
     @PatchMapping("/withdrawal-requests/{requestId}/approve")
-    fun approveWithdrawalRequest(@PathVariable requestId: Long): ContributionWithdrawalRequestResponse {
-        return approveContributionWithdrawalRequestUseCase.approve(requestId)
+    fun approveWithdrawalRequest(
+        @PathVariable requestId: Long,
+        @AuthUser principal: AuthPrincipal,
+    ): ContributionWithdrawalRequestResponse {
+        return approveContributionWithdrawalRequestUseCase.approve(requestId, principal.userId)
     }
 
     @PatchMapping("/withdrawal-requests/{requestId}/reject")
     fun rejectWithdrawalRequest(
         @PathVariable requestId: Long,
+        @AuthUser principal: AuthPrincipal,
         @Valid @RequestBody(required = false) request: RejectContributionRequest?,
     ): ContributionWithdrawalRequestResponse {
-        return rejectContributionWithdrawalRequestUseCase.reject(requestId, request ?: RejectContributionRequest())
+        return rejectContributionWithdrawalRequestUseCase.reject(requestId, principal.userId, request)
     }
 }

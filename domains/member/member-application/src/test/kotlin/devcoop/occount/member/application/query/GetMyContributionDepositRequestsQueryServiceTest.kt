@@ -22,6 +22,6 @@ class GetMyContributionDepositRequestsQueryServiceTest {
         val response = queryService.findAll(userId = 1L)
 
         assertEquals(1, response.requests.size)
-        assertEquals(10000, response.requests.single().amount)
+        assertEquals(10000L, response.requests.single().amount)
     }
 }

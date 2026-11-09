@@ -8,6 +8,25 @@ import org.junit.jupiter.api.Test
 @DisplayName("ContributionDepositRequest 도메인 테스트")
 class ContributionDepositRequestTest {
     @Test
+    fun `approval and rejection preserve versions and record actors only when processed`() {
+        val pending = ContributionDepositRequest.request(1L, 3_000_000_000L).copy(version = 7L)
+        assertEquals(null, pending.processedBy)
+        assertEquals(null, pending.processedAt)
+        val approved = pending.approve(99L)
+        val rejected = pending.reject(88L, "reason")
+        assertEquals(7L, approved.version)
+        assertEquals(7L, rejected.version)
+        assertEquals(99L, approved.processedBy)
+        assertEquals(88L, rejected.processedBy)
+        assertEquals("reason", rejected.rejectionReason)
+        kotlin.test.assertNotNull(approved.processedAt)
+        kotlin.test.assertNotNull(rejected.processedAt)
+        assertFailsWith<ContributionDepositRequestAlreadyProcessedException> { rejected.approve(99L) }
+        assertFailsWith<ContributionDepositRequestAlreadyProcessedException> { approved.reject(99L) }
+        assertFailsWith<ContributionDepositRequestAlreadyProcessedException> { rejected.reject(99L) }
+    }
+
+    @Test
     @DisplayName("출자금 납입 신청은 대기 상태로 생성된다")
     fun `request creates pending contribution deposit request`() {
         val request = ContributionDepositRequest.request(
@@ -16,7 +35,7 @@ class ContributionDepositRequestTest {
         )
 
         assertEquals(1L, request.userId)
-        assertEquals(10000, request.amount)
+        assertEquals(10000L, request.amount)
         assertEquals(ContributionDepositRequestStatus.PENDING, request.status)
     }
 
@@ -36,7 +55,7 @@ class ContributionDepositRequestTest {
     fun `approve changes pending request to approved`() {
         val request = ContributionDepositRequest.request(userId = 1L, amount = 10000)
 
-        val approved = request.approve()
+        val approved = request.approve(processedBy = 99L)
 
         assertEquals(ContributionDepositRequestStatus.APPROVED, approved.status)
     }
@@ -44,10 +63,10 @@ class ContributionDepositRequestTest {
     @Test
     @DisplayName("이미 처리된 출자금 납입 신청은 다시 승인할 수 없다")
     fun `approve fails when request already processed`() {
-        val approved = ContributionDepositRequest.request(userId = 1L, amount = 10000).approve()
+        val approved = ContributionDepositRequest.request(userId = 1L, amount = 10000).approve(processedBy = 99L)
 
         assertFailsWith<ContributionDepositRequestAlreadyProcessedException> {
-            approved.approve()
+            approved.approve(processedBy = 99L)
         }
     }
 }

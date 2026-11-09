@@ -21,7 +21,7 @@ class SubmitContributionDepositRequestUseCaseTest {
 
         val savedRequest = repository.findAllByUserId(1L).single()
         assertEquals(savedRequest.id, response.id)
-        assertEquals(10000, response.amount)
+        assertEquals(10000L, response.amount)
         assertEquals(ContributionDepositRequestStatus.PENDING, response.status)
     }
 }

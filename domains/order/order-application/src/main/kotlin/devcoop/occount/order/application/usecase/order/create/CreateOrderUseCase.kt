@@ -29,6 +29,7 @@ class CreateOrderUseCase(
         val requestedLines = request.items.map { RequestedOrderLine(itemId = it.itemId, quantity = it.quantity) }
 
         val createdOrder = orderMutationExecutor.executeInNewTransaction {
+            val now = Instant.now()
             val createdOrder = orderRepository.save(
                 OrderAggregate(
                     orderId = 0L,
@@ -39,7 +40,7 @@ class CreateOrderUseCase(
                     ),
                     status = OrderStatus.PROCESSING,
                     kioskId = kioskId,
-                    expiresAt = Instant.now().plusSeconds(orderTimeoutConfig.timeoutSeconds),
+                    expiresAt = now.plusSeconds(orderTimeoutConfig.timeoutSeconds),
                 ),
             )
             publishOrderRequested(createdOrder, userId)

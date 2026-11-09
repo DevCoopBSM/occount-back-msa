@@ -17,7 +17,7 @@ class RejectContributionDepositRequestUseCaseTest {
         )
         val useCase = RejectContributionDepositRequestUseCase(repository)
 
-        val response = useCase.reject(requestId = 1L)
+        val response = useCase.reject(requestId = 1L, processedBy = 99L)
 
         assertEquals(ContributionDepositRequestStatus.REJECTED, response.status)
     }

@@ -11,15 +11,13 @@ import org.springframework.stereotype.Repository
 interface ItemPersistenceRepository : JpaRepository<ItemJpaEntity, Long> {
     fun findAllByItemInfoNameIn(names: List<String>): MutableList<ItemJpaEntity>
     fun findAllByItemIdIn(itemIds: List<Long>): MutableList<ItemJpaEntity>
-    fun findAllByIsActiveTrue(): MutableList<ItemJpaEntity>
-    fun findAllByItemInfoBarcodeIsNullAndIsActiveTrue(): MutableList<ItemJpaEntity>
+    fun findAllByItemInfoBarcodeIsNull(): MutableList<ItemJpaEntity>
     fun findByItemInfoBarcode(barcode: String): ItemJpaEntity?
 
     @Query(
         value = """
             SELECT i.* FROM item i
-            WHERE i.is_active = TRUE
-              AND MATCH(i.name) AGAINST (:query IN BOOLEAN MODE)
+            WHERE MATCH(i.name) AGAINST (:query IN BOOLEAN MODE)
             ORDER BY MATCH(i.name) AGAINST (:query IN BOOLEAN MODE) DESC
         """,
         nativeQuery = true,
@@ -34,7 +32,6 @@ interface ItemPersistenceRepository : JpaRepository<ItemJpaEntity, Long> {
             item.itemInfo.category = :category,
             item.itemInfo.price = :price,
             item.itemInfo.barcode = :barcode,
-            item.isActive = :isActive,
             item.catalogVersion = item.catalogVersion + 1
         where item.itemId = :itemId
           and item.catalogVersion = :catalogVersion
@@ -46,7 +43,6 @@ interface ItemPersistenceRepository : JpaRepository<ItemJpaEntity, Long> {
         @Param("category") category: Category,
         @Param("price") price: Int,
         @Param("barcode") barcode: String?,
-        @Param("isActive") isActive: Boolean,
         @Param("catalogVersion") catalogVersion: Long,
     ): Int
 

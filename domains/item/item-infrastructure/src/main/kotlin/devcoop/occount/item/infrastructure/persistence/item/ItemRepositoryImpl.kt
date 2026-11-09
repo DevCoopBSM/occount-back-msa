@@ -10,12 +10,12 @@ class ItemRepositoryImpl(
     private val itemPersistenceRepository: ItemPersistenceRepository,
 ) : ItemRepository {
     override fun findAll(): List<Item> {
-        return itemPersistenceRepository.findAllByIsActiveTrue()
+        return itemPersistenceRepository.findAll()
             .map(ItemPersistenceMapper::toDomain)
     }
 
     override fun findAllWithoutBarcode(): List<Item> {
-        return itemPersistenceRepository.findAllByItemInfoBarcodeIsNullAndIsActiveTrue()
+        return itemPersistenceRepository.findAllByItemInfoBarcodeIsNull()
             .map(ItemPersistenceMapper::toDomain)
     }
 
@@ -87,6 +87,10 @@ class ItemRepositoryImpl(
         return items.map(::saveStock)
     }
 
+    override fun deleteById(id: Long) {
+        itemPersistenceRepository.deleteById(id)
+    }
+
     private fun persistNew(item: Item): Item {
         return itemPersistenceRepository.save(ItemPersistenceMapper.toEntity(item))
             .let(ItemPersistenceMapper::toDomain)
@@ -103,7 +107,6 @@ class ItemRepositoryImpl(
             category = item.getCategory(),
             price = item.getPrice(),
             barcode = item.getBarcode(),
-            isActive = item.isActive(),
             catalogVersion = item.getCatalogVersion(),
         )
 

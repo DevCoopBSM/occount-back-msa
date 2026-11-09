@@ -8,11 +8,11 @@ import org.springframework.stereotype.Service
 class RejectContributionWithdrawalRequestUseCase(
     private val contributionWithdrawalRequestRepository: ContributionWithdrawalRequestRepository,
 ) {
-    fun reject(requestId: Long, command: RejectContributionRequest = RejectContributionRequest()): ContributionWithdrawalRequestResponse {
+    fun reject(requestId: Long, processedBy: Long, request: RejectContributionRequest? = null): ContributionWithdrawalRequestResponse {
         val withdrawalRequest = contributionWithdrawalRequestRepository.findById(requestId)
             ?: throw ContributionWithdrawalRequestNotFoundException()
 
-        return contributionWithdrawalRequestRepository.save(withdrawalRequest.reject(command.reason))
+        return contributionWithdrawalRequestRepository.save(withdrawalRequest.reject(processedBy, request?.reason))
             .let(ContributionWithdrawalRequestResponse::from)
     }
 }

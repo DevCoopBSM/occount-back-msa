@@ -62,4 +62,28 @@ subprojects {
             archiveBaseName.set(project.path.substring(1).replace(':', '-'))
         }
     }
+
+    // member 도메인 모듈에만 JaCoCo 커버리지 적용 (-Pcoverage 옵트인).
+    // JaCoCo 0.8.13은 JDK 26(major 70)을 지원하지 않으므로, 기본 빌드(JDK 26)를
+    // 깨뜨리지 않도록 -Pcoverage 플래그가 있을 때만 적용한다. 커버리지는 JDK 21로 실행한다.
+    if (project.path.startsWith(':domains:member') && project.hasProperty('coverage')) {
+        apply plugin: 'jacoco'
+
+        jacoco {
+            toolVersion = '0.8.13'
+        }
+
+        tasks.withType(Test).configureEach {
+            finalizedBy(tasks.named('jacocoTestReport'))
+        }
+
+        tasks.named('jacocoTestReport') {
+            dependsOn(tasks.named('test'))
+            reports {
+                xml.required = true
+                html.required = true
+                csv.required = true
+            }
+        }
+    }
 }

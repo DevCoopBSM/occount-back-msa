@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 data class ContributionDepositRequestResponse(
     val id: Long,
     val userId: Long,
-    val amount: Int,
+    val amount: Long,
     val depositorName: String?,
     val bankName: String?,
     val proofImageUrl: String?,
@@ -15,6 +15,8 @@ data class ContributionDepositRequestResponse(
     val status: ContributionDepositRequestStatus,
     val rejectionReason: String?,
     val requestedAt: LocalDateTime,
+    val processedBy: Long?,
+    val processedAt: LocalDateTime?,
 ) {
     companion object {
         fun from(request: ContributionDepositRequest): ContributionDepositRequestResponse {
@@ -29,6 +31,8 @@ data class ContributionDepositRequestResponse(
                 status = request.status,
                 rejectionReason = request.rejectionReason,
                 requestedAt = request.requestedAt,
+                processedBy = request.processedBy,
+                processedAt = request.processedAt,
             )
         }
     }

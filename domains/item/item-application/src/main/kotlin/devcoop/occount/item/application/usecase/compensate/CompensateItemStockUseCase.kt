@@ -60,7 +60,7 @@ class CompensateItemStockUseCase(
 
             itemRepository.saveStocks(restoredItems)
             eventPublisher.publish(
-                topic = DomainTopics.ITEM_STOCK_COMPENSATED,
+                topic = DomainTopics.ITEM_EVENTS,
                 key = event.orderId.toString(),
                 eventType = DomainEventTypes.ITEM_STOCK_COMPENSATED,
                 payload = ItemStockCompensatedEvent(orderId = event.orderId),
@@ -95,7 +95,7 @@ class CompensateItemStockUseCase(
 
     private fun publishFailed(orderId: Long, reason: String) {
         eventPublisher.publish(
-            topic = DomainTopics.ITEM_STOCK_COMPENSATION_FAILED,
+            topic = DomainTopics.ITEM_EVENTS,
             key = orderId.toString(),
             eventType = DomainEventTypes.ITEM_STOCK_COMPENSATION_FAILED,
             payload = ItemStockCompensationFailedEvent(

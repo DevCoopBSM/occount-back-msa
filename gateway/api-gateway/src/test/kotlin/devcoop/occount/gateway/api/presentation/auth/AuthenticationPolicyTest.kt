@@ -15,8 +15,66 @@ class AuthenticationPolicyTest {
     }
 
     @Test
+    fun `user list requires admin`() {
+        assertEquals(AuthenticationRule.Access.ADMIN_ONLY, policy.resolveAccess(HttpMethod.GET, "/api/v3/users"))
+    }
+
+    @Test
+    fun `user sub path still requires authentication`() {
+        assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.GET, "/api/v3/users/me"))
+    }
+
+    @Test
     fun `wallet path requires authentication`() {
         assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.POST, "/api/v3/wallet/charge"))
+    }
+
+    @Test
+    fun `wallet admin charge requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.POST, "/api/v3/wallet/admin/charge"),
+        )
+    }
+
+    @Test
+    fun `wallet admin charge history requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/wallet/admin/charges"),
+        )
+    }
+
+    @Test
+    fun `inquiry admin list requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/inquiries/admin"),
+        )
+    }
+
+    @Test
+    fun `inquiry admin detail requires admin`() {
+        assertEquals(
+            AuthenticationRule.Access.ADMIN_ONLY,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/inquiries/admin/1"),
+        )
+    }
+
+    @Test
+    fun `inquiry self path still requires authentication`() {
+        assertEquals(
+            AuthenticationRule.Access.AUTHENTICATED,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/inquiries"),
+        )
+    }
+
+    @Test
+    fun `inquiry user detail requires authentication not admin`() {
+        assertEquals(
+            AuthenticationRule.Access.AUTHENTICATED,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/inquiries/42"),
+        )
     }
 
     @Test
@@ -60,6 +118,14 @@ class AuthenticationPolicyTest {
         assertEquals(
             AuthenticationRule.Access.OPTIONAL_AUTH,
             policy.resolveAccess(HttpMethod.GET, "/api/v3/orders/order-1/stream"),
+        )
+    }
+
+    @Test
+    fun `order sales ranking requires authentication`() {
+        assertEquals(
+            AuthenticationRule.Access.AUTHENTICATED,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/orders/sales-ranking"),
         )
     }
 
@@ -139,6 +205,26 @@ class AuthenticationPolicyTest {
         assertEquals(
             AuthenticationRule.Access.ADMIN_ONLY,
             policy.resolveAccess(HttpMethod.DELETE, "/api/v3/ari-pick/blocked-keywords/1"),
+        )
+    }
+
+    @Test
+    fun `contribution management requires admin while self service requires authentication`() {
+        for (kind in listOf("deposit", "withdrawal")) {
+            val path = "/api/v3/contributions/$kind-requests"
+            assertEquals(AuthenticationRule.Access.ADMIN_ONLY, policy.resolveAccess(HttpMethod.GET, path))
+            for (action in listOf("approve", "reject")) {
+                assertEquals(
+                    AuthenticationRule.Access.ADMIN_ONLY,
+                    policy.resolveAccess(HttpMethod.PATCH, "$path/1/$action"),
+                )
+            }
+            assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.POST, path))
+            assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.GET, "$path/my"))
+        }
+        assertEquals(
+            AuthenticationRule.Access.AUTHENTICATED,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/contributions/account/my"),
         )
     }
 }

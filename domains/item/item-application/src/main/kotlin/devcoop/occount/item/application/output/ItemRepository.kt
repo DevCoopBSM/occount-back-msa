@@ -26,4 +26,6 @@ interface ItemRepository {
     fun saveStock(item: Item): Item
 
     fun saveStocks(items: List<Item>): List<Item>
+
+    fun deleteById(id: Long)
 }

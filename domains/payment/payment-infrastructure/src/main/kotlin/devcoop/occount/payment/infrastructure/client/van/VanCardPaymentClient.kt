@@ -30,6 +30,7 @@ class VanCardPaymentClient(
         approvalNumber: String?,
         approvalDate: String,
         amount: Int,
+        items: List<ItemCommand>,
         kioskId: String,
     ): VanResult {
         if (approvalNumber == null) throw InvalidPaymentRequestException()
@@ -39,6 +40,7 @@ class VanCardPaymentClient(
                 approvalNumber = approvalNumber,
                 approvalDate = approvalDate,
                 amount = amount,
+                items = items,
             )
         }
     }

@@ -7,6 +7,7 @@ object WalletPersistenceMapper {
         return Wallet(
             userId = entity.getUserId(),
             point = entity.getBalance(),
+            version = entity.getVersion(),
         )
     }
 
@@ -14,6 +15,7 @@ object WalletPersistenceMapper {
         return WalletJpaEntity(
             userId = domain.userId,
             point = domain.point,
+            version = domain.version,
         )
     }
 }

@@ -4,7 +4,7 @@ import devcoop.occount.member.application.exception.ContributionWithdrawalReques
 import devcoop.occount.member.application.output.ContributionAccountRepository
 import devcoop.occount.member.application.output.ContributionTransactionRepository
 import devcoop.occount.member.application.output.ContributionWithdrawalRequestRepository
-import devcoop.occount.member.domain.contribution.ContributionAccount
+import devcoop.occount.member.domain.contribution.InsufficientContributionBalanceException
 import devcoop.occount.member.domain.contribution.ContributionTransaction
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,14 +16,15 @@ class ApproveContributionWithdrawalRequestUseCase(
     private val contributionTransactionRepository: ContributionTransactionRepository,
 ) {
     @Transactional
-    fun approve(requestId: Long): ContributionWithdrawalRequestResponse {
+    fun approve(requestId: Long, processedBy: Long): ContributionWithdrawalRequestResponse {
         val request = contributionWithdrawalRequestRepository.findById(requestId)
             ?: throw ContributionWithdrawalRequestNotFoundException()
 
-        val account = contributionAccountRepository.findByUserId(request.userId)
-            ?: ContributionAccount(userId = request.userId)
+        val processedRequest = request.approve(processedBy)
+        val account = contributionAccountRepository.findByUserIdForUpdate(request.userId)
+            ?: throw InsufficientContributionBalanceException()
         val updatedAccount = account.withdraw(request.amount)
-        val approvedRequest = contributionWithdrawalRequestRepository.save(request.approve())
+        val approvedRequest = contributionWithdrawalRequestRepository.save(processedRequest)
         val savedAccount = contributionAccountRepository.save(updatedAccount)
         contributionTransactionRepository.save(
             ContributionTransaction.withdrawal(

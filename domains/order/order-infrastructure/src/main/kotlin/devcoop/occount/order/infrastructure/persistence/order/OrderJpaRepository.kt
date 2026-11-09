@@ -1,6 +1,7 @@
 package devcoop.occount.order.infrastructure.persistence.order
 
 import devcoop.occount.order.domain.order.OrderStatus
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
@@ -8,6 +9,8 @@ import org.springframework.data.repository.query.Param
 import java.time.Instant
 
 interface OrderJpaRepository : JpaRepository<OrderJpaEntity, Long> {
+    fun findByUserId(userId: Long, pageable: Pageable): Page<OrderJpaEntity>
+
     @Query("SELECT o.orderId FROM OrderJpaEntity o WHERE o.expiresAt <= :now AND o.status NOT IN :finalStatuses")
     fun findExpiredNonFinalOrderIds(
         @Param("now") now: Instant,
@@ -32,4 +35,48 @@ interface OrderJpaRepository : JpaRepository<OrderJpaEntity, Long> {
         """
     )
     fun findOrderIdsRequiringCompensation(pageable: Pageable): List<Long>
+
+    @Query(
+        """
+        SELECT new devcoop.occount.order.infrastructure.persistence.order.SalesRankingItemJpaProjection(
+            l.itemId,
+            MAX(l.itemNameSnapshot),
+            SUM(l.quantity)
+        )
+        FROM OrderJpaEntity o
+        JOIN o.lines l
+        WHERE o.status = devcoop.occount.order.domain.order.OrderStatus.COMPLETED
+          AND o.expiresAt >= :startDateTime
+          AND o.expiresAt < :endDateTime
+        GROUP BY l.itemId
+        ORDER BY SUM(l.quantity) DESC, l.itemId ASC
+        """
+    )
+    fun findPopularSalesRanking(
+        @Param("startDateTime") startDateTime: Instant,
+        @Param("endDateTime") endDateTime: Instant,
+        pageable: Pageable,
+    ): List<SalesRankingItemJpaProjection>
+
+    @Query(
+        """
+        SELECT new devcoop.occount.order.infrastructure.persistence.order.SalesRankingItemJpaProjection(
+            l.itemId,
+            MAX(l.itemNameSnapshot),
+            SUM(l.quantity)
+        )
+        FROM OrderJpaEntity o
+        JOIN o.lines l
+        WHERE o.status = devcoop.occount.order.domain.order.OrderStatus.COMPLETED
+          AND o.expiresAt >= :startDateTime
+          AND o.expiresAt < :endDateTime
+        GROUP BY l.itemId
+        ORDER BY SUM(l.quantity) ASC, l.itemId ASC
+        """
+    )
+    fun findUnpopularSalesRanking(
+        @Param("startDateTime") startDateTime: Instant,
+        @Param("endDateTime") endDateTime: Instant,
+        pageable: Pageable,
+    ): List<SalesRankingItemJpaProjection>
 }

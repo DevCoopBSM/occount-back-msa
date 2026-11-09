@@ -3,6 +3,8 @@ package devcoop.occount.payment.infrastructure.persistence.paymentlog
 import devcoop.occount.payment.application.output.PaymentLogRepository
 import devcoop.occount.payment.domain.payment.PaymentLog
 import devcoop.occount.payment.domain.payment.PaymentType
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
@@ -21,12 +23,27 @@ class PaymentLogRepositoryImpl(
             .map(PaymentLogPersistenceMapper::toDomain)
     }
 
+    override fun findByUserId(userId: Long, pageable: Pageable): Page<PaymentLog> {
+        return persistenceRepository.findByUserId(userId, pageable)
+            .map(PaymentLogPersistenceMapper::toDomain)
+    }
+
     override fun findByUserIdAndPaymentDateBetween(
         userId: Long,
         startDate: LocalDateTime,
         endDate: LocalDateTime
     ): List<PaymentLog> {
         return persistenceRepository.findByUserIdAndPaymentDateBetween(userId, startDate, endDate)
+            .map(PaymentLogPersistenceMapper::toDomain)
+    }
+
+    override fun findByUserIdAndPaymentDateBetween(
+        userId: Long,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
+        pageable: Pageable,
+    ): Page<PaymentLog> {
+        return persistenceRepository.findByUserIdAndPaymentDateBetween(userId, startDate, endDate, pageable)
             .map(PaymentLogPersistenceMapper::toDomain)
     }
 

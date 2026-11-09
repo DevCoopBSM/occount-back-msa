@@ -15,6 +15,8 @@ object ContributionWithdrawalRequestPersistenceMapper {
             status = entity.status,
             rejectionReason = entity.rejectionReason,
             requestedAt = entity.requestedAt,
+            processedBy = entity.processedBy,
+            processedAt = entity.processedAt,
             version = entity.version,
         )
     }
@@ -31,6 +33,8 @@ object ContributionWithdrawalRequestPersistenceMapper {
             status = domain.status,
             rejectionReason = domain.rejectionReason,
             requestedAt = domain.requestedAt,
+            processedBy = domain.processedBy,
+            processedAt = domain.processedAt,
             version = domain.version,
         )
     }

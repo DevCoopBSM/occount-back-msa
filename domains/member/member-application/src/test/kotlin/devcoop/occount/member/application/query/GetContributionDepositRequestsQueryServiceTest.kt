@@ -16,7 +16,7 @@ class GetContributionDepositRequestsQueryServiceTest {
         val repository = FakeContributionDepositRequestRepository(
             listOf(
                 ContributionDepositRequest.request(userId = 1L, amount = 10000),
-                ContributionDepositRequest.request(userId = 2L, amount = 20000).approve(),
+                ContributionDepositRequest.request(userId = 2L, amount = 20000).approve(processedBy = 99L),
             ),
         )
         val queryService = GetContributionDepositRequestsQueryService(repository, FakeUserRepository())
@@ -32,7 +32,7 @@ class GetContributionDepositRequestsQueryServiceTest {
         val repository = FakeContributionDepositRequestRepository(
             listOf(
                 ContributionDepositRequest.request(userId = 1L, amount = 10000),
-                ContributionDepositRequest.request(userId = 2L, amount = 20000).approve(),
+                ContributionDepositRequest.request(userId = 2L, amount = 20000).approve(processedBy = 99L),
             ),
         )
         val queryService = GetContributionDepositRequestsQueryService(repository, FakeUserRepository())

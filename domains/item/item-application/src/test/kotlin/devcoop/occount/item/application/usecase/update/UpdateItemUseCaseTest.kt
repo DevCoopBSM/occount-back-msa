@@ -6,16 +6,15 @@ import devcoop.occount.item.application.support.itemFixture
 import devcoop.occount.item.domain.item.Category
 import devcoop.occount.item.domain.item.ItemNotFoundException
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
 class UpdateItemUseCaseTest {
     @Test
-    fun `update changes item fields and preserves inactive state`() {
+    fun `update changes item fields`() {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(
-                itemFixture(itemId = 1L, name = "Old", quantity = 3, isActive = false),
+                itemFixture(itemId = 1L, name = "Old", quantity = 3),
             ),
         )
         val updateItemUseCase = UpdateItemUseCase(itemRepository, TestTransactionManager())
@@ -34,7 +33,6 @@ class UpdateItemUseCaseTest {
         val updatedItem = itemRepository.findById(1L)!!
         assertEquals("New", result.name)
         assertEquals(10, updatedItem.getQuantity())
-        assertFalse(updatedItem.isActive())
     }
 
     @Test

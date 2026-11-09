@@ -13,7 +13,7 @@ class ContributionAccountJpaEntity(
     @field:Column(nullable = false)
     val userId: Long = 0L,
     @field:Column(nullable = false)
-    val balance: Int = 0,
+    val balance: Long = 0,
     @Version
     @field:Column(nullable = false)
     val version: Long? = null,

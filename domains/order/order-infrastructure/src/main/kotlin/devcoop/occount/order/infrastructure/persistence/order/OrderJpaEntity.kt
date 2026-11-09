@@ -10,13 +10,19 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.Index
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import jakarta.persistence.Version
+import org.hibernate.annotations.BatchSize
+import org.hibernate.annotations.CreationTimestamp
 import java.time.Instant
 
 @Entity
-@Table(name = "orders")
+@Table(
+    name = "orders",
+    indexes = [Index(name = "idx_orders_user_id", columnList = "user_id, order_id")],
+)
 class OrderJpaEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,8 +30,10 @@ class OrderJpaEntity(
     private var orderId: Long = 0L,
     @field:Column(name = "user_id", nullable = true)
     private var userId: Long? = null,
+    @field:BatchSize(size = 100)
     @field:OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true)
     private var requestedLines: MutableList<RequestedOrderLineJpaEntity> = mutableListOf(),
+    @field:BatchSize(size = 100)
     @field:OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true)
     private var lines: MutableList<OrderLineJpaEntity> = mutableListOf(),
     @field:Column(name = "total_amount", nullable = false)
@@ -65,6 +73,9 @@ class OrderJpaEntity(
     private var paymentCompensationRequested: Boolean = false,
     @field:Column(name = "stock_compensation_requested", nullable = false)
     private var stockCompensationRequested: Boolean = false,
+    @field:CreationTimestamp
+    @field:Column(name = "created_at", updatable = false)
+    private var createdAt: Instant? = null,
     @Version
     @field:Column(name = "version", nullable = false)
     private var version: Long = 0L,
@@ -98,5 +109,6 @@ class OrderJpaEntity(
     fun isPaymentCancellationRequested() = paymentCancellationRequested
     fun isPaymentCompensationRequested() = paymentCompensationRequested
     fun isStockCompensationRequested() = stockCompensationRequested
+    fun getCreatedAt() = createdAt
     fun getVersion() = version
 }

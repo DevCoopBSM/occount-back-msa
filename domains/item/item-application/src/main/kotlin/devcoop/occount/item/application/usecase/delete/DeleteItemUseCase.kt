@@ -11,9 +11,9 @@ class DeleteItemUseCase(
 ) {
     @Transactional
     fun delete(id: Long) {
-        val item = itemRepository.findById(id)
+        itemRepository.findById(id)
             ?: throw ItemNotFoundException()
 
-        itemRepository.saveCatalog(item.deactivate())
+        itemRepository.deleteById(id)
     }
 }

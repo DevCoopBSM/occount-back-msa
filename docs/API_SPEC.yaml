@@ -30,7 +30,7 @@ tags:
   - name: Member
     description: 회원 정보 조회
   - name: Contribution
-    description: 출자금 납입 신청 관리
+    description: 출자금 납입 및 반환 신청 관리
   - name: Item
     description: 상품 조회 및 관리
   - name: AriPick
@@ -39,11 +39,149 @@ tags:
     description: 주문 생성 및 취소
   - name: Wallet
     description: 포인트 잔액 및 충전 내역
+  - name: Inquiry
+    description: 1:1 문의 제출 및 조회
 
 paths:
   # ───────────────────────────────────────────────
   # Auth
   # ───────────────────────────────────────────────
+  /api/v3/auth/email/send-otp:
+    post:
+      tags: [Auth]
+      operationId: sendEmailOtp
+      summary: 이메일 인증번호 발송
+      description: 입력된 이메일로 6자리 OTP 인증번호를 발송합니다. 유효시간은 5분입니다. (PERMIT_ALL)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmailOtpRequest'
+            example:
+              email: "hong@example.com"
+      responses:
+        "204":
+          description: 인증번호 발송 성공
+        "400":
+          description: 요청 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "429":
+          description: 요청 한도 초과 (IP 기준 rate limit)
+          headers:
+            Retry-After:
+              description: 재시도까지 대기 시간(초)
+              schema:
+                type: integer
+              example: 30
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/auth/email/verify-otp:
+    post:
+      tags: [Auth]
+      operationId: verifyEmailOtp
+      summary: 이메일 인증번호 확인
+      description: 발송된 OTP 인증번호를 검증합니다. 성공 시 해당 이메일로 회원가입이 가능합니다. (PERMIT_ALL)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailOtpRequest'
+            example:
+              email: "hong@example.com"
+              otp_code: "384921"
+      responses:
+        "204":
+          description: 인증번호 확인 성공
+        "400":
+          description: 요청 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: 인증번호 불일치 또는 만료
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: 발송된 인증번호 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "429":
+          description: 요청 한도 초과 (IP 기준 rate limit)
+          headers:
+            Retry-After:
+              description: 재시도까지 대기 시간(초)
+              schema:
+                type: integer
+              example: 30
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/auth/identity/verify:
+    post:
+      tags: [Auth]
+      operationId: verifyIdentity
+      summary: 본인인증 검증
+      description: PortOne SDK로 완료된 본인인증을 백엔드에서 검증하고, 회원가입에 필요한 사용자 정보를 반환합니다. (PERMIT_ALL)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyIdentityRequest'
+            example:
+              identity_verification_id: "identity-verification-id-from-portone"
+      responses:
+        "200":
+          description: 본인인증 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyIdentityResponse'
+              example:
+                user_ci_number: "CI_HASH_VALUE"
+                username: "홍길동"
+                user_phone: "01012345678"
+                birth_date: "2000-01-15"
+        "400":
+          description: 요청 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "502":
+          description: PortOne 본인인증 실패 또는 미완료
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "429":
+          description: 요청 한도 초과 (IP 기준 rate limit)
+          headers:
+            Retry-After:
+              description: 재시도까지 대기 시간(초)
+              schema:
+                type: integer
+              example: 30
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/v3/auth/register:
     post:
       tags: [Auth]
@@ -60,13 +198,58 @@ paths:
               user_ci_number: "CI1234567890"
               username: "홍길동"
               user_phone: "010-1234-5678"
+              birth_date: "2000-01-15"
               user_email: "hong@example.com"
               password: "pass1234"
+              pin: "1234"
       responses:
         "201":
           description: 회원가입 성공
         "400":
           description: 요청 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/auth/password/change:
+    post:
+      tags: [Auth]
+      operationId: changePassword
+      summary: 비밀번호 변경 (이메일 인증)
+      description: |
+        이메일 OTP 인증으로 비밀번호를 재설정합니다. (PERMIT_ALL)
+
+        흐름: `send-otp(purpose=PASSWORD_RESET)` → 사용자가 받은 6자리 코드를 본 요청에 그대로 전달.
+        - 변경 시점에 OTP 코드를 직접 재검증하며, PASSWORD_RESET 용도의 OTP만 허용합니다.
+        - 가입 여부 노출 방지를 위해, 인증을 통과하면 해당 이메일의 계정 존재 여부와 무관하게 204를 반환합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+            example:
+              email: "hong@example.com"
+              otp_code: "384921"
+              new_password: "newpass1234"
+      responses:
+        "204":
+          description: 비밀번호 변경 성공 (또는 인증 통과·계정 없음 — 동일 응답)
+        "400":
+          description: 요청 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: 인증번호 불일치 또는 잠금
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: PASSWORD_RESET 용도의 발송된 인증번호 없음
           content:
             application/json:
               schema:
@@ -90,7 +273,7 @@ paths:
               email: "hong@example.com"
               password: "pass1234"
       responses:
-        "201":
+        "200":
           description: 로그인 성공
           headers:
             Authorization:
@@ -106,6 +289,18 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "401":
           description: 이메일 또는 비밀번호 불일치
+        "429":
+          description: 요청 한도 초과 (IP 기준 rate limit)
+          headers:
+            Retry-After:
+              description: 재시도까지 대기 시간(초)
+              schema:
+                type: integer
+              example: 30
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v3/auth/kiosk/login:
     post:
@@ -125,7 +320,7 @@ paths:
               user_barcode: "20240001"
               user_pin: "1234"
       responses:
-        "201":
+        "200":
           description: 로그인 성공
           headers:
             Authorization:
@@ -141,17 +336,92 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "401":
           description: 바코드 또는 PIN 불일치
+        "429":
+          description: PIN 실패 누적으로 인한 계정(barcode) 잠금 — 잠시 후 다시 시도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # ───────────────────────────────────────────────
   # Member
   # ───────────────────────────────────────────────
+  /api/v3/users:
+    get:
+      tags: [Member]
+      operationId: getAdminUserList
+      summary: 사용자 전체 조회 / 검색
+      description: |
+        관리자가 전체 사용자 목록을 페이지 단위로 조회합니다. (ADMIN_ONLY)
+
+        - `keyword` 를 전달하면 이름(`username`)·이메일(`email`)·조합원번호(`cooperative_number`)
+          를 부분일치(OR)로 검색합니다. 공백이거나 생략하면 전체 목록을 조회합니다.
+        - 기본 페이지 크기는 10이며 `size` 는 최대 100으로 제한됩니다.
+        - 기본 정렬은 `id` 오름차순입니다. 정렬 허용 필드는 `id` 뿐이며, 그 외 필드는 무시되고 기본 정렬이 적용됩니다.
+        - 자격증명(비밀번호/PIN)과 CI 등 민감정보는 응답에서 제외됩니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: keyword
+          in: query
+          required: false
+          description: 이름·이메일·조합원번호 부분일치 검색어 (생략 시 전체 조회)
+          schema:
+            type: string
+          example: "홍길동"
+        - name: page
+          in: query
+          required: false
+          description: 0부터 시작하는 페이지 번호
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+        - name: size
+          in: query
+          required: false
+          description: 페이지 크기 (최대 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          example: 10
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserListResponse'
+              example:
+                users:
+                  - id: 1
+                    username: "홍길동"
+                    email: "hong@example.com"
+                    phone: "010-1234-5678"
+                    user_type: "STUDENT"
+                    role: "ROLE_USER"
+                    cooperative_number: "COOP001"
+                    user_barcode: "BARCODE123"
+                    birth_date: "2000-01-15"
+                total_count: 23
+                total_pages: 3
+                current_page: 0
+                page_size: 10
+        "401":
+          description: 인증 실패
+        "403":
+          description: 관리자 권한 없음
+
   /api/v3/users/pre-order-info:
     get:
       tags: [Member]
       operationId: getPreOrderInfo
       summary: 주문 전 회원 정보 조회
       description: |
-        주문 화면 진입 시 회원 이름과 보유 포인트를 반환합니다. (AUTHENTICATED)
+        주문 화면 진입 시 회원 이름을 반환합니다. (AUTHENTICATED)
       security:
         - BearerAuth: []
       responses:
@@ -165,6 +435,145 @@ paths:
                 username: "홍길동"
         "401":
           description: 인증 실패
+
+  /api/v3/users/barcode:
+    get:
+      tags: [Member]
+      operationId: getUserBarcode
+      summary: 회원 바코드 조회
+      description: |
+        로그인한 회원의 바코드를 반환합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBarcodeResponse'
+              example:
+                user_barcode: "BARCODE123"
+        "401":
+          description: 인증 실패
+
+  /api/v3/users/me:
+    get:
+      tags: [Member]
+      operationId: getMemberInfo
+      summary: 본인 회원정보 조회
+      description: |
+        로그인한 회원 본인의 회원정보를 반환합니다. (AUTHENTICATED)
+        자격증명(비밀번호/PIN)과 CI 등 민감정보는 제외됩니다.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberInfoResponse'
+              example:
+                username: "홍길동"
+                email: "hong@example.com"
+                phone: "010-1234-5678"
+                user_type: "STUDENT"
+                role: "ROLE_USER"
+                cooperative_number: "COOP001"
+                birth_date: "2000-01-15"
+        "401":
+          description: 인증 실패
+        "404":
+          description: 존재하지 않는 유저
+
+  /api/v3/users/pin/change-ticket:
+    post:
+      tags: [Member]
+      operationId: issuePinChangeTicket
+      summary: PIN 변경 1단계 - 비밀번호 확인 및 변경 티켓 발급
+      description: |
+        PIN 변경을 위해 현재 비밀번호만 먼저 검증하고, 성공 시 새 PIN 제출 단계
+        (PUT /users/pin)에서 사용할 1회용 변경 티켓 리소스를 생성합니다. 티켓은 발급받은
+        본인에게만 유효하며 짧은 시간(기본 300초) 뒤 만료되고, 사용되면 즉시 폐기됩니다.
+        (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyPasswordForPinChangeRequest'
+            example:
+              password: "pass1234"
+      responses:
+        "201":
+          description: 비밀번호 확인 성공, PIN 변경 티켓 발급
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PinChangeTicketResponse'
+        "400":
+          description: 요청 검증 실패 (비밀번호 누락 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: 인증 실패 또는 현재 비밀번호 불일치
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: 존재하지 않는 유저
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/users/pin:
+    put:
+      tags: [Member]
+      operationId: changePin
+      summary: PIN 변경 2단계 - 새 PIN 제출
+      description: |
+        1단계(POST /users/pin/change-ticket)에서 발급받은 1회용 티켓과 새 PIN으로
+        키오스크 결제용 PIN을 변경합니다. 티켓은 발급받은 본인에게만 유효하며, 변경이
+        완료되면 즉시 소비(폐기)됩니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePinRequest'
+            example:
+              ticket: "qY3k...단계1에서_발급된_티켓"
+              new_pin: "4321"
+      responses:
+        "204":
+          description: PIN 변경 성공
+        "400":
+          description: 요청 검증 실패 (PIN 형식 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: 인증 실패, 티켓 없음/불일치 또는 티켓 만료
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: 존재하지 않는 유저
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # ───────────────────────────────────────────────
   # Item
@@ -410,7 +819,7 @@ paths:
         "400":
           description: 매점 물품 수칙 위반
         "503":
-          description: 식약처 연동 실패
+          description: 식약처 연동 실패 또는 금지 키워드 정책 로딩 실패
         "401":
           description: 인증 실패
 
@@ -705,7 +1114,7 @@ paths:
       description: |
         주문을 생성합니다. (OPTIONAL_AUTH)
 
-        - `X-Kiosk-Id` 헤더가 없으면 기본값 `1`을 사용합니다.
+        - `X-Kiosk-Id` 헤더는 **필수**입니다. 없으면 400을 반환합니다.
         - 토큰이 있으면 회원 주문, 없으면 비회원 주문으로 처리합니다.
         - 요청 즉시 `PROCESSING` 상태로 응답하며, 실제 처리는 비동기로 수행됩니다.
         - 상품 검증, 가격 확정, 재고 차감은 비동기로 처리됩니다.
@@ -715,11 +1124,10 @@ paths:
       parameters:
         - name: X-Kiosk-Id
           in: header
-          required: false
-          description: 키오스크 식별자. 없으면 `1`
+          required: true
+          description: 키오스크 식별자 (필수)
           schema:
             type: string
-            default: "1"
           example: "1"
       security:
         - {}
@@ -753,6 +1161,139 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         "401":
           description: 잘못된 토큰
+    get:
+      tags: [Order]
+      operationId: getMyOrders
+      summary: 내 주문 내역 조회 (결제 정보 포함)
+      description: >-
+        로그인 사용자 본인의 주문 내역을 페이징 조회합니다. (AUTHENTICATED)
+        각 주문에는 주문 상품 목록(lines)과 결제 정보(payment)가 함께 포함됩니다.
+        결제 정보는 주문 처리 시 주문에 기록된 결과(결제 로그 ID, 사용 포인트, 카드 결제액, 거래 ID, 승인 번호)입니다.
+        기본 10건, 최신순(orderId DESC). 정렬 가능 필드는 orderId, createdAt
+        (허용 외 필드는 무시되고 기본 정렬이 적용됩니다).
+        사용자 식별은 게이트웨이가 주입하는 `X-Authenticated-User-Id` 헤더로 수행됩니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, default: 0, minimum: 0 }
+          description: 0-based 페이지 번호
+        - name: size
+          in: query
+          required: false
+          schema: { type: integer, default: 10, maximum: 100 }
+          description: 페이지 크기 (최대 100으로 제한됨)
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, default: "orderId,desc" }
+          description: "정렬 (허용 필드 orderId, createdAt — 그 외 무시되고 기본 orderId DESC 적용)"
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderHistoryListResponse'
+              example:
+                orders:
+                  - order_id: 1001
+                    status: "COMPLETED"
+                    order_date: "2026-06-11T09:00:00Z"
+                    total_amount: 4500
+                    lines:
+                      - item_id: 1
+                        item_name_snapshot: "삼각김밥"
+                        unit_price: 1500
+                        quantity: 3
+                        total_price: 4500
+                    payment:
+                      payment_log_id: 5001
+                      payment_status: "SUCCEEDED"
+                      points_used: 500
+                      card_amount: 4000
+                      transaction_id: "TXN-20260611-0001"
+                      approval_number: "00012345"
+                total_count: 23
+                total_pages: 3
+                current_page: 0
+                page_size: 10
+        "401":
+          description: 인증 실패
+
+  /api/v3/orders/statistics/sales-ranking:
+    get:
+      tags: [Order]
+      operationId: getOrderSalesRanking
+      summary: 상품 판매량 랭킹 조회
+      description: |
+        결제 완료된 주문을 기준으로 상품별 판매 수량 합계 랭킹을 조회합니다. (AUTHENTICATED)
+
+        - 판매량은 `COMPLETED` 주문의 주문 상품 `quantity` 합계입니다.
+        - `DAILY` 는 기준 날짜 하루, `WEEKLY` 는 기준 날짜가 포함된 월요일~일요일, `MONTHLY` 는 기준 날짜가 포함된 월 전체를 집계합니다.
+        - `date` 를 생략하면 서버 기준 오늘 날짜로 집계합니다.
+        - 판매 이력이 없는 상품은 주문 데이터만으로 알 수 없으므로 응답에 포함되지 않습니다.
+      parameters:
+        - name: period
+          in: query
+          required: true
+          description: 집계 기간
+          schema:
+            $ref: '#/components/schemas/SalesRankingPeriod'
+          example: DAILY
+        - name: type
+          in: query
+          required: true
+          description: 인기순/비인기순 정렬 기준
+          schema:
+            $ref: '#/components/schemas/SalesRankingType'
+          example: POPULAR
+        - name: limit
+          in: query
+          required: false
+          description: 조회할 상품 개수
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+          example: 5
+        - name: date
+          in: query
+          required: false
+          description: 기준 날짜. 없으면 서버 기준 오늘
+          schema:
+            type: string
+            format: date
+          example: "2026-06-05"
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 상품 판매량 랭킹 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesRankingResponse'
+              example:
+                period: DAILY
+                type: POPULAR
+                limit: 5
+                start_date: "2026-06-05"
+                end_date: "2026-06-05"
+                items:
+                  - item_id: 1
+                    item_name: "아메리카노"
+                    sold_quantity: 123
+        "400":
+          description: 잘못된 집계 기간, 정렬 기준, 조회 개수 또는 날짜 형식
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: 인증 실패
 
   /api/v3/orders/{orderId}:
     get:
@@ -800,7 +1341,7 @@ paths:
 
         - 연결 즉시 현재 주문 상태를 전송합니다.
         - 각 메시지는 `event: <event_type>` 형식으로 전달됩니다.
-        - 이벤트 타입은 `order_accepted`, `payment_requested`, `completed`, `failed`, `cancel_requested`, `cancelled`, `timed_out` 중 하나입니다.
+        - 이벤트 타입은 `order_accepted`, `stock_confirmed`, `payment_requested`, `completed`, `failed`, `cancel_requested`, `compensating`, `cancelled`, `compensation_failed`, `timed_out` 중 하나입니다.
         - 주문이 최종 상태(`completed`, `failed`, `cancelled`, `timed_out`)에 도달하면 서버가 연결을 종료합니다.
         - 주문 생성 직후 SSE 연결을 맺어 비동기 처리 결과를 수신하는 용도로 사용합니다.
       parameters:
@@ -825,37 +1366,45 @@ paths:
                   SSE 메시지는 아래 형식으로 전달됩니다.
 
                   - `event`: 이벤트 타입
-                  - `data`: 이벤트 데이터 (JSON). 정상 이벤트는 `{}`, 실패 이벤트는 `{"failure_reason": "..."}` 포함
+                  - `data`: 이벤트 데이터 (JSON). 모든 이벤트가 `order_id`를 포함하며, 실패 이벤트는 `failure_reason`을 추가로 포함합니다.
+                    - 정상: `{"order_id": 1001}`
+                    - 실패: `{"order_id": 1001, "failure_reason": "..."}`
               examples:
                 accepted:
                   summary: 주문 접수 직후
                   value: |
                     event: order_accepted
-                    data: {}
+                    data: {"order_id": 1001}
+
+                stockConfirmed:
+                  summary: 재고 확정 단계
+                  value: |
+                    event: stock_confirmed
+                    data: {"order_id": 1001}
 
                 paymentRequested:
                   summary: 결제 요청 단계
                   value: |
                     event: payment_requested
-                    data: {}
+                    data: {"order_id": 1001}
 
                 completed:
                   summary: 주문 완료
                   value: |
                     event: completed
-                    data: {}
+                    data: {"order_id": 1001}
 
                 failed:
                   summary: 주문 실패
                   value: |
                     event: failed
-                    data: {"failure_reason": "재고 부족"}
+                    data: {"order_id": 1001, "failure_reason": "재고 부족"}
 
                 cancelled:
                   summary: 주문 취소 완료
                   value: |
                     event: cancelled
-                    data: {}
+                    data: {"order_id": 1001}
         "404":
           description: 주문을 찾을 수 없음
 
@@ -932,6 +1481,460 @@ paths:
                 point: 3500
         "401":
           description: 인증 실패
+
+  /api/v3/wallet/admin/charge:
+    post:
+      tags: [Wallet]
+      operationId: adminChargeWallets
+      summary: 어드민 다중 회원 포인트 충전
+      description: >-
+        관리자가 여러 회원에게 동일 금액의 포인트를 일괄 충전합니다. (ADMIN_ONLY)
+        사용자별 독립 트랜잭션으로 처리되어 일부가 실패해도 나머지는 충전되며, 결과가 리포트로 반환됩니다.
+        충전한 관리자의 id는 인증 헤더에서 추출되어 충전 로그에 기록됩니다.
+        충전 대상 검색은 GET /api/v3/users (keyword) 를 사용합니다.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminChargeWalletRequest'
+            example:
+              user_ids: [1, 2, 99]
+              amount: 1000
+              reason: "5월 우수회원 보상"
+      responses:
+        "200":
+          description: >-
+            충전 처리 완료. 전체/부분/전체-실패 모두 200으로 응답하므로,
+            클라이언트는 HTTP 상태가 아니라 charged_count/failed_count 와 results 의 status 로 결과를 판정해야 한다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminChargeWalletResponse'
+              example:
+                charged_count: 2
+                failed_count: 1
+                results:
+                  - user_id: 1
+                    status: "CHARGED"
+                    message: null
+                  - user_id: 2
+                    status: "CHARGED"
+                    message: null
+                  - user_id: 99
+                    status: "FAILED"
+                    message: "WALLET_NOT_FOUND"
+        "400":
+          description: 요청 검증 실패 (user_ids 비어있음 / amount 0 이하 / reason 공백)
+        "401":
+          description: 인증 실패
+        "403":
+          description: 관리자 권한 없음
+
+  /api/v3/wallet/admin/charges:
+    get:
+      tags: [Wallet]
+      operationId: adminFindChargeHistory
+      summary: 어드민 전체 충전 내역 조회 (감사)
+      description: >-
+        관리자가 전체 포인트 충전 내역을 감사용으로 페이징 조회합니다. (ADMIN_ONLY)
+        기본 10건, 최신순(chargeId DESC). 정렬 가능 필드는 chargeId, chargeDate
+        (Spring Data 정렬 규약상 엔티티 프로퍼티명을 사용하며, 허용 외 필드는 무시되고 기본 정렬이 적용됩니다).
+        user_id/charged_by 는 id 로만 노출되며, 이름은 GET /api/v3/users (keyword) 로 교차 조회합니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, default: 0, minimum: 0 }
+          description: 0-based 페이지 번호
+        - name: size
+          in: query
+          required: false
+          schema: { type: integer, default: 10, maximum: 100 }
+          description: 페이지 크기 (최대 100으로 제한됨)
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, default: "chargeId,desc" }
+          description: "정렬 (허용 필드 chargeId, chargeDate — 그 외 무시되고 기본 chargeId DESC 적용)"
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminChargeLogListResponse'
+              example:
+                charges:
+                  - charge_id: 120
+                    user_id: 1
+                    charge_date: "2026-06-11T09:00:00"
+                    charge_reason: "ADMIN"
+                    detail_reason: "5월 우수회원 보상"
+                    charged_by: 99
+                    payment_id: null
+                    before_point: 0
+                    change_amount: 1000
+                    after_point: 1000
+                total_count: 134
+                total_pages: 14
+                current_page: 0
+                page_size: 10
+        "401":
+          description: 인증 실패
+        "403":
+          description: 관리자 권한 없음
+
+  /api/v3/wallet/charges:
+    get:
+      tags: [Wallet]
+      operationId: getMyChargeHistory
+      summary: 내 충전 내역 조회
+      description: >-
+        로그인 사용자 본인의 포인트 충전 내역을 페이징 조회합니다. (AUTHENTICATED)
+        토큰의 사용자 id 로만 필터링하며 임의 사용자 조회는 불가합니다.
+        기본 10건, 최신순(chargeId DESC). 정렬 가능 필드는 chargeId, chargeDate
+        (Spring Data 정렬 규약상 엔티티 프로퍼티명을 사용하며, 허용 외 필드는 무시되고 기본 정렬이 적용됩니다).
+        충전을 수행한 어드민 id(charged_by) 등 감사용 필드는 노출하지 않습니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, default: 0, minimum: 0 }
+          description: 0-based 페이지 번호
+        - name: size
+          in: query
+          required: false
+          schema: { type: integer, default: 10, maximum: 100 }
+          description: 페이지 크기 (최대 100으로 제한됨)
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, default: "chargeId,desc" }
+          description: "정렬 (허용 필드 chargeId, chargeDate — 그 외 무시되고 기본 chargeId DESC 적용)"
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargeHistoryListResponse'
+              example:
+                charges:
+                  - charge_id: 120
+                    charge_date: "2026-06-11T09:00:00"
+                    charge_reason: "PURCHASE"
+                    detail_reason: "포인트 충전"
+                    payment_id: 5001
+                    before_point: 0
+                    change_amount: 1000
+                    after_point: 1000
+                total_count: 12
+                total_pages: 2
+                current_page: 0
+                page_size: 10
+        "401":
+          description: 인증 실패
+
+  # ───────────────────────────────────────────────
+  # Payment
+  # ───────────────────────────────────────────────
+  /api/v3/payments/history:
+    get:
+      tags: [Payment]
+      operationId: getPaymentHistory
+      summary: 내 결제 내역 조회
+      description: >-
+        로그인 사용자 본인의 결제 내역(결제 로그)을 페이징 조회합니다. (AUTHENTICATED)
+        `start_date`/`end_date` 를 **둘 다** 지정하면 해당 기간으로 필터링하며,
+        하나만 지정하거나 둘 다 생략하면 전체 기간을 조회합니다.
+        기본 10건, 최신순(paymentDate DESC). 정렬 가능 필드는 paymentId, paymentDate
+        (허용 외 필드는 무시되고 기본 정렬이 적용됩니다).
+        결제 수단에 따라 포인트 결제는 point_transaction 이, 카드 결제는 card_info/transaction_info 가 채워집니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, default: 0, minimum: 0 }
+          description: 0-based 페이지 번호
+        - name: size
+          in: query
+          required: false
+          schema: { type: integer, default: 10, maximum: 100 }
+          description: 페이지 크기 (최대 100으로 제한됨)
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, default: "paymentDate,desc" }
+          description: "정렬 (허용 필드 paymentId, paymentDate — 그 외 무시되고 기본 paymentDate DESC 적용)"
+        - name: start_date
+          in: query
+          required: false
+          schema: { type: string, format: date-time }
+          description: "조회 시작 일시 (ISO-8601, end_date 와 함께 지정해야 적용)"
+          example: "2026-06-01T00:00:00"
+        - name: end_date
+          in: query
+          required: false
+          schema: { type: string, format: date-time }
+          description: "조회 종료 일시 (ISO-8601, start_date 와 함께 지정해야 적용)"
+          example: "2026-06-30T23:59:59"
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentHistoryListResponse'
+              example:
+                payments:
+                  - payment_id: 5001
+                    user_id: 1
+                    payment_date: "2026-06-11T09:00:00"
+                    payment_type: "CARD"
+                    total_amount: 4500
+                    point_transaction:
+                      before_point: 500
+                      change_amount: -500
+                      after_point: 0
+                    card_info:
+                      issuer_name: "신한카드"
+                      card_brand: "VISA"
+                    transaction_info:
+                      approval_number: "00012345"
+                      transaction_id: "TXN-20260611-0001"
+                      amount: 4000
+                    event_type: "NONE"
+                total_count: 42
+                total_pages: 5
+                current_page: 0
+                page_size: 10
+        "401":
+          description: 인증 실패
+
+  # ───────────────────────────────────────────────
+  # Inquiry
+  # ───────────────────────────────────────────────
+  /api/v3/inquiries:
+    post:
+      tags: [Inquiry]
+      operationId: createInquiry
+      summary: 문의 제출
+      description: 로그인한 회원이 새로운 문의를 제출합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInquiryRequest'
+            example:
+              title: "결제가 안돼요"
+              content: "포인트 결제 시 오류가 발생합니다."
+              category: "PAYMENT"
+      responses:
+        "201":
+          description: 문의 접수 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateInquiryResponse'
+              example:
+                inquiry_id: 1
+                status: "RECEIVED"
+                created_at: "2026-04-28T08:30:00"
+        "400":
+          description: 요청 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+              example:
+                title: "제목을 입력해주세요."
+                category: "카테고리를 선택해주세요."
+        "401":
+          description: 인증 실패
+
+    get:
+      tags: [Inquiry]
+      operationId: getInquiryList
+      summary: 내 문의 목록 조회
+      description: |
+        로그인한 회원 본인이 제출한 문의 목록을 페이지 단위로 반환합니다. (AUTHENTICATED)
+
+        - 기본 정렬은 `created_at` 내림차순입니다.
+        - 정렬 허용 필드는 `created_at`, `title`, `status`, `category` 이며, 그 외 필드는 무시되고 기본 정렬이 적용됩니다.
+        - `size` 는 최대 100으로 제한됩니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: 0부터 시작하는 페이지 번호
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+        - name: size
+          in: query
+          required: false
+          description: 페이지 크기 (최대 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          example: 20
+        - name: sort
+          in: query
+          required: false
+          description: "정렬 기준 `필드,방향` (허용 필드: created_at, title, status, category)"
+          schema:
+            type: string
+          example: "created_at,desc"
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InquiryListResponse'
+        "401":
+          description: 인증 실패
+
+  /api/v3/inquiries/{inquiryId}:
+    get:
+      tags: [Inquiry]
+      operationId: getInquiryDetail
+      summary: 문의 상세 조회
+      description: 단건 문의의 상세 내용을 조회합니다. 본인의 문의가 아닌 경우 403을 반환합니다. (AUTHENTICATED)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: inquiryId
+          in: path
+          required: true
+          description: 조회할 문의 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InquiryDetailResponse'
+        "401":
+          description: 인증 실패
+        "403":
+          description: 본인의 문의가 아님
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: 문의를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/inquiries/admin:
+    get:
+      tags: [Inquiry]
+      operationId: adminGetInquiryList
+      summary: 어드민 전체 문의 조회
+      description: >-
+        관리자가 전체 사용자의 문의를 페이징 조회합니다. (ADMIN_ONLY)
+        기본 10건, 최신순(createdAt DESC). 정렬 가능 필드는 createdAt, status, category.
+        status 쿼리 파라미터로 처리 상태를 필터링할 수 있습니다. 작성자는 user_id 로만 노출됩니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [RECEIVED, IN_PROGRESS, COMPLETED]
+          description: 처리 상태 필터 (미지정 시 전체)
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, default: 0, minimum: 0 }
+        - name: size
+          in: query
+          required: false
+          schema: { type: integer, default: 10, maximum: 100 }
+          description: 페이지 크기 (최대 100으로 제한됨)
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, default: "createdAt,desc" }
+          description: "정렬 (허용 필드 createdAt, status, category — 그 외 무시되고 기본 createdAt DESC 적용)"
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminInquiryListResponse'
+        "400":
+          description: 잘못된 status 값
+        "401":
+          description: 인증 실패
+        "403":
+          description: 관리자 권한 없음
+
+  /api/v3/inquiries/admin/{inquiryId}:
+    get:
+      tags: [Inquiry]
+      operationId: adminGetInquiryDetail
+      summary: 어드민 문의 상세 조회
+      description: >-
+        관리자가 임의 문의의 상세(본문 포함)를 조회합니다. (ADMIN_ONLY)
+        본인 소유 여부와 무관하게 조회되며 작성자 user_id 가 포함됩니다.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: inquiryId
+          in: path
+          required: true
+          description: 조회할 문의 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminInquiryDetailResponse'
+        "401":
+          description: 인증 실패
+        "403":
+          description: 관리자 권한 없음
+        "404":
+          description: 문의를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # ───────────────────────────────────────────────
   # Contribution
@@ -1077,7 +2080,7 @@ paths:
       tags: [Contribution]
       operationId: approveContributionDepositRequest
       summary: 출자금 납입 신청 승인
-      description: 관리자가 출자금 납입 신청을 승인하고 회원의 확정 출자금 잔액에 반영합니다. (ADMIN_ONLY)
+      description: 관리자가 출자금 납입 신청을 승인하고 회원의 확정 출자금 잔액에 반영합니다. ROLE_USER는 ROLE_MEMBER로 승격하며 다른 권한은 유지합니다. 처리 관리자와 시각을 기록합니다. (ADMIN_ONLY)
       security:
         - BearerAuth: []
       parameters:
@@ -1100,6 +2103,8 @@ paths:
                 amount: 10000
                 status: "APPROVED"
                 requested_at: "2026-05-26T10:30:00"
+        "400":
+          description: 승인 후 잔액이 signed int64 범위를 초과함 (신청과 잔액 변경 없음)
         "401":
           description: 인증 실패
         "403":
@@ -1107,7 +2112,7 @@ paths:
         "404":
           description: 신청을 찾을 수 없음
         "409":
-          description: 이미 처리된 신청
+          description: 이미 처리된 신청 또는 동시 변경 충돌 (현재 상태 재조회 후 재시도)
 
   /api/v3/contributions/deposit-requests/{requestId}/reject:
     patch:
@@ -1124,6 +2129,12 @@ paths:
           schema:
             type: integer
             format: int64
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectContributionRequest'
       responses:
         "200":
           description: 반려 성공
@@ -1144,7 +2155,7 @@ paths:
         "404":
           description: 신청을 찾을 수 없음
         "409":
-          description: 이미 처리된 신청
+          description: 이미 처리된 신청 또는 동시 변경 충돌 (현재 상태 재조회 후 재시도)
 
   /api/v3/contributions/withdrawal-requests:
     post:
@@ -1237,7 +2248,7 @@ paths:
       tags: [Contribution]
       operationId: approveContributionWithdrawalRequest
       summary: 출자금 반환 신청 승인
-      description: 관리자가 출자금 반환 신청을 승인하고 회원 출자금 잔액에서 차감합니다. (ADMIN_ONLY)
+      description: 관리자가 출자금 반환 신청을 승인하고 회원 출자금 잔액에서 차감합니다. 처리 관리자와 시각을 기록합니다. 실제 은행 송금은 수행하지 않으며 송금 실패 시 운영자가 대사 및 별도 보정해야 합니다. (ADMIN_ONLY)
       security:
         - BearerAuth: []
       parameters:
@@ -1263,7 +2274,7 @@ paths:
         "404":
           description: 신청을 찾을 수 없음
         "409":
-          description: 이미 처리된 신청
+          description: 이미 처리된 신청 또는 동시 변경 충돌 (현재 상태 재조회 후 재시도)
 
   /api/v3/contributions/withdrawal-requests/{requestId}/reject:
     patch:
@@ -1280,6 +2291,12 @@ paths:
           schema:
             type: integer
             format: int64
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectContributionRequest'
       responses:
         "200":
           description: 반려 성공
@@ -1294,7 +2311,7 @@ paths:
         "404":
           description: 신청을 찾을 수 없음
         "409":
-          description: 이미 처리된 신청
+          description: 이미 처리된 신청 또는 동시 변경 충돌 (현재 상태 재조회 후 재시도)
 
 security:
   - BearerAuth: []
@@ -1309,9 +2326,66 @@ components:
 
   schemas:
     # ── Auth ──────────────────────────────────────
+    SendEmailOtpRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          description: 인증번호를 받을 이메일
+        purpose:
+          type: string
+          enum: [REGISTER, PASSWORD_RESET]
+          default: REGISTER
+          description: |
+            OTP 용도. 미지정 시 회원가입(REGISTER)으로 간주.
+            비밀번호 변경 OTP는 PASSWORD_RESET으로 발송해야 하며,
+            발송 시 고정된 용도로만 소비할 수 있습니다.
+
+    VerifyEmailOtpRequest:
+      type: object
+      required: [email, otp_code]
+      properties:
+        email:
+          type: string
+          format: email
+          description: 인증번호를 받은 이메일
+        otp_code:
+          type: string
+          minLength: 6
+          maxLength: 6
+          description: 6자리 인증번호
+
+    VerifyIdentityRequest:
+      type: object
+      required: [identity_verification_id]
+      properties:
+        identity_verification_id:
+          type: string
+          description: PortOne SDK에서 발급된 본인인증 고유 ID
+
+    VerifyIdentityResponse:
+      type: object
+      properties:
+        user_ci_number:
+          type: string
+          description: 본인인증 CI 값 (회원가입 시 사용)
+        username:
+          type: string
+          description: 실명
+        user_phone:
+          type: string
+          description: 전화번호
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          description: 생년월일 (YYYY-MM-DD). 일부 인증사(예 KG이니시스+카카오)에서는 누락될 수 있음
+
     MemberRegisterRequest:
       type: object
-      required: [user_ci_number, username, user_email, password]
+      required: [user_ci_number, username, user_email, password, pin]
       properties:
         user_ci_number:
           type: string
@@ -1324,6 +2398,11 @@ components:
           type: string
           nullable: true
           description: 전화번호
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          description: 생년월일 (YYYY-MM-DD). 본인인증 응답에서 받은 값을 그대로 전달
         user_email:
           type: string
           format: email
@@ -1333,6 +2412,10 @@ components:
           minLength: 8
           maxLength: 16
           description: 비밀번호 (8~16자)
+        pin:
+          type: string
+          pattern: '^\d{4,6}$'
+          description: 키오스크 결제용 PIN (4~6자리 숫자)
 
     MemberLoginRequest:
       type: object
@@ -1355,6 +2438,56 @@ components:
           type: string
           description: PIN 번호
 
+    ChangePasswordRequest:
+      type: object
+      required: [email, otp_code, new_password]
+      properties:
+        email:
+          type: string
+          format: email
+          description: 비밀번호를 변경할 계정 이메일
+        otp_code:
+          type: string
+          minLength: 6
+          maxLength: 6
+          description: PASSWORD_RESET 용도로 발송·검증된 6자리 인증번호
+        new_password:
+          type: string
+          minLength: 8
+          maxLength: 16
+          description: 새 비밀번호 (8~16자)
+
+    VerifyPasswordForPinChangeRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+          description: 본인 확인용 현재 비밀번호
+
+    PinChangeTicketResponse:
+      type: object
+      properties:
+        ticket:
+          type: string
+          description: 새 PIN 제출(PUT /users/pin) 시 사용할 1회용 티켓
+        expires_in:
+          type: integer
+          format: int64
+          description: 티켓 만료까지 남은 시간(초)
+
+    ChangePinRequest:
+      type: object
+      required: [ticket, new_pin]
+      properties:
+        ticket:
+          type: string
+          description: 1단계(POST /users/pin/change-ticket)에서 발급받은 1회용 티켓
+        new_pin:
+          type: string
+          pattern: '^\d{4,6}$'
+          description: 새 PIN (4~6자리 숫자)
+
     # ── Member ─────────────────────────────────────
     UserPreOrderInfoResponse:
       type: object
@@ -1362,6 +2495,110 @@ components:
         username:
           type: string
           description: 회원 이름
+
+    MemberInfoResponse:
+      type: object
+      description: 본인 회원정보. 자격증명(password/pin)과 CI 등 민감정보는 제외됨
+      properties:
+        username:
+          type: string
+          description: 이름
+        email:
+          type: string
+          format: email
+          description: 이메일
+        phone:
+          type: string
+          nullable: true
+          description: 전화번호
+        user_type:
+          type: string
+          enum: [STUDENT, PARENT, TEACHER, OTHER]
+          description: 회원 유형
+        role:
+          type: string
+          enum: [ROLE_DEACTIVATED, ROLE_USER, ROLE_MEMBER, ROLE_COOP, ROLE_ADMIN]
+          description: 권한
+        cooperative_number:
+          type: string
+          nullable: true
+          description: 조합원 번호
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          description: 생년월일 (YYYY-MM-DD)
+
+    UserBarcodeResponse:
+      type: object
+      properties:
+        user_barcode:
+          type: string
+          nullable: true
+          description: 회원 바코드
+
+    AdminUserListResponse:
+      type: object
+      description: 관리자 사용자 목록. 자격증명(password/pin)과 CI 등 민감정보는 제외됨
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminUserSummaryResponse'
+        total_count:
+          type: integer
+          format: int64
+          description: 전체 사용자 수
+        total_pages:
+          type: integer
+          description: 전체 페이지 수
+        current_page:
+          type: integer
+          description: 현재 페이지 번호 (0부터 시작)
+        page_size:
+          type: integer
+          description: 페이지 크기
+
+    AdminUserSummaryResponse:
+      type: object
+      description: 관리자 목록의 사용자 항목. 비밀번호/PIN/CI 등 민감정보는 제외됨
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 사용자 ID
+        username:
+          type: string
+          description: 이름
+        email:
+          type: string
+          format: email
+          description: 이메일
+        phone:
+          type: string
+          nullable: true
+          description: 전화번호
+        user_type:
+          type: string
+          enum: [STUDENT, PARENT, TEACHER, OTHER]
+          description: 회원 유형
+        role:
+          type: string
+          enum: [ROLE_DEACTIVATED, ROLE_USER, ROLE_MEMBER, ROLE_COOP, ROLE_ADMIN]
+          description: 권한
+        cooperative_number:
+          type: string
+          nullable: true
+          description: 조합원 번호
+        user_barcode:
+          type: string
+          nullable: true
+          description: 회원 바코드
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          description: 생년월일 (YYYY-MM-DD)
 
     # ── Item ───────────────────────────────────────
     ItemListResponse:
@@ -1445,6 +2682,7 @@ components:
 
     ItemUpdateRequest:
       type: object
+      required: [name, category, price, quantity]
       properties:
         name:
           type: string
@@ -1461,9 +2699,9 @@ components:
     # ── AriPick ───────────────────────────────────
     CreateAripickRequest:
       type: object
-      required: [type_n_seq, reason]
+      required: [type_nseq, reason]
       properties:
-        type_n_seq:
+        type_nseq:
           type: integer
           format: int64
         reason:
@@ -1480,7 +2718,7 @@ components:
     AripickFoodSearchItemResponse:
       type: object
       properties:
-        type_n_seq:
+        type_nseq:
           type: integer
           format: int64
         name:
@@ -1610,6 +2848,76 @@ components:
           nullable: true
           description: 실패/취소 사유
 
+    SalesRankingResponse:
+      type: object
+      required:
+        - period
+        - type
+        - limit
+        - start_date
+        - end_date
+        - items
+      properties:
+        period:
+          $ref: '#/components/schemas/SalesRankingPeriod'
+        type:
+          $ref: '#/components/schemas/SalesRankingType'
+        limit:
+          type: integer
+          minimum: 1
+        start_date:
+          type: string
+          format: date
+          description: 실제 집계 시작일
+        end_date:
+          type: string
+          format: date
+          description: 실제 집계 종료일
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesRankingItemResponse'
+
+    SalesRankingItemResponse:
+      type: object
+      required:
+        - item_id
+        - item_name
+        - sold_quantity
+      properties:
+        item_id:
+          type: integer
+          format: int64
+        item_name:
+          type: string
+          description: 주문 시점 상품명 스냅샷
+        sold_quantity:
+          type: integer
+          format: int64
+          description: 해당 기간 동안 판매된 총 수량
+
+    SalesRankingPeriod:
+      type: string
+      description: |
+        판매량 집계 기간.
+        - `DAILY` — 기준 날짜 하루
+        - `WEEKLY` — 기준 날짜가 포함된 월요일~일요일
+        - `MONTHLY` — 기준 날짜가 포함된 월 전체
+      enum:
+        - DAILY
+        - WEEKLY
+        - MONTHLY
+
+    SalesRankingType:
+      type: string
+      description: |
+        판매량 랭킹 정렬 기준.
+        - `POPULAR` — 많이 팔린 순
+        - `UNPOPULAR` — 적게 팔린 순
+      enum:
+        - POPULAR
+        - UNPOPULAR
+
     OrderStatus:
       type: string
       description: |
@@ -1638,6 +2946,103 @@ components:
         - COMPENSATION_FAILED
         - TIMED_OUT
 
+    OrderStepStatus:
+      type: string
+      description: |
+        주문 단계(결제/재고)별 진행 상태.
+        - `PENDING` — 대기
+        - `SUCCEEDED` — 성공
+        - `FAILED` — 실패
+        - `COMPENSATED` — 보상(환불/복원) 완료
+        - `COMPENSATION_FAILED` — 보상 실패
+      enum:
+        - PENDING
+        - SUCCEEDED
+        - FAILED
+        - COMPENSATED
+        - COMPENSATION_FAILED
+
+    OrderHistoryListResponse:
+      type: object
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderHistoryItem'
+        total_count:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+        current_page:
+          type: integer
+          description: 0-based 현재 페이지 번호
+        page_size:
+          type: integer
+
+    OrderHistoryItem:
+      type: object
+      properties:
+        order_id:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        order_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: 주문 생성 일시 (created_at 도입 이전 주문은 null)
+        total_amount:
+          type: integer
+          description: 총 결제 금액
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderLineResult'
+        payment:
+          $ref: '#/components/schemas/OrderPaymentInfo'
+
+    OrderLineResult:
+      type: object
+      properties:
+        item_id:
+          type: integer
+          format: int64
+        item_name_snapshot:
+          type: string
+          description: 주문 시점 상품명 스냅샷
+        unit_price:
+          type: integer
+        quantity:
+          type: integer
+        total_price:
+          type: integer
+
+    OrderPaymentInfo:
+      type: object
+      description: 주문에 기록된 결제 결과 (결제 도메인 동기 조회 없이 주문 자체에 비정규화된 값)
+      properties:
+        payment_log_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: 결제 로그 ID (결제 미완료 시 null)
+        payment_status:
+          $ref: '#/components/schemas/OrderStepStatus'
+        points_used:
+          type: integer
+          description: 사용한 포인트
+        card_amount:
+          type: integer
+          description: 카드 결제 금액
+        transaction_id:
+          type: string
+          nullable: true
+        approval_number:
+          type: string
+          nullable: true
+
     # ── Wallet ─────────────────────────────────────
     WalletPointResponse:
       type: object
@@ -1646,6 +3051,456 @@ components:
           type: integer
           description: 현재 포인트 잔액
 
+    AdminChargeWalletRequest:
+      type: object
+      required: [user_ids, amount, reason]
+      properties:
+        user_ids:
+          type: array
+          minItems: 1
+          items:
+            type: integer
+            format: int64
+          description: 충전 대상 회원 id 목록 (비어 있을 수 없음, 중복은 1회만 처리)
+        amount:
+          type: integer
+          minimum: 1
+          description: 충전 금액 (양수)
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 충전 사유 (충전 로그의 detail_reason 으로 저장)
+
+    AdminChargeWalletResponse:
+      type: object
+      properties:
+        charged_count:
+          type: integer
+          description: 충전 성공 건수
+        failed_count:
+          type: integer
+          description: 충전 실패 건수
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminChargeItemResponse'
+
+    AdminChargeItemResponse:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [CHARGED, FAILED]
+        message:
+          type: string
+          nullable: true
+          description: 실패 시 사유 코드 (예 WALLET_NOT_FOUND), 성공 시 null
+
+    AdminChargeLogListResponse:
+      type: object
+      properties:
+        charges:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminChargeLogResponse'
+        total_count:
+          type: integer
+          format: int64
+          description: 전체 충전 내역 건수
+        total_pages:
+          type: integer
+        current_page:
+          type: integer
+          description: 0-based 현재 페이지 번호
+        page_size:
+          type: integer
+
+    AdminChargeLogResponse:
+      type: object
+      properties:
+        charge_id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+          description: 충전 대상 회원 id
+        charge_date:
+          type: string
+          format: date-time
+        charge_reason:
+          type: string
+          enum: [EVENT, REWARD, PURCHASE, REFUND, ADMIN]
+        detail_reason:
+          type: string
+          nullable: true
+        charged_by:
+          type: integer
+          format: int64
+          nullable: true
+          description: 충전을 수행한 어드민 id (시스템/사용자 충전은 null)
+        payment_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: 결제 연동 충전인 경우 결제 id (그 외 null)
+        before_point:
+          type: integer
+        change_amount:
+          type: integer
+        after_point:
+          type: integer
+
+    ChargeHistoryListResponse:
+      type: object
+      properties:
+        charges:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserChargeLogResponse'
+        total_count:
+          type: integer
+          format: int64
+          description: 본인 충전 내역 전체 건수
+        total_pages:
+          type: integer
+        current_page:
+          type: integer
+          description: 0-based 현재 페이지 번호
+        page_size:
+          type: integer
+
+    UserChargeLogResponse:
+      type: object
+      description: 사용자 본인 충전 내역 항목 (감사용 charged_by, 본인 user_id 는 노출하지 않음)
+      properties:
+        charge_id:
+          type: integer
+          format: int64
+        charge_date:
+          type: string
+          format: date-time
+        charge_reason:
+          type: string
+          enum: [EVENT, REWARD, PURCHASE, REFUND, ADMIN]
+        detail_reason:
+          type: string
+          nullable: true
+        payment_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: 결제 연동 충전인 경우 결제 id (그 외 null)
+        before_point:
+          type: integer
+        change_amount:
+          type: integer
+        after_point:
+          type: integer
+
+    # ── Payment ────────────────────────────────────
+    PaymentHistoryListResponse:
+      type: object
+      properties:
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentLogResult'
+        total_count:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+        current_page:
+          type: integer
+          description: 0-based 현재 페이지 번호
+        page_size:
+          type: integer
+
+    PaymentLogResult:
+      type: object
+      properties:
+        payment_id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+          nullable: true
+        payment_date:
+          type: string
+          format: date-time
+        payment_type:
+          $ref: '#/components/schemas/PaymentType'
+        total_amount:
+          type: integer
+        point_transaction:
+          allOf:
+            - $ref: '#/components/schemas/PointTransactionResult'
+          nullable: true
+          description: 포인트 결제 시 채워짐
+        card_info:
+          allOf:
+            - $ref: '#/components/schemas/CardResult'
+          nullable: true
+          description: 카드 결제 시 채워짐
+        transaction_info:
+          allOf:
+            - $ref: '#/components/schemas/TransactionResult'
+          nullable: true
+          description: 카드 결제 승인 상세
+        event_type:
+          $ref: '#/components/schemas/EventType'
+
+    PointTransactionResult:
+      type: object
+      properties:
+        before_point:
+          type: integer
+        change_amount:
+          type: integer
+        after_point:
+          type: integer
+
+    CardResult:
+      type: object
+      properties:
+        acquirer_code: { type: string, nullable: true }
+        acquirer_name: { type: string, nullable: true }
+        issuer_code: { type: string, nullable: true }
+        issuer_name: { type: string, nullable: true }
+        card_type: { type: string, nullable: true }
+        card_category: { type: string, nullable: true }
+        card_name: { type: string, nullable: true }
+        card_brand: { type: string, nullable: true }
+
+    TransactionResult:
+      type: object
+      properties:
+        message_number: { type: string, nullable: true }
+        type_code: { type: string, nullable: true }
+        card_number: { type: string, nullable: true }
+        amount: { type: integer, nullable: true }
+        installment_months: { type: integer, nullable: true }
+        cancel_type: { type: string, nullable: true }
+        approval_number: { type: string, nullable: true }
+        approval_date: { type: string, nullable: true }
+        approval_time: { type: string, nullable: true }
+        transaction_id: { type: string, nullable: true }
+        terminal_id: { type: string, nullable: true }
+        merchant_number: { type: string, nullable: true }
+        reject_code: { type: string, nullable: true }
+        reject_message: { type: string, nullable: true }
+
+    PaymentType:
+      type: string
+      description: 결제 수단 (POINT 포인트, CARD 카드, MIXED 포인트+카드)
+      enum:
+        - POINT
+        - CARD
+        - MIXED
+
+    EventType:
+      type: string
+      nullable: true
+      description: 결제 이벤트 유형
+      enum:
+        - NONE
+        - PROMOTION
+        - SPECIAL_SALE
+
+    # ── Inquiry ────────────────────────────────────
+    CreateInquiryRequest:
+      type: object
+      required: [title, content, category]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: ".*\\S.*"
+          description: 문의 제목 (공백 문자열 불가)
+        content:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          pattern: ".*\\S.*"
+          description: 문의 내용 (공백 문자열 불가)
+        category:
+          $ref: '#/components/schemas/InquiryCategory'
+
+    CreateInquiryResponse:
+      type: object
+      properties:
+        inquiry_id:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/InquiryStatus'
+        created_at:
+          type: string
+          format: date-time
+
+    InquiryListResponse:
+      type: object
+      properties:
+        inquiries:
+          type: array
+          items:
+            $ref: '#/components/schemas/InquiryListItemResponse'
+        total_count:
+          type: integer
+          format: int64
+          description: 전체 문의 수
+        total_pages:
+          type: integer
+          description: 전체 페이지 수
+        current_page:
+          type: integer
+          description: 현재 페이지 번호 (0부터 시작)
+        page_size:
+          type: integer
+          description: 페이지 크기
+
+    InquiryListItemResponse:
+      type: object
+      properties:
+        inquiry_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        category:
+          $ref: '#/components/schemas/InquiryCategory'
+        status:
+          $ref: '#/components/schemas/InquiryStatus'
+        created_at:
+          type: string
+          format: date-time
+
+    InquiryDetailResponse:
+      type: object
+      properties:
+        inquiry_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        content:
+          type: string
+        category:
+          $ref: '#/components/schemas/InquiryCategory'
+        status:
+          $ref: '#/components/schemas/InquiryStatus'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AdminInquiryListResponse:
+      type: object
+      properties:
+        inquiries:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminInquiryListItemResponse'
+        total_count:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+        current_page:
+          type: integer
+          description: 0-based 현재 페이지 번호
+        page_size:
+          type: integer
+
+    AdminInquiryListItemResponse:
+      type: object
+      properties:
+        inquiry_id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+          description: 작성자 회원 id
+        title:
+          type: string
+        category:
+          $ref: '#/components/schemas/InquiryCategory'
+        status:
+          $ref: '#/components/schemas/InquiryStatus'
+        created_at:
+          type: string
+          format: date-time
+
+    AdminInquiryDetailResponse:
+      type: object
+      properties:
+        inquiry_id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+          description: 작성자 회원 id
+        title:
+          type: string
+        content:
+          type: string
+        category:
+          $ref: '#/components/schemas/InquiryCategory'
+        status:
+          $ref: '#/components/schemas/InquiryStatus'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    InquiryStatus:
+      type: string
+      description: |
+        문의 처리 상태.
+        - `RECEIVED` — 접수됨 (초기값)
+        - `IN_PROGRESS` — 처리중
+        - `COMPLETED` — 완료
+      enum:
+        - RECEIVED
+        - IN_PROGRESS
+        - COMPLETED
+
+    InquiryCategory:
+      type: string
+      description: |
+        문의 카테고리.
+        - `PAYMENT` — 결제 관련
+        - `ACCOUNT` — 계정 관련
+        - `SERVICE` — 서비스 오류 관련
+        - `OTHER` — 기타
+      enum:
+        - PAYMENT
+        - ACCOUNT
+        - SERVICE
+        - OTHER
+
+    ValidationErrorResponse:
+      type: object
+      description: 필드 유효성 검사 실패 시 반환되는 필드명-오류메시지 맵
+      additionalProperties:
+        type: string
+      example:
+        title: "제목을 입력해주세요."
+        category: "카테고리를 선택해주세요."
+
     # ── Contribution ───────────────────────────────
     SubmitContributionDepositRequest:
       type: object
@@ -1653,6 +3508,7 @@ components:
       properties:
         amount:
           type: integer
+          format: int64
           minimum: 1
           description: 출자금 납입 신청 금액
         depositor_name:
@@ -1666,6 +3522,14 @@ components:
           nullable: true
         memo:
           type: string
+          nullable: true
+
+    RejectContributionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
           nullable: true
 
     ContributionDepositRequestStatus:
@@ -1686,6 +3550,7 @@ components:
           description: 신청자 회원 ID
         amount:
           type: integer
+          format: int64
           description: 출자금 납입 신청 금액
         depositor_name:
           type: string
@@ -1709,6 +3574,16 @@ components:
           type: string
           format: date-time
           description: 신청 일시
+        processed_by:
+          type: integer
+          format: int64
+          nullable: true
+          description: 승인 또는 반려한 관리자 ID (미처리 또는 기존 이력은 null)
+        processed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: 승인 또는 반려 일시 (미처리 또는 기존 이력은 null)
 
     ContributionDepositRequestListResponse:
       type: object
@@ -1746,6 +3621,7 @@ components:
       properties:
         amount:
           type: integer
+          format: int64
           minimum: 1
         bank_name:
           type: string
@@ -1775,6 +3651,7 @@ components:
           format: int64
         amount:
           type: integer
+          format: int64
         bank_name:
           type: string
           nullable: true
@@ -1796,6 +3673,16 @@ components:
         requested_at:
           type: string
           format: date-time
+        processed_by:
+          type: integer
+          format: int64
+          nullable: true
+          description: 승인 또는 반려한 관리자 ID (미처리 또는 기존 이력은 null)
+        processed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: 승인 또는 반려 일시 (미처리 또는 기존 이력은 null)
 
     ContributionWithdrawalRequestListResponse:
       type: object
@@ -1832,6 +3719,7 @@ components:
       properties:
         balance:
           type: integer
+          format: int64
           description: 확정 출자금 잔액
 
     PageMeta:
@@ -1843,6 +3731,7 @@ components:
           type: integer
         total_count:
           type: integer
+          format: int64
         total_pages:
           type: integer
 

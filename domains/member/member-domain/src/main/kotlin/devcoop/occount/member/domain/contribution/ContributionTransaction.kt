@@ -6,18 +6,18 @@ data class ContributionTransaction(
     val id: Long = 0L,
     val userId: Long,
     val type: ContributionTransactionType,
-    val amount: Int,
-    val beforeBalance: Int,
-    val afterBalance: Int,
+    val amount: Long,
+    val beforeBalance: Long,
+    val afterBalance: Long,
     val sourceRequestId: Long,
     val occurredAt: LocalDateTime = LocalDateTime.now(),
 ) {
     companion object {
         fun deposit(
             userId: Long,
-            amount: Int,
-            beforeBalance: Int,
-            afterBalance: Int,
+            amount: Long,
+            beforeBalance: Long,
+            afterBalance: Long,
             sourceRequestId: Long,
         ): ContributionTransaction {
             return ContributionTransaction(
@@ -32,9 +32,9 @@ data class ContributionTransaction(
 
         fun withdrawal(
             userId: Long,
-            amount: Int,
-            beforeBalance: Int,
-            afterBalance: Int,
+            amount: Long,
+            beforeBalance: Long,
+            afterBalance: Long,
             sourceRequestId: Long,
         ): ContributionTransaction {
             return ContributionTransaction(

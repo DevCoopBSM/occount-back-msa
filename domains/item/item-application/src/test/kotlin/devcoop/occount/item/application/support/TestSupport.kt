@@ -19,7 +19,6 @@ fun itemFixture(
     price: Int = 1500,
     barcode: String? = null,
     quantity: Int = 0,
-    isActive: Boolean = true,
     catalogVersion: Long = 0L,
     stockVersion: Long = 0L,
 ): Item {
@@ -32,7 +31,6 @@ fun itemFixture(
             barcode = barcode,
         ),
         stock = Stock(quantity),
-        isActive = isActive,
         catalogVersion = catalogVersion,
         stockVersion = stockVersion,
     )
@@ -66,11 +64,11 @@ class FakeItemRepository(
     var saveStockOptimisticLockFailuresRemaining: Int = 0
 
     override fun findAll(): List<Item> {
-        return itemsById.values.filter(Item::isActive)
+        return itemsById.values.toList()
     }
 
     override fun findAllWithoutBarcode(): List<Item> {
-        return itemsById.values.filter { it.isActive() && it.getBarcode() == null }
+        return itemsById.values.filter { it.getBarcode() == null }
     }
 
     override fun findAllByNameIn(names: List<String>): List<Item> {
@@ -85,7 +83,7 @@ class FakeItemRepository(
         val trimmed = query.trim()
         if (trimmed.isEmpty()) return emptyList()
         return itemsById.values.filter {
-            it.isActive() && it.getName().contains(trimmed, ignoreCase = true)
+            it.getName().contains(trimmed, ignoreCase = true)
         }
     }
 
@@ -159,7 +157,6 @@ class FakeItemRepository(
                 barcode = item.getBarcode(),
             ),
             stock = Stock(item.getQuantity()),
-            isActive = item.isActive(),
             catalogVersion = item.getCatalogVersion() + 1,
             stockVersion = item.getStockVersion(),
         )
@@ -180,7 +177,6 @@ class FakeItemRepository(
                 barcode = item.getBarcode(),
             ),
             stock = Stock(item.getQuantity()),
-            isActive = item.isActive(),
             catalogVersion = item.getCatalogVersion(),
             stockVersion = item.getStockVersion() + 1,
         )
@@ -196,10 +192,13 @@ class FakeItemRepository(
                 barcode = item.getBarcode(),
             ),
             stock = Stock(item.getQuantity()),
-            isActive = item.isActive(),
             catalogVersion = item.getCatalogVersion() + 1,
             stockVersion = item.getStockVersion() + 1,
         )
+    }
+
+    override fun deleteById(id: Long) {
+        itemsById.remove(id)
     }
 }
 

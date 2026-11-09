@@ -1,5 +1,7 @@
 package devcoop.occount.member.infrastructure.persistence.contribution
 
+import devcoop.occount.member.infrastructure.persistence.UserJpaEntity
+import devcoop.occount.member.infrastructure.persistence.UserJpaRepository
 import devcoop.occount.member.domain.contribution.ContributionAccount
 import devcoop.occount.member.domain.contribution.ContributionDepositRequest
 import devcoop.occount.member.domain.contribution.ContributionWithdrawalRequest
@@ -67,6 +69,6 @@ class ContributionPersistenceVersionTest @Autowired constructor(
 
 @SpringBootConfiguration
 @EnableAutoConfiguration
-@EntityScan(basePackageClasses = [ContributionDepositRequestJpaEntity::class])
-@EnableJpaRepositories(basePackageClasses = [ContributionDepositRequestPersistenceRepository::class])
+@EntityScan(basePackageClasses = [ContributionDepositRequestJpaEntity::class, UserJpaEntity::class])
+@EnableJpaRepositories(basePackageClasses = [UserJpaRepository::class])
 class ContributionPersistenceVersionTestConfig

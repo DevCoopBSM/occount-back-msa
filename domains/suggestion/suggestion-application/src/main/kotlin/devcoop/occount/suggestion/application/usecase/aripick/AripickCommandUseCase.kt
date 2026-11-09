@@ -1,8 +1,8 @@
 package devcoop.occount.suggestion.application.usecase.aripick
 
 import devcoop.occount.suggestion.application.output.AripickRepository
-import devcoop.occount.suggestion.application.output.AripickPolicyRepository
 import devcoop.occount.suggestion.application.output.FoodSafetyRepository
+import devcoop.occount.suggestion.application.shared.AhoCorasickKeywordMatcher
 import devcoop.occount.suggestion.application.shared.AripickMapper
 import devcoop.occount.suggestion.application.shared.AripickResponse
 import devcoop.occount.suggestion.domain.aripick.AripickAccessDeniedException
@@ -17,10 +17,11 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class AripickCommandUseCase(
     private val aripickRepository: AripickRepository,
-    private val aripickPolicyRepository: AripickPolicyRepository,
     private val foodSafetyRepository: FoodSafetyRepository,
     private val aripickMapper: AripickMapper,
+    private val blockedKeywordMatcher: AhoCorasickKeywordMatcher,
 ) {
+    @Transactional
     fun create(
         request: CreateAripickRequest,
         proposerId: Long,
@@ -32,7 +33,7 @@ class AripickCommandUseCase(
             throw AripickPolicyViolationException()
         }
 
-        if (aripickPolicyRepository.hasBlockedKeyword(detail.name)) {
+        if (blockedKeywordMatcher.contains(detail.name)) {
             throw AripickPolicyViolationException()
         }
 
@@ -49,25 +50,25 @@ class AripickCommandUseCase(
     @Transactional
     fun approve(proposalId: Long): AripickResponse {
         val proposal = getProposal(proposalId)
-        changeStatus(proposalId, proposal.approve().getStatus())
-        val approved = getProposal(proposalId)
-        return aripickMapper.toResponse(approved)
+        val updated = proposal.approve()
+        changeStatus(proposalId, updated.getStatus())
+        return aripickMapper.toResponse(updated)
     }
 
     @Transactional
     fun reject(proposalId: Long): AripickResponse {
         val proposal = getProposal(proposalId)
-        changeStatus(proposalId, proposal.reject().getStatus())
-        val rejected = getProposal(proposalId)
-        return aripickMapper.toResponse(rejected)
+        val updated = proposal.reject()
+        changeStatus(proposalId, updated.getStatus())
+        return aripickMapper.toResponse(updated)
     }
 
     @Transactional
     fun pending(proposalId: Long): AripickResponse {
         val proposal = getProposal(proposalId)
-        changeStatus(proposalId, proposal.pending().getStatus())
-        val pending = getProposal(proposalId)
-        return aripickMapper.toResponse(pending)
+        val updated = proposal.pending()
+        changeStatus(proposalId, updated.getStatus())
+        return aripickMapper.toResponse(updated)
     }
 
     @Transactional

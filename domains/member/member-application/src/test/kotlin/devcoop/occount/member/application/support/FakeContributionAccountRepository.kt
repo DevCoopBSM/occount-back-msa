@@ -12,6 +12,10 @@ class FakeContributionAccountRepository(
 
     override fun findByUserId(userId: Long): ContributionAccount? = accountsByUserId[userId]
 
+    override fun findByUserIdForUpdate(userId: Long): ContributionAccount? = findByUserId(userId)
+
+    override fun promoteOwnerToMember(userId: Long) = Unit
+
     override fun save(account: ContributionAccount): ContributionAccount {
         accountsByUserId[account.userId] = account
         return account

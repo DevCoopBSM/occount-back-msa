@@ -8,11 +8,11 @@ import org.springframework.stereotype.Service
 class RejectContributionDepositRequestUseCase(
     private val contributionDepositRequestRepository: ContributionDepositRequestRepository,
 ) {
-    fun reject(requestId: Long, command: RejectContributionRequest = RejectContributionRequest()): ContributionDepositRequestResponse {
+    fun reject(requestId: Long, processedBy: Long, request: RejectContributionRequest? = null): ContributionDepositRequestResponse {
         val depositRequest = contributionDepositRequestRepository.findById(requestId)
             ?: throw ContributionDepositRequestNotFoundException()
 
-        return contributionDepositRequestRepository.save(depositRequest.reject(command.reason))
+        return contributionDepositRequestRepository.save(depositRequest.reject(processedBy, request?.reason))
             .let(ContributionDepositRequestResponse::from)
     }
 }

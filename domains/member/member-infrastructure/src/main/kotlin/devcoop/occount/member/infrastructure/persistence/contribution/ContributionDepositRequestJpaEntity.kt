@@ -7,21 +7,29 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
+import jakarta.persistence.Index
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import jakarta.persistence.Version
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "contribution_deposit_request")
+@Table(
+    name = "contribution_deposit_request",
+    indexes = [
+        Index(name = "idx_contribution_deposit_request_status_requested", columnList = "status,requested_at"),
+        Index(name = "idx_contribution_deposit_request_user_requested", columnList = "user_id,requested_at"),
+        Index(name = "idx_contribution_deposit_request_requested", columnList = "requested_at"),
+    ],
+)
 class ContributionDepositRequestJpaEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0L,
-    @field:Column(nullable = false)
+    @field:Column(name = "user_id", nullable = false)
     val userId: Long = 0L,
     @field:Column(nullable = false)
-    val amount: Int = 0,
+    val amount: Long = 0,
     @field:Column(length = 100)
     val depositorName: String? = null,
     @field:Column(length = 100)
@@ -35,8 +43,10 @@ class ContributionDepositRequestJpaEntity(
     val status: ContributionDepositRequestStatus = ContributionDepositRequestStatus.PENDING,
     @field:Column(length = 500)
     val rejectionReason: String? = null,
-    @field:Column(nullable = false)
+    @field:Column(name = "requested_at", nullable = false)
     val requestedAt: LocalDateTime = LocalDateTime.now(),
+    val processedBy: Long? = null,
+    val processedAt: LocalDateTime? = null,
     @Version
     @field:Column(nullable = false)
     val version: Long? = null,

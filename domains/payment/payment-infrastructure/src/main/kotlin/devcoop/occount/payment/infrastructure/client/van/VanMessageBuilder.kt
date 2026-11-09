@@ -1,6 +1,7 @@
 package devcoop.occount.payment.infrastructure.client.van
 
 import devcoop.occount.payment.application.dto.request.ItemCommand
+import devcoop.occount.payment.application.exception.InvalidPaymentRequestException
 import org.springframework.stereotype.Component
 import java.io.ByteArrayOutputStream
 
@@ -36,8 +37,14 @@ class VanMessageBuilder(
         )
     }
 
-    fun buildRefundMessage(amount: Int, approvalDate: String, approvalNumber: String): ByteArray {
+    fun buildRefundMessage(
+        amount: Int,
+        approvalDate: String,
+        approvalNumber: String,
+        items: List<ItemCommand>,
+    ): ByteArray {
         val amountString = amount.toString()
+        val productData = VanReceiptBuilder.buildReceiptLines(items)
 
         return buildMessage(
             serviceType = message.refundServiceType,
@@ -55,6 +62,7 @@ class VanMessageBuilder(
                 writeAscii(approvalDate)
                 write(protocolSpec.separatorByte.toInt())
                 write(protocolSpec.separatorByte.toInt())
+                write(productData)
                 write(protocolSpec.separatorByte.toInt())
                 write(protocolSpec.blankByte.toInt())
                 write(protocolSpec.separatorByte.toInt())
@@ -87,6 +95,9 @@ class VanMessageBuilder(
         }.toByteArray()
 
         val totalLength = 1 + 4 + body.size + 1
+        if (totalLength > 9999) {
+            throw InvalidPaymentRequestException()
+        }
         val data = ByteArrayOutputStream().apply {
             write(protocolSpec.stxByte.toInt())
             writeAscii(totalLength.toString().padStart(4, '0'))

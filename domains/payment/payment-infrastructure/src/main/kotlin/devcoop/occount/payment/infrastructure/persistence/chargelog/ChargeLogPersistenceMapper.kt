@@ -13,6 +13,7 @@ object ChargeLogPersistenceMapper {
             pointTransaction = toDomainPointTransaction(entity.getPointTransaction()),
             chargeReason = entity.getChargeReason(),
             detailReason = entity.getDetailReason(),
+            chargedBy = entity.getChargedBy(),
         )
     }
 
@@ -25,6 +26,7 @@ object ChargeLogPersistenceMapper {
             pointTransaction = toEntityPointTransaction(domain.pointTransaction),
             chargeReason = domain.chargeReason,
             detailReason = domain.detailReason,
+            chargedBy = domain.chargedBy,
         )
     }
 

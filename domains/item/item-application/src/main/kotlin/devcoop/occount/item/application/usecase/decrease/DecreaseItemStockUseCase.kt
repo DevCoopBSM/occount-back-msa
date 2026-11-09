@@ -57,7 +57,6 @@ class DecreaseItemStockUseCase(
             val updatedItems = mutableListOf<Item>()
             val confirmedItems = requestedItems.map { (itemId, quantity) ->
                 val item = itemsById[itemId] ?: throw ItemNotFoundException()
-                if (!item.isActive()) throw ItemNotFoundException()
 
                 val updatedItem = item.decreaseQuantity(quantity)
                 updatedItems += updatedItem
@@ -73,7 +72,7 @@ class DecreaseItemStockUseCase(
 
             itemRepository.saveStocks(updatedItems)
             eventPublisher.publish(
-                topic = DomainTopics.ITEM_STOCK_DECREASED,
+                topic = DomainTopics.ITEM_EVENTS,
                 key = event.orderId.toString(),
                 eventType = DomainEventTypes.ITEM_STOCK_DECREASED,
                 payload = ItemStockDecreasedEvent(
@@ -108,7 +107,7 @@ class DecreaseItemStockUseCase(
 
     private fun publishFailed(orderId: Long, reason: String) {
         eventPublisher.publish(
-            topic = DomainTopics.ITEM_STOCK_DECREASE_FAILED,
+            topic = DomainTopics.ITEM_EVENTS,
             key = orderId.toString(),
             eventType = DomainEventTypes.ITEM_STOCK_DECREASE_FAILED,
             payload = ItemStockDecreaseFailedEvent(

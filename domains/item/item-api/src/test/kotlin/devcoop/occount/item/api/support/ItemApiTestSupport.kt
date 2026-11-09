@@ -20,11 +20,9 @@ fun itemFixture(
     price: Int = 1500,
     barcode: String? = null,
     quantity: Int = 0,
-    isActive: Boolean = true,
 ): Item {
-    val item = Item.create(name = name, category = category, price = price, barcode = barcode, quantity = quantity)
+    return Item.create(name = name, category = category, price = price, barcode = barcode, quantity = quantity)
         .withId(itemId)
-    return if (isActive) item else item.deactivate()
 }
 
 class FakeItemRepository(
@@ -38,10 +36,10 @@ class FakeItemRepository(
     var saveCatalogOptimisticLockFailuresRemaining: Int = 0
     var saveStockOptimisticLockFailuresRemaining: Int = 0
 
-    override fun findAll(): List<Item> = itemsById.values.filter(Item::isActive)
+    override fun findAll(): List<Item> = itemsById.values.toList()
 
     override fun findAllWithoutBarcode(): List<Item> {
-        return itemsById.values.filter { it.isActive() && it.getBarcode() == null }
+        return itemsById.values.filter { it.getBarcode() == null }
     }
 
     override fun findAllByNameIn(names: List<String>): List<Item> {
@@ -56,7 +54,7 @@ class FakeItemRepository(
         val trimmed = query.trim()
         if (trimmed.isEmpty()) return emptyList()
         return itemsById.values.filter {
-            it.isActive() && it.getName().contains(trimmed, ignoreCase = true)
+            it.getName().contains(trimmed, ignoreCase = true)
         }
     }
 
@@ -102,6 +100,10 @@ class FakeItemRepository(
     }
 
     override fun saveStocks(items: List<Item>): List<Item> = items.map(::saveStock)
+
+    override fun deleteById(id: Long) {
+        itemsById.remove(id)
+    }
 
     private fun persistBoth(item: Item): Item {
         val withId = if (item.getItemId() == 0L) item.withId(nextId()) else item

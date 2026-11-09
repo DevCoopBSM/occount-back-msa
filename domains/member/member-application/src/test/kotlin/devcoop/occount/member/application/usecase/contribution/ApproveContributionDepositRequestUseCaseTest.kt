@@ -27,11 +27,11 @@ class ApproveContributionDepositRequestUseCaseTest {
         val transactionRepository = FakeContributionTransactionRepository()
         val useCase = ApproveContributionDepositRequestUseCase(requestRepository, accountRepository, transactionRepository)
 
-        val response = useCase.approve(requestId = 1L)
+        val response = useCase.approve(requestId = 1L, processedBy = 99L)
 
         assertEquals(ContributionDepositRequestStatus.APPROVED, response.status)
-        assertEquals(15000, accountRepository.findByUserId(1L)?.balance)
-        assertEquals(15000, transactionRepository.saved.single().afterBalance)
+        assertEquals(15000L, accountRepository.findByUserId(1L)?.balance)
+        assertEquals(15000L, transactionRepository.saved.single().afterBalance)
     }
 
     @Test
@@ -47,9 +47,9 @@ class ApproveContributionDepositRequestUseCaseTest {
             FakeContributionTransactionRepository(),
         )
 
-        useCase.approve(requestId = 1L)
+        useCase.approve(requestId = 1L, processedBy = 99L)
 
-        assertEquals(10000, accountRepository.findByUserId(1L)?.balance)
+        assertEquals(10000L, accountRepository.findByUserId(1L)?.balance)
     }
 
     @Test
@@ -62,7 +62,7 @@ class ApproveContributionDepositRequestUseCaseTest {
         )
 
         assertFailsWith<ContributionDepositRequestNotFoundException> {
-            useCase.approve(requestId = 999L)
+            useCase.approve(requestId = 999L, processedBy = 99L)
         }
     }
 
@@ -70,7 +70,7 @@ class ApproveContributionDepositRequestUseCaseTest {
     @DisplayName("이미 처리된 출자금 납입 신청은 승인할 수 없다")
     fun `approve fails when request already processed`() {
         val requestRepository = FakeContributionDepositRequestRepository(
-            listOf(ContributionDepositRequest.request(userId = 1L, amount = 10000).approve()),
+            listOf(ContributionDepositRequest.request(userId = 1L, amount = 10000).approve(processedBy = 99L)),
         )
         val useCase = ApproveContributionDepositRequestUseCase(
             requestRepository,
@@ -79,7 +79,7 @@ class ApproveContributionDepositRequestUseCaseTest {
         )
 
         assertFailsWith<ContributionDepositRequestAlreadyProcessedException> {
-            useCase.approve(requestId = 1L)
+            useCase.approve(requestId = 1L, processedBy = 99L)
         }
     }
 }

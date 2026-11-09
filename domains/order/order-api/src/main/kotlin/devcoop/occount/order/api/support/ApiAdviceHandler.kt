@@ -21,7 +21,6 @@ class ApiAdviceHandler {
             .body(ErrorResponse.of(ErrorMessage.INTERNAL_SERVER_ERROR))
     }
 
-
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidationException(e: MethodArgumentNotValidException): ResponseEntity<Map<String, String>> {
         val errors = e.bindingResult.allErrors.associate {

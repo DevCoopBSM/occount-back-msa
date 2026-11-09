@@ -16,12 +16,12 @@ class ApproveContributionDepositRequestUseCase(
     private val contributionTransactionRepository: ContributionTransactionRepository,
 ) {
     @Transactional
-    fun approve(requestId: Long): ContributionDepositRequestResponse {
+    fun approve(requestId: Long, processedBy: Long): ContributionDepositRequestResponse {
         val request = contributionDepositRequestRepository.findById(requestId)
             ?: throw ContributionDepositRequestNotFoundException()
 
-        val approvedRequest = contributionDepositRequestRepository.save(request.approve())
-        val account = contributionAccountRepository.findByUserId(request.userId)
+        val processedRequest = request.approve(processedBy)
+        val account = contributionAccountRepository.findByUserIdForUpdate(request.userId)
             ?: ContributionAccount(userId = request.userId)
         val updatedAccount = contributionAccountRepository.save(account.deposit(request.amount))
         contributionTransactionRepository.save(
@@ -34,6 +34,8 @@ class ApproveContributionDepositRequestUseCase(
             ),
         )
 
+        contributionAccountRepository.promoteOwnerToMember(request.userId)
+        val approvedRequest = contributionDepositRequestRepository.save(processedRequest)
         return ContributionDepositRequestResponse.from(approvedRequest)
     }
 }

@@ -70,8 +70,10 @@ class OrderPaymentRequestScheduler(
     private fun publishPaymentRequested(order: OrderAggregate, attempt: Int) {
         log.info("결제 요청 이벤트 발행 - 주문={} 시도={}", order.orderId, attempt)
         eventPublisher.publish(
-            topic = DomainTopics.ORDER_PAYMENT_REQUESTED,
-            key = order.orderId.toString(),
+            topic = DomainTopics.PAYMENT_COMMANDS,
+            // VAN 단말은 키오스크당 1대이므로 kioskId로 파티셔닝한다.
+            // 같은 단말의 결제는 직렬, 다른 단말은 병렬 처리되어 한 단말의 지연이 전체를 막지 않는다.
+            key = order.kioskId,
             eventType = DomainEventTypes.ORDER_PAYMENT_REQUESTED,
             payload = OrderPaymentRequestedEvent(
                 orderId = order.orderId,

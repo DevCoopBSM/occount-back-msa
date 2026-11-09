@@ -1,0 +1,11 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    // 공통 인증 모델(AuthPrincipal/AuthUser/AuthHeaders)은 core-common 에 남는다.
+    implementation project(':core:core-common')
+
+    // 서블릿(WebMvc) 환경에서만 동작하는 어댑터다. 웹 의존은 소비 측 *-api(starter-web)가 공급한다.
+    compileOnly 'org.springframework.boot:spring-boot-starter-web'
+}

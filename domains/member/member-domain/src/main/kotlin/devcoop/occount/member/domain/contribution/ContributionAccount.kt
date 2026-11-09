@@ -2,17 +2,22 @@ package devcoop.occount.member.domain.contribution
 
 data class ContributionAccount(
     val userId: Long,
-    val balance: Int = 0,
+    val balance: Long = 0,
     val version: Long? = null,
 ) {
-    fun deposit(amount: Int): ContributionAccount {
+    fun deposit(amount: Long): ContributionAccount {
         if (amount <= 0) {
             throw InvalidContributionDepositAmountException()
         }
-        return copy(balance = balance + amount)
+        val updatedBalance = try {
+            Math.addExact(balance, amount)
+        } catch (_: ArithmeticException) {
+            throw ContributionBalanceOverflowException()
+        }
+        return copy(balance = updatedBalance)
     }
 
-    fun withdraw(amount: Int): ContributionAccount {
+    fun withdraw(amount: Long): ContributionAccount {
         if (amount <= 0) {
             throw InvalidContributionWithdrawalAmountException()
         }

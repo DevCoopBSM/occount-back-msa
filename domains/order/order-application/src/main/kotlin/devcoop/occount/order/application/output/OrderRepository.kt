@@ -1,10 +1,13 @@
 package devcoop.occount.order.application.output
 
 import devcoop.occount.order.domain.order.OrderAggregate
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import java.time.Instant
 
 interface OrderRepository {
     fun findById(orderId: Long): OrderAggregate?
+    fun findByUserId(userId: Long, pageable: Pageable): Page<OrderAggregate>
     fun findPersistedById(orderId: Long): PersistedOrder?
     fun save(order: OrderAggregate): OrderAggregate
     fun save(order: OrderAggregate, persistenceVersion: Long): OrderAggregate

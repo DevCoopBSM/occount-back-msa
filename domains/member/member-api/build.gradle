@@ -4,14 +4,18 @@ plugins {
 
 dependencies {
     implementation project(':core:core-common')
+    implementation project(':modules:web')
     implementation project(':domains:member:member-application')
     implementation project(':domains:member:member-domain')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.data:spring-data-commons'
+    implementation 'org.springframework:spring-tx'
 
     testImplementation project(':domains:member:member-domain')
     testImplementation 'org.springframework.security:spring-security-crypto'
+    testImplementation 'org.springframework:spring-orm'
     testImplementation 'tools.jackson.core:jackson-databind'
     testImplementation 'tools.jackson.module:jackson-module-kotlin'
 }

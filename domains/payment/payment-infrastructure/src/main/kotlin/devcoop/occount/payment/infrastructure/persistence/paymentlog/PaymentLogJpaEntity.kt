@@ -12,12 +12,16 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.Index
 import jakarta.persistence.Table
 import org.hibernate.annotations.CreationTimestamp
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "payment_log")
+@Table(
+    name = "payment_log",
+    indexes = [Index(name = "idx_payment_log_user_id", columnList = "user_id, payment_date")],
+)
 class PaymentLogJpaEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

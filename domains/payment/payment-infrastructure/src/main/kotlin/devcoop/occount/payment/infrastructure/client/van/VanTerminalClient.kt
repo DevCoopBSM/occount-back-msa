@@ -29,6 +29,7 @@ class VanTerminalClient(
             spanName = "van.approve",
             paymentKey = paymentKey,
             amount = amount,
+            itemsCount = items.size,
         ) {
             executeTransaction(
                 actionName = "카드결제",
@@ -39,16 +40,22 @@ class VanTerminalClient(
         }
     }
 
-    fun refund(approvalNumber: String, approvalDate: String, amount: Int): VanResult {
+    fun refund(
+        approvalNumber: String,
+        approvalDate: String,
+        amount: Int,
+        items: List<ItemCommand>,
+    ): VanResult {
         return tracedTransaction(
             spanName = "van.refund",
             paymentKey = null,
             amount = amount,
+            itemsCount = items.size,
         ) {
             executeTransaction(
                 actionName = "카드환불",
                 transactionType = TransactionType.REFUND,
-                requestMessage = messageBuilder.buildRefundMessage(amount, approvalDate, approvalNumber),
+                requestMessage = messageBuilder.buildRefundMessage(amount, approvalDate, approvalNumber, items),
             )
         }
     }
@@ -83,12 +90,14 @@ class VanTerminalClient(
         spanName: String,
         paymentKey: Long?,
         amount: Int,
+        itemsCount: Int,
         block: () -> VanResult,
     ): VanResult {
         val tracer = this.tracer ?: return block()
         val span: Span = tracer.nextSpan().name(spanName).start()
         paymentKey?.let { span.tag("payment.key", it.toString()) }
         span.tag("payment.amount", amount.toString())
+        span.tag("payment.items_count", itemsCount.toString())
         return try {
             tracer.withSpan(span).use {
                 val result = block()
@@ -139,12 +148,13 @@ class VanTerminalClient(
     }
 
     private fun doExecuteTransaction(actionName: String, requestMessage: ByteArray): VanResult {
+        // 결제·환불 모두 전송 직전 새 소켓으로 재연결한다.
+        // VAN 단말은 거래 종료 후 TCP 연결을 닫는데, Java Socket.isConnected()는
+        // 상대의 RST/FIN을 감지하지 못해 죽은 소켓을 살아있는 것으로 오인한다.
+        // 직전 거래가 남긴 소켓을 재사용하면 Connection reset / Broken pipe가 발생하므로
+        // 항상 close 후 새로 연결한다.
         val connected = traceStep("van.connect") {
-            if (currentTransactionType.get() == TransactionType.APPROVE) {
-                socketConnection.refreshConnection()
-            } else {
-                socketConnection.ensureConnected()
-            }
+            socketConnection.refreshConnection()
         }
 
         if (!connected) {

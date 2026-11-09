@@ -3,6 +3,7 @@ package devcoop.occount.payment.domain.wallet
 data class Wallet(
     val userId: Long,
     val point: Int = 0,
+    val version: Long = 0L,
 ) {
     fun charge(amount: Int): Wallet {
         if (amount <= 0) {

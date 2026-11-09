@@ -23,11 +23,11 @@ class ContributionTransactionJpaEntity(
     @field:Column(nullable = false, length = 20)
     val type: ContributionTransactionType = ContributionTransactionType.DEPOSIT,
     @field:Column(nullable = false)
-    val amount: Int = 0,
+    val amount: Long = 0,
     @field:Column(nullable = false)
-    val beforeBalance: Int = 0,
+    val beforeBalance: Long = 0,
     @field:Column(nullable = false)
-    val afterBalance: Int = 0,
+    val afterBalance: Long = 0,
     @field:Column(nullable = false)
     val sourceRequestId: Long = 0L,
     @field:Column(nullable = false)

@@ -6,7 +6,10 @@ import org.hibernate.annotations.CreationTimestamp
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "charge_log")
+@Table(
+    name = "charge_log",
+    indexes = [Index(name = "idx_charge_log_user_id", columnList = "user_id, charge_id")],
+)
 class ChargeLogJpaEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,8 +27,10 @@ class ChargeLogJpaEntity(
     @Enumerated(EnumType.STRING)
     @Column(name = "charge_type", nullable = false)
     private var chargeReason: ChargeReason,
-    @field:Column(name = "detail_reason")
+    @field:Column(name = "detail_reason", length = 255)
     private var detailReason: String? = null,
+    @field:Column(name = "charged_by")
+    private var chargedBy: Long? = null,
 ) {
     fun getChargeId() = chargeId
     fun getUserId() = userId
@@ -34,4 +39,5 @@ class ChargeLogJpaEntity(
     fun getPointTransaction() = pointTransaction
     fun getChargeReason() = chargeReason
     fun getDetailReason() = detailReason
+    fun getChargedBy() = chargedBy
 }

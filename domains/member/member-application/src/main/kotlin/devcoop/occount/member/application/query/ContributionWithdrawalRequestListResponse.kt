@@ -20,7 +20,7 @@ data class AdminContributionWithdrawalRequestResponse(
     val userId: Long,
     val username: String?,
     val userEmail: String?,
-    val amount: Int,
+    val amount: Long,
     val bankName: String?,
     val accountNumber: String?,
     val accountHolder: String?,
@@ -28,6 +28,8 @@ data class AdminContributionWithdrawalRequestResponse(
     val status: ContributionWithdrawalRequestStatus,
     val rejectionReason: String?,
     val requestedAt: LocalDateTime,
+    val processedBy: Long?,
+    val processedAt: LocalDateTime?,
 ) {
     companion object {
         fun from(request: ContributionWithdrawalRequest, user: User?): AdminContributionWithdrawalRequestResponse {
@@ -44,6 +46,8 @@ data class AdminContributionWithdrawalRequestResponse(
                 status = request.status,
                 rejectionReason = request.rejectionReason,
                 requestedAt = request.requestedAt,
+                processedBy = request.processedBy,
+                processedAt = request.processedAt,
             )
         }
     }
