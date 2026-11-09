@@ -133,6 +133,7 @@ private class PagingFakeUserRepository(
     private val users: List<User>,
 ) : UserRepository {
     override fun findById(id: Long): User? = users.firstOrNull { it.getId() == id }
+    override fun findAllByIds(ids: List<Long>): List<User> = users.filter { it.getId() in ids }
     override fun findByUserBarcode(userBarcode: String): User? = users.firstOrNull { it.getUserBarcode() == userBarcode }
     override fun findByEmail(userEmail: String): User? = users.firstOrNull { it.getEmail() == userEmail }
     override fun existsByEmail(userEmail: String): Boolean = users.any { it.getEmail() == userEmail }

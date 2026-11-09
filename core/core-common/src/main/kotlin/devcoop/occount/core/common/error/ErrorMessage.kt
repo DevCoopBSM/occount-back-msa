@@ -30,6 +30,16 @@ enum class ErrorMessage(
     PIN_CHANGE_TICKET_EXPIRED("비밀번호 확인이 만료되었습니다. 비밀번호 확인을 다시 진행해주세요."),
 
 
+    INVALID_CONTRIBUTION_DEPOSIT_AMOUNT("출자금 납입 신청 금액은 0보다 커야 합니다."),
+    CONTRIBUTION_DEPOSIT_REQUEST_NOT_FOUND("출자금 납입 신청을 찾을 수 없습니다."),
+    CONTRIBUTION_DEPOSIT_REQUEST_ALREADY_PROCESSED("이미 처리된 출자금 납입 신청입니다."),
+    INVALID_CONTRIBUTION_WITHDRAWAL_AMOUNT("출자금 반환 신청 금액은 0보다 커야 합니다."),
+    CONTRIBUTION_BALANCE_OVERFLOW("출자금 잔액이 허용 범위를 초과합니다."),
+    INSUFFICIENT_CONTRIBUTION_BALANCE("출자금 잔액이 부족합니다."),
+    CONTRIBUTION_WITHDRAWAL_REQUEST_NOT_FOUND("출자금 반환 신청을 찾을 수 없습니다."),
+    CONTRIBUTION_WITHDRAWAL_REQUEST_ALREADY_PROCESSED("이미 처리된 출자금 반환 신청입니다."),
+
+
     ITEM_STOCK_NEGATIVE("요청으로 인해 재고가 부족합니다. 재고 수량을 확인해주세요."),
     ITEM_NOT_FOUND("현재 등록되지 않은 상품입니다."),
     ITEM_ALREADY_EXISTS("이미 등록된 상품입니다."),

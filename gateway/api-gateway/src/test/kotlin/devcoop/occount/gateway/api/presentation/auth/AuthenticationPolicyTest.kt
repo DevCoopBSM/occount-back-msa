@@ -207,4 +207,24 @@ class AuthenticationPolicyTest {
             policy.resolveAccess(HttpMethod.DELETE, "/api/v3/ari-pick/blocked-keywords/1"),
         )
     }
+
+    @Test
+    fun `contribution management requires admin while self service requires authentication`() {
+        for (kind in listOf("deposit", "withdrawal")) {
+            val path = "/api/v3/contributions/$kind-requests"
+            assertEquals(AuthenticationRule.Access.ADMIN_ONLY, policy.resolveAccess(HttpMethod.GET, path))
+            for (action in listOf("approve", "reject")) {
+                assertEquals(
+                    AuthenticationRule.Access.ADMIN_ONLY,
+                    policy.resolveAccess(HttpMethod.PATCH, "$path/1/$action"),
+                )
+            }
+            assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.POST, path))
+            assertEquals(AuthenticationRule.Access.AUTHENTICATED, policy.resolveAccess(HttpMethod.GET, "$path/my"))
+        }
+        assertEquals(
+            AuthenticationRule.Access.AUTHENTICATED,
+            policy.resolveAccess(HttpMethod.GET, "/api/v3/contributions/account/my"),
+        )
+    }
 }

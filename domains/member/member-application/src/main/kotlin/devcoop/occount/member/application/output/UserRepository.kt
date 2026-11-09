@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable
 
 interface UserRepository {
     fun findById(id: Long): User?
+    fun findAllByIds(ids: List<Long>): List<User>
     fun findByUserBarcode(userBarcode: String): User?
     fun findByEmail(userEmail: String): User?
     fun existsByEmail(userEmail: String): Boolean

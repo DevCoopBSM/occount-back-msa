@@ -2,6 +2,10 @@ package devcoop.occount.member.infrastructure.persistence
 
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import jakarta.persistence.LockModeType
+import org.springframework.data.jpa.repository.Lock
+import org.springframework.data.jpa.repository.Modifying
+import devcoop.occount.member.domain.user.Role
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -9,6 +13,18 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface UserJpaRepository : JpaRepository<UserJpaEntity, Long> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from UserJpaEntity u where u.id = :id")
+    fun findByIdForUpdate(@Param("id") id: Long): UserJpaEntity?
+
+    @Modifying
+    @Query("update UserJpaEntity u set u.role = :memberRole where u.id = :id and u.role = :userRole")
+    fun promoteToMember(
+        @Param("id") id: Long,
+        @Param("userRole") userRole: Role,
+        @Param("memberRole") memberRole: Role,
+    ): Int
+
     fun findByUserBarcode(userBarcode: String): UserJpaEntity?
     fun findByEmail(userEmail: String): UserJpaEntity?
     fun existsByEmail(userEmail: String): Boolean
