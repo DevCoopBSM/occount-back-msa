@@ -8,6 +8,7 @@ import devcoop.occount.item.application.query.ItemQueryService
 import devcoop.occount.item.application.usecase.create.CreateItemUseCase
 import devcoop.occount.item.application.usecase.delete.DeleteItemUseCase
 import devcoop.occount.item.application.usecase.update.UpdateItemUseCase
+import devcoop.occount.item.domain.item.Category
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
@@ -48,7 +49,7 @@ class ItemControllerTest {
     fun `get items without barcode returns only items without barcode`() {
         val itemRepository = FakeItemRepository(
             initialItems = listOf(
-                itemFixture(itemId = 1L, name = "Snack", barcode = null),
+                itemFixture(itemId = 1L, name = "Snack", category = Category.잡화, barcode = null),
                 itemFixture(itemId = 2L, name = "Drink", barcode = "88012341234"),
             ),
         )
@@ -58,6 +59,7 @@ class ItemControllerTest {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.items.length()").value(1))
             .andExpect(jsonPath("$.items[0].itemId").value(1))
+            .andExpect(jsonPath("$.items[0].category").value("잡화"))
     }
 
     @Test
