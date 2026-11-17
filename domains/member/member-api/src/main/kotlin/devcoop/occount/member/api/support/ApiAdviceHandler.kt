@@ -3,6 +3,7 @@ package devcoop.occount.member.api.support
 import devcoop.occount.core.common.error.ErrorResponse
 import devcoop.occount.core.common.error.ErrorMessage
 import devcoop.occount.core.common.exception.BusinessBaseException
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.FieldError
@@ -34,6 +35,12 @@ class ApiAdviceHandler {
             .body(ErrorResponse.of(e.errorMessage))
     }
 
+    @ExceptionHandler(OptimisticLockingFailureException::class)
+    fun handleOptimisticLockingFailure(): ResponseEntity<ErrorResponse> {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ErrorResponse("Contribution data changed concurrently. Please retry the request."))
+    }
+
     private fun resolveStatus(errorMessage: ErrorMessage): HttpStatus {
         return when (errorMessage) {
             ErrorMessage.INVALID_TOKEN,
@@ -57,6 +64,8 @@ class ApiAdviceHandler {
             ErrorMessage.IDENTITY_NOT_VERIFIED -> HttpStatus.BAD_REQUEST
 
             ErrorMessage.USER_NOT_FOUND,
+            ErrorMessage.CONTRIBUTION_DEPOSIT_REQUEST_NOT_FOUND,
+            ErrorMessage.CONTRIBUTION_WITHDRAWAL_REQUEST_NOT_FOUND,
             ErrorMessage.ITEM_NOT_FOUND,
             ErrorMessage.ITEM_NOT_SYNCHRONIZED,
             ErrorMessage.PAYMENT_LOG_NOT_FOUND,
@@ -65,6 +74,8 @@ class ApiAdviceHandler {
 
             ErrorMessage.USER_ALREADY_EXISTS,
             ErrorMessage.TRANSACTION_IN_PROGRESS,
+            ErrorMessage.CONTRIBUTION_DEPOSIT_REQUEST_ALREADY_PROCESSED,
+            ErrorMessage.CONTRIBUTION_WITHDRAWAL_REQUEST_ALREADY_PROCESSED,
             -> HttpStatus.CONFLICT
 
             ErrorMessage.PAYMENT_TIMEOUT -> HttpStatus.REQUEST_TIMEOUT
