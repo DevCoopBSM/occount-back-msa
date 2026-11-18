@@ -9,6 +9,8 @@ import devcoop.occount.order.application.query.SalesRankingQueryService
 import devcoop.occount.order.application.shared.OrderHistoryListResponse
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
+import devcoop.occount.order.application.query.receipt.GetReceiptQueryService
+import devcoop.occount.order.application.query.receipt.ReceiptResponse
 import devcoop.occount.order.application.shared.SalesRankingResponse
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
@@ -35,6 +37,7 @@ class OrderController(
     private val createOrderUseCase: CreateOrderUseCase,
     private val cancelOrderUseCase: CancelOrderUseCase,
     private val orderQueryService: OrderQueryService,
+    private val getReceiptQueryService: GetReceiptQueryService,
     private val salesRankingQueryService: SalesRankingQueryService,
     private val orderSseRegistry: OrderSseRegistry,
 ) {
@@ -76,6 +79,17 @@ class OrderController(
         @PathVariable orderId: Long,
     ): ResponseEntity<OrderResponse> {
         val response = orderQueryService.getOrder(orderId)
+        return ResponseEntity.ok(response)
+    }
+
+    @GetMapping("/{orderId}/receipt")
+    fun getReceipt(
+        @PathVariable orderId: Long,
+        @RequestHeader(value = AuthHeaders.KIOSK_ID, required = false) kioskId: String?,
+        @RequestHeader(value = AuthHeaders.AUTHENTICATED_USER_ID, required = false) userIdHeader: String?,
+    ): ResponseEntity<ReceiptResponse> {
+        val userId = userIdHeader?.toLongOrNull()
+        val response = getReceiptQueryService.getReceipt(orderId, userId, kioskId)
         return ResponseEntity.ok(response)
     }
 
