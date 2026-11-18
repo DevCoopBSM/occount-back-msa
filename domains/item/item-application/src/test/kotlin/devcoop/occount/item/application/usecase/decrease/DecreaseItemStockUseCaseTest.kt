@@ -11,6 +11,8 @@ import devcoop.occount.item.application.support.TestTransactionManager
 import devcoop.occount.item.application.support.itemFixture
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class DecreaseItemStockUseCaseTest {
     @Test
@@ -76,6 +78,31 @@ class DecreaseItemStockUseCaseTest {
         Assertions.assertEquals(6000, publishedEvent.totalAmount)
         Assertions.assertEquals(1, publishedEvent.items.size)
         Assertions.assertEquals(3, publishedEvent.items.single().quantity)
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [1, 0, -3])
+    fun `decrease allows insufficient zero and negative stock to continue payment`(initialQuantity: Int) {
+        val itemRepository = FakeItemRepository(
+            initialItems = listOf(
+                itemFixture(itemId = 1L, name = "Americano", price = 2000, quantity = initialQuantity),
+            ),
+        )
+        val eventPublisher = FakeEventPublisher()
+        val useCase = DecreaseItemStockUseCase(
+            itemRepository = itemRepository,
+            eventPublisher = eventPublisher,
+            transactionManager = TestTransactionManager(),
+        )
+
+        useCase.decrease(requestedEvent()) {}
+
+        Assertions.assertEquals(initialQuantity - 2, itemRepository.findById(1L)!!.getQuantity())
+        val publishedEvent =
+            Assertions.assertInstanceOf(ItemStockDecreasedEvent::class.java, eventPublisher.published.single())
+        Assertions.assertEquals(1L, publishedEvent.orderId)
+        Assertions.assertEquals(4000, publishedEvent.totalAmount)
+        Assertions.assertEquals(2, publishedEvent.items.single().quantity)
     }
 
     @Test

@@ -39,8 +39,7 @@ enum class ErrorMessage(
     CONTRIBUTION_WITHDRAWAL_REQUEST_NOT_FOUND("출자금 반환 신청을 찾을 수 없습니다."),
     CONTRIBUTION_WITHDRAWAL_REQUEST_ALREADY_PROCESSED("이미 처리된 출자금 반환 신청입니다."),
 
-
-    ITEM_STOCK_NEGATIVE("요청으로 인해 재고가 부족합니다. 재고 수량을 확인해주세요."),
+  
     ITEM_NOT_FOUND("현재 등록되지 않은 상품입니다."),
     ITEM_ALREADY_EXISTS("이미 등록된 상품입니다."),
     ITEM_NOT_SYNCHRONIZED("상품이 토스와 동기화되지 않았습니다."),
