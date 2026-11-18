@@ -63,6 +63,7 @@ class ApiAdviceHandler {
             ErrorMessage.USER_ALREADY_EXISTS,
             ErrorMessage.TRANSACTION_IN_PROGRESS,
             ErrorMessage.ORDER_CANNOT_CANCEL,
+            ErrorMessage.ORDER_RECEIPT_NOT_AVAILABLE,
             -> HttpStatus.CONFLICT
 
             ErrorMessage.PAYMENT_TIMEOUT -> HttpStatus.REQUEST_TIMEOUT
