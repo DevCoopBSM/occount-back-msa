@@ -21,6 +21,7 @@ data class OrderAggregate(
     val paymentCompensationRequested: Boolean = false,
     val stockCompensationRequested: Boolean = false,
     val createdAt: Instant? = null,
+    val guestOrderTokenHash: String? = null,
 ) {
     fun reconcileStatus(): OrderAggregate {
         if (hasCompensationFailure()) {

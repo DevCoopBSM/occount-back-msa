@@ -1116,6 +1116,7 @@ paths:
 
         - `X-Kiosk-Id` 헤더는 **필수**입니다. 없으면 400을 반환합니다.
         - 토큰이 있으면 회원 주문, 없으면 비회원 주문으로 처리합니다.
+        - 비회원 생성 응답의 `guest_order_token`은 한 번만 반환됩니다. 상태 조회, SSE, 취소 시 `X-Order-Token` 헤더로 전달합니다.
         - 요청 즉시 `PROCESSING` 상태로 응답하며, 실제 처리는 비동기로 수행됩니다.
         - 상품 검증, 가격 확정, 재고 차감은 비동기로 처리됩니다.
         - 재고가 0개이거나 음수여도 주문 및 결제를 진행하며, 차감 후 재고는 음수가 될 수 있습니다.
@@ -1302,7 +1303,7 @@ paths:
       operationId: getOrder
       summary: 주문 조회
       description: |
-        주문 상태를 단건 조회합니다. (PERMIT_ALL)
+        주문 상태를 단건 조회합니다. 회원 주문은 소유자 JWT, 비회원 주문은 주문 토큰이 필요합니다.
 
         - 재고 부족만으로는 실패하지 않습니다. 상품 미존재 등 재고 단계 실패는 `FAILED` 로 종료됩니다.
         - 최종 상태: `COMPLETED`, `FAILED`, `CANCELLED`, `COMPENSATION_FAILED`, `TIMED_OUT`
@@ -1317,7 +1318,8 @@ paths:
             format: int64
           example: 1001
       security:
-        - {}
+        - BearerAuth: []
+        - GuestOrderToken: []
       responses:
         "200":
           description: 주문 조회 성공
@@ -1329,6 +1331,10 @@ paths:
                 order_id: 1001
                 status: "COMPLETED"
                 failure_reason: null
+        "401":
+          description: 유효하지 않은 JWT
+        "403":
+          description: 주문 접근 권한 없음
         "404":
           description: 주문을 찾을 수 없음
 
@@ -1338,7 +1344,7 @@ paths:
       operationId: streamOrder
       summary: 주문 상태 실시간 스트리밍 (SSE)
       description: |
-        Server-Sent Events(SSE) 방식으로 주문 상태 변경을 실시간 수신합니다. (PERMIT_ALL)
+        주문 상태 변경을 실시간 수신합니다. 연결 전에 회원 소유자 JWT 또는 비회원 주문 토큰을 검증합니다.
 
         - 연결 즉시 현재 주문 상태를 전송합니다.
         - 각 메시지는 `event: <event_type>` 형식으로 전달됩니다.
@@ -1355,7 +1361,8 @@ paths:
             format: int64
           example: 1001
       security:
-        - {}
+        - BearerAuth: []
+        - GuestOrderToken: []
       responses:
         "200":
           description: SSE 스트림 연결 성공
@@ -1406,6 +1413,10 @@ paths:
                   value: |
                     event: cancelled
                     data: {"order_id": 1001}
+        "401":
+          description: 유효하지 않은 JWT
+        "403":
+          description: 주문 접근 권한 없음
         "404":
           description: 주문을 찾을 수 없음
 
@@ -1415,11 +1426,10 @@ paths:
       operationId: cancelOrder
       summary: 주문 취소
       description: |
-        주문을 취소합니다. (OPTIONAL_AUTH)
+        주문을 취소합니다. 회원 주문은 소유자 JWT, 비회원 주문은 주문 토큰이 필요합니다.
 
         - `X-Kiosk-Id` 헤더가 없으면 기본값 `1`을 사용합니다.
         - 주문을 생성한 키오스크와 동일한 `X-Kiosk-Id` 여야 취소가 허용됩니다.
-        - 회원/비회원 구분 없이 키오스크 ID만으로 소유권을 검증합니다.
       parameters:
         - name: orderId
           in: path
@@ -1438,7 +1448,7 @@ paths:
             default: "1"
           example: "1"
       security:
-        - {}
+        - GuestOrderToken: []
         - BearerAuth: []
       responses:
         "200":
@@ -1454,7 +1464,7 @@ paths:
         "401":
           description: 잘못된 토큰
         "403":
-          description: 다른 키오스크에서 생성된 주문
+          description: 주문 접근 권한이 없거나 주문을 생성한 키오스크와 다름
         "404":
           description: 주문을 찾을 수 없음
         "409":
@@ -2377,6 +2387,10 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: "Authorization: Bearer <JWT 토큰>"
+    GuestOrderToken:
+      type: apiKey
+      in: header
+      name: X-Order-Token
 
   schemas:
     # ── Auth ──────────────────────────────────────
@@ -2901,6 +2915,9 @@ components:
           type: string
           nullable: true
           description: 실패/취소 사유
+        guest_order_token:
+          type: string
+          description: 비회원 주문 생성 응답에서만 제공하는 주문 접근 토큰
 
     ReceiptResponse:
       type: object

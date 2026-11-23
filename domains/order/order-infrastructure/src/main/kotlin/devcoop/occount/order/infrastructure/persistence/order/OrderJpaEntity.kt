@@ -79,6 +79,8 @@ class OrderJpaEntity(
     @Version
     @field:Column(name = "version", nullable = false)
     private var version: Long = 0L,
+    @field:Column(name = "guest_order_token_hash", length = 43)
+    private var guestOrderTokenHash: String? = null,
 ) {
     fun replaceRequestedLines(lines: MutableList<RequestedOrderLineJpaEntity>) {
         requestedLines = lines
@@ -110,5 +112,6 @@ class OrderJpaEntity(
     fun isPaymentCompensationRequested() = paymentCompensationRequested
     fun isStockCompensationRequested() = stockCompensationRequested
     fun getCreatedAt() = createdAt
+    fun getGuestOrderTokenHash() = guestOrderTokenHash
     fun getVersion() = version
 }
