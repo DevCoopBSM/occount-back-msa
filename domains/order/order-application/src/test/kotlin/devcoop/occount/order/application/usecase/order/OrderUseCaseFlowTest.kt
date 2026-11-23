@@ -1,6 +1,7 @@
 package devcoop.occount.order.application.usecase.order
 
 import devcoop.occount.core.common.event.*
+import devcoop.occount.order.application.exception.OrderAccessDeniedException
 import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.output.PersistedOrder
 import devcoop.occount.order.application.output.TransactionPort
@@ -13,6 +14,7 @@ import devcoop.occount.order.application.usecase.order.timeout.ExpireTimedOutOrd
 import devcoop.occount.order.domain.order.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
@@ -122,7 +124,7 @@ class OrderUseCaseFlowTest {
         val cancelOrderUseCase = cancelOrderUseCase(orderRepository, eventPublisher)
         val sweeper = compensationSweeper(orderRepository, eventPublisher)
 
-        cancelOrderUseCase.cancel(ORDER_ID, KIOSK_ID)
+        cancelOrderUseCase.cancel(ORDER_ID, KIOSK_ID, userId = USER_ID, guestOrderToken = null)
         sweeper.sweep()
 
         val publishedEvent = eventPublisher.published.last().payload
@@ -142,10 +144,34 @@ class OrderUseCaseFlowTest {
         val eventPublisher = FakeEventPublisher()
         val cancelOrderUseCase = cancelOrderUseCase(orderRepository, eventPublisher)
 
-        cancelOrderUseCase.cancel(ORDER_ID, KIOSK_ID)
+        cancelOrderUseCase.cancel(ORDER_ID, KIOSK_ID, userId = USER_ID, guestOrderToken = null)
 
         assertEquals(1, eventPublisher.published.filter { it.payload is OrderPaymentCancellationRequestedEvent }.size)
         assertEquals(true, orderRepository.findById(ORDER_ID)!!.paymentCancellationRequested)
+    }
+
+    @Test
+    fun `denied cancellation leaves the order and payment untouched`() {
+        val token = GuestOrderToken.generate()
+        val guestOrder = orderFixture(stockStatus = OrderStepStatus.SUCCEEDED, paymentRequested = true)
+            .copy(userId = null, guestOrderTokenHash = GuestOrderToken.hash(token))
+        val orderRepository = FakeOrderRepository(initialOrder = guestOrder)
+        val eventPublisher = FakeEventPublisher()
+        val useCase = cancelOrderUseCase(orderRepository, eventPublisher)
+
+        assertThrows(OrderAccessDeniedException::class.java) {
+            useCase.cancel(ORDER_ID, KIOSK_ID, userId = USER_ID, guestOrderToken = null)
+        }
+        assertThrows(OrderAccessDeniedException::class.java) {
+            useCase.cancel(ORDER_ID, KIOSK_ID, userId = null, guestOrderToken = GuestOrderToken.generate())
+        }
+        assertThrows(OrderAccessDeniedException::class.java) {
+            useCase.cancel(ORDER_ID, "wrong-kiosk", userId = null, guestOrderToken = token)
+        }
+
+        assertEquals(guestOrder, orderRepository.findById(ORDER_ID))
+        assertEquals(0, orderRepository.versionedSaveCount)
+        assertEquals(0, eventPublisher.published.size)
     }
 
     @Test

@@ -5,11 +5,14 @@ import devcoop.occount.core.common.error.ErrorMessage
 import devcoop.occount.core.common.exception.BusinessBaseException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.FieldError
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.HandlerMethod
 
 @RestControllerAdvice
 class ApiAdviceHandler {
@@ -32,9 +35,14 @@ class ApiAdviceHandler {
     }
 
     @ExceptionHandler(BusinessBaseException::class)
-    fun handleBusinessBaseException(e: BusinessBaseException): ResponseEntity<ErrorResponse> {
-        return ResponseEntity
-            .status(resolveStatus(e.errorMessage))
+    fun handleBusinessBaseException(e: BusinessBaseException, handler: HandlerMethod?): ResponseEntity<ErrorResponse> {
+        val response = ResponseEntity.status(resolveStatus(e.errorMessage))
+        val produces = handler?.getMethodAnnotation(GetMapping::class.java)?.produces
+        if (produces?.contains(MediaType.TEXT_EVENT_STREAM_VALUE) == true) {
+            // Pre-stream failures must be writable even when the client only accepts SSE.
+            response.contentType(MediaType.APPLICATION_JSON)
+        }
+        return response
             .body(ErrorResponse.of(e.errorMessage))
     }
 
@@ -63,6 +71,7 @@ class ApiAdviceHandler {
             ErrorMessage.USER_ALREADY_EXISTS,
             ErrorMessage.TRANSACTION_IN_PROGRESS,
             ErrorMessage.ORDER_CANNOT_CANCEL,
+            ErrorMessage.ORDER_RECEIPT_NOT_AVAILABLE,
             -> HttpStatus.CONFLICT
 
             ErrorMessage.PAYMENT_TIMEOUT -> HttpStatus.REQUEST_TIMEOUT

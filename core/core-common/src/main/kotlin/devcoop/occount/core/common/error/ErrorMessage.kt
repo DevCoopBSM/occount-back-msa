@@ -30,7 +30,16 @@ enum class ErrorMessage(
     PIN_CHANGE_TICKET_EXPIRED("비밀번호 확인이 만료되었습니다. 비밀번호 확인을 다시 진행해주세요."),
 
 
-    ITEM_STOCK_NEGATIVE("요청으로 인해 재고가 부족합니다. 재고 수량을 확인해주세요."),
+    INVALID_CONTRIBUTION_DEPOSIT_AMOUNT("출자금 납입 신청 금액은 0보다 커야 합니다."),
+    CONTRIBUTION_DEPOSIT_REQUEST_NOT_FOUND("출자금 납입 신청을 찾을 수 없습니다."),
+    CONTRIBUTION_DEPOSIT_REQUEST_ALREADY_PROCESSED("이미 처리된 출자금 납입 신청입니다."),
+    INVALID_CONTRIBUTION_WITHDRAWAL_AMOUNT("출자금 반환 신청 금액은 0보다 커야 합니다."),
+    CONTRIBUTION_BALANCE_OVERFLOW("출자금 잔액이 허용 범위를 초과합니다."),
+    INSUFFICIENT_CONTRIBUTION_BALANCE("출자금 잔액이 부족합니다."),
+    CONTRIBUTION_WITHDRAWAL_REQUEST_NOT_FOUND("출자금 반환 신청을 찾을 수 없습니다."),
+    CONTRIBUTION_WITHDRAWAL_REQUEST_ALREADY_PROCESSED("이미 처리된 출자금 반환 신청입니다."),
+
+  
     ITEM_NOT_FOUND("현재 등록되지 않은 상품입니다."),
     ITEM_ALREADY_EXISTS("이미 등록된 상품입니다."),
     ITEM_NOT_SYNCHRONIZED("상품이 토스와 동기화되지 않았습니다."),
@@ -47,6 +56,7 @@ enum class ErrorMessage(
     ORDER_NOT_FOUND("주문 정보를 찾을 수 없습니다."),
     ORDER_ACCESS_DENIED("해당 주문에 접근할 수 없습니다."),
     ORDER_CANNOT_CANCEL("현재 상태에서는 주문을 취소할 수 없습니다."),
+    ORDER_RECEIPT_NOT_AVAILABLE("현재 상태에서는 영수증을 조회할 수 없습니다."),
     ORDER_INVALID_TOTAL_PRICE("주문 항목의 총 금액이 일치하지 않습니다."),
     ORDER_INVALID_PAYMENT_TYPE("비회원 주문은 카드 결제만 지원합니다."),
     ORDER_INVALID_SALES_RANKING_PERIOD("판매량 랭킹 조회 기간이 올바르지 않습니다."),

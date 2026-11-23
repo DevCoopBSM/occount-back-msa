@@ -4,11 +4,14 @@ import devcoop.occount.core.common.auth.AuthHeaders
 import devcoop.occount.core.common.auth.AuthPrincipal
 import devcoop.occount.core.common.auth.AuthUser
 import devcoop.occount.order.api.sse.OrderSseRegistry
+import devcoop.occount.order.application.exception.OrderAccessDeniedException
 import devcoop.occount.order.application.query.OrderQueryService
 import devcoop.occount.order.application.query.SalesRankingQueryService
 import devcoop.occount.order.application.shared.OrderHistoryListResponse
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
+import devcoop.occount.order.application.query.receipt.GetReceiptQueryService
+import devcoop.occount.order.application.query.receipt.ReceiptResponse
 import devcoop.occount.order.application.shared.SalesRankingResponse
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
@@ -16,6 +19,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
+import org.springframework.http.CacheControl
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -35,10 +39,12 @@ class OrderController(
     private val createOrderUseCase: CreateOrderUseCase,
     private val cancelOrderUseCase: CancelOrderUseCase,
     private val orderQueryService: OrderQueryService,
+    private val getReceiptQueryService: GetReceiptQueryService,
     private val salesRankingQueryService: SalesRankingQueryService,
     private val orderSseRegistry: OrderSseRegistry,
 ) {
     companion object {
+        private const val ORDER_TOKEN_HEADER = "X-Order-Token"
         private const val MAX_PAGE_SIZE = 100
         private val ALLOWED_SORT_FIELDS = setOf("orderId", "createdAt")
         private val DEFAULT_SORT = Sort.by(Sort.Direction.DESC, "orderId")
@@ -68,14 +74,25 @@ class OrderController(
     ): ResponseEntity<OrderResponse> {
         val userId = userIdHeader?.toLongOrNull()
         val response = createOrderUseCase.placeOrder(orderRequest, userId, kioskId)
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response)
+        return ResponseEntity.status(HttpStatus.ACCEPTED).cacheControl(CacheControl.noStore()).body(response)
     }
 
     @GetMapping("/{orderId}")
     fun getOrder(
         @PathVariable orderId: Long,
+        @RequestHeader(value = AuthHeaders.AUTHENTICATED_USER_ID, required = false) userIdHeader: String?,
+        @RequestHeader(value = ORDER_TOKEN_HEADER, required = false) guestOrderToken: String?,
     ): ResponseEntity<OrderResponse> {
-        val response = orderQueryService.getOrder(orderId)
+        val response = orderQueryService.getOrder(orderId, parseOptionalUserId(userIdHeader), guestOrderToken)
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(response)
+    }
+
+    @GetMapping("/{orderId}/receipt")
+    fun getReceipt(
+        @PathVariable orderId: Long,
+        @AuthUser principal: AuthPrincipal,
+    ): ResponseEntity<ReceiptResponse> {
+        val response = getReceiptQueryService.getReceipt(orderId, principal.userId)
         return ResponseEntity.ok(response)
     }
 
@@ -98,9 +115,14 @@ class OrderController(
     @GetMapping("/{orderId}/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun streamOrder(
         @PathVariable orderId: Long,
+        @RequestHeader(value = AuthHeaders.AUTHENTICATED_USER_ID, required = false) userIdHeader: String?,
+        @RequestHeader(value = ORDER_TOKEN_HEADER, required = false) guestOrderToken: String?,
     ): SseEmitter {
+        val userId = parseOptionalUserId(userIdHeader)
+        orderQueryService.validateOrderAccess(orderId, userId, guestOrderToken)
+        // Read the current status after registration so no concurrent update is missed.
         return orderSseRegistry.register(orderId) {
-            orderQueryService.getOrderStreamEvent(orderId)
+            orderQueryService.getOrderStreamEvent(orderId, userId, guestOrderToken)
         }
     }
 
@@ -108,8 +130,13 @@ class OrderController(
     fun cancelOrder(
         @PathVariable orderId: Long,
         @RequestHeader(value = AuthHeaders.KIOSK_ID, defaultValue = "1") kioskId: String,
+        @RequestHeader(value = AuthHeaders.AUTHENTICATED_USER_ID, required = false) userIdHeader: String?,
+        @RequestHeader(value = ORDER_TOKEN_HEADER, required = false) guestOrderToken: String?,
     ): ResponseEntity<OrderResponse> {
-        val response = cancelOrderUseCase.cancel(orderId, kioskId)
+        val response = cancelOrderUseCase.cancel(orderId, kioskId, parseOptionalUserId(userIdHeader), guestOrderToken)
         return ResponseEntity.ok(response)
     }
+
+    private fun parseOptionalUserId(userIdHeader: String?): Long? =
+        userIdHeader?.let { it.toLongOrNull() ?: throw OrderAccessDeniedException() }
 }

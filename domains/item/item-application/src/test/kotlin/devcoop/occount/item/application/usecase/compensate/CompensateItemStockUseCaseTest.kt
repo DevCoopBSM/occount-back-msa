@@ -10,6 +10,8 @@ import devcoop.occount.item.application.support.TestTransactionManager
 import devcoop.occount.item.application.support.itemFixture
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class CompensateItemStockUseCaseTest {
     @Test
@@ -56,6 +58,27 @@ class CompensateItemStockUseCaseTest {
         ) {}
 
         Assertions.assertEquals(10, itemRepository.findById(1L)!!.getQuantity())
+        Assertions.assertInstanceOf(ItemStockCompensatedEvent::class.java, eventPublisher.published.single())
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [-2, -5])
+    fun `compensate restores negative stock without clamping to zero`(initialQuantity: Int) {
+        val itemRepository = FakeItemRepository(
+            initialItems = listOf(
+                itemFixture(itemId = 1L, name = "Americano", price = 2000, quantity = initialQuantity),
+            ),
+        )
+        val eventPublisher = FakeEventPublisher()
+        val useCase = CompensateItemStockUseCase(
+            itemRepository = itemRepository,
+            eventPublisher = eventPublisher,
+            transactionManager = TestTransactionManager(),
+        )
+
+        useCase.compensate(requestedEvent()) {}
+
+        Assertions.assertEquals(initialQuantity + 2, itemRepository.findById(1L)!!.getQuantity())
         Assertions.assertInstanceOf(ItemStockCompensatedEvent::class.java, eventPublisher.published.single())
     }
 
