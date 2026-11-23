@@ -1466,10 +1466,9 @@ paths:
       operationId: getOrderReceipt
       summary: 주문 영수증 조회
       description: |
-        완료된 주문의 영수증 정보를 조회합니다. (OPTIONAL_AUTH)
+        완료된 주문의 영수증 정보를 조회합니다. (AUTHENTICATED)
 
-        - 회원 주문은 로그인 사용자와 주문의 `user_id`가 같아야 조회할 수 있습니다.
-        - 비회원 주문은 주문을 생성한 키오스크와 동일한 `X-Kiosk-Id` 여야 조회할 수 있습니다.
+        - 로그인 사용자와 주문의 `user_id`가 같아야 조회할 수 있습니다. 비회원 주문은 조회할 수 없습니다.
         - `COMPLETED` 주문만 영수증 조회가 가능합니다.
       parameters:
         - name: orderId
@@ -1480,15 +1479,7 @@ paths:
             type: integer
             format: int64
           example: 1001
-        - name: X-Kiosk-Id
-          in: header
-          required: false
-          description: 비회원 주문 접근 검증에 사용하는 키오스크 식별자
-          schema:
-            type: string
-          example: "kiosk-1"
       security:
-        - {}
         - BearerAuth: []
       responses:
         "200":
@@ -1514,9 +1505,9 @@ paths:
                   approval_number: "12345678"
                   transaction_id: "TX-123"
         "401":
-          description: 잘못된 토큰
+          description: 토큰이 없거나 유효하지 않음
         "403":
-          description: 주문 소유자 또는 주문 생성 키오스크가 아님
+          description: 주문 소유자가 아니거나 비회원 주문임
         "404":
           description: 주문을 찾을 수 없음
         "409":

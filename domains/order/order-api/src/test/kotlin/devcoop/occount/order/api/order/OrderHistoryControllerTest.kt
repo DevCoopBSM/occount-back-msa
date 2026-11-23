@@ -14,12 +14,14 @@ import devcoop.occount.order.application.config.OrderTimeoutConfig
 import devcoop.occount.order.application.query.OrderQueryService
 import devcoop.occount.order.application.query.SalesRankingQueryParser
 import devcoop.occount.order.application.query.SalesRankingQueryService
+import devcoop.occount.order.application.query.receipt.GetReceiptQueryService
 import devcoop.occount.order.application.support.OrderHistoryMapper
 import devcoop.occount.order.application.support.OrderLifecycleProcessor
 import devcoop.occount.order.application.support.OrderMutationExecutor
 import devcoop.occount.order.application.support.OrderPaymentCancellationEventPublisher
 import devcoop.occount.order.application.support.OrderResponseMapper
 import devcoop.occount.order.application.support.OrderStreamEventMapper
+import devcoop.occount.order.application.support.ReceiptResponseMapper
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
 import devcoop.occount.order.domain.order.OrderAggregate
@@ -130,6 +132,7 @@ class OrderHistoryControllerTest {
                 orderStreamEventMapper = OrderStreamEventMapper(),
                 orderHistoryMapper = OrderHistoryMapper(),
             ),
+            getReceiptQueryService = GetReceiptQueryService(orderRepository, ReceiptResponseMapper()),
             salesRankingQueryService = SalesRankingQueryService(
                 salesRankingRepository = FakeSalesRankingRepository(),
                 salesRankingQueryParser = SalesRankingQueryParser(),

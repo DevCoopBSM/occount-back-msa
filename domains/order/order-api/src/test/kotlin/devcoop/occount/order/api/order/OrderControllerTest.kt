@@ -150,6 +150,14 @@ class OrderControllerTest {
     }
 
     @Test
+    fun `getReceipt requires authentication even with matching kiosk id`() {
+        val mockMvc = buildMockMvc(initialOrders = listOf(receiptOrderFixture().copy(userId = null)))
+
+        mockMvc.perform(get("/orders/1/receipt").header(AuthHeaders.KIOSK_ID, "kiosk-1"))
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
     @DisplayName("다른 사용자가 영수증을 조회하면 403을 반환한다")
     fun `getReceipt returns 403 for different member`() {
         val mockMvc = buildMockMvc(

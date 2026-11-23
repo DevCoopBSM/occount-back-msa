@@ -85,11 +85,9 @@ class OrderController(
     @GetMapping("/{orderId}/receipt")
     fun getReceipt(
         @PathVariable orderId: Long,
-        @RequestHeader(value = AuthHeaders.KIOSK_ID, required = false) kioskId: String?,
-        @RequestHeader(value = AuthHeaders.AUTHENTICATED_USER_ID, required = false) userIdHeader: String?,
+        @AuthUser principal: AuthPrincipal,
     ): ResponseEntity<ReceiptResponse> {
-        val userId = userIdHeader?.toLongOrNull()
-        val response = getReceiptQueryService.getReceipt(orderId, userId, kioskId)
+        val response = getReceiptQueryService.getReceipt(orderId, principal.userId)
         return ResponseEntity.ok(response)
     }
 
