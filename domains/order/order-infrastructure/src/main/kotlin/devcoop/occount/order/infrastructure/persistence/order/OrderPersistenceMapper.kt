@@ -36,6 +36,7 @@ object OrderPersistenceMapper {
             paymentCompensationRequested = entity.isPaymentCompensationRequested(),
             stockCompensationRequested = entity.isStockCompensationRequested(),
             createdAt = entity.getCreatedAt(),
+            guestOrderTokenHash = entity.getGuestOrderTokenHash(),
         )
     }
 
@@ -62,6 +63,7 @@ object OrderPersistenceMapper {
             stockCompensationRequested = domain.stockCompensationRequested,
             createdAt = domain.createdAt,
             version = version,
+            guestOrderTokenHash = domain.guestOrderTokenHash,
         )
 
         val requestedLines = domain.requestedLines.map { toEntityRequestedLine(entity, it) }.toMutableList()

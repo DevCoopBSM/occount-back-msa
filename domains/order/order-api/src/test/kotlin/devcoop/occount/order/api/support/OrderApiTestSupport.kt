@@ -18,6 +18,7 @@ import devcoop.occount.order.domain.order.OrderStatus
 import devcoop.occount.order.domain.order.OrderStepStatus
 import devcoop.occount.order.domain.order.RequestedOrderLine
 import devcoop.occount.order.domain.order.isFinalForClient
+import devcoop.occount.web.auth.AuthPrincipalArgumentResolver
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
@@ -157,6 +158,7 @@ fun mockMvc(vararg controllers: Any): MockMvc {
     val messageConverter = JacksonJsonHttpMessageConverter(jacksonMapperBuilder())
     return MockMvcBuilders.standaloneSetup(*controllers)
         .setControllerAdvice(ApiAdviceHandler())
+        .setCustomArgumentResolvers(AuthPrincipalArgumentResolver())
         .setMessageConverters(messageConverter)
         .build()
 }

@@ -9,6 +9,7 @@ import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.config.OrderTimeoutConfig
 import devcoop.occount.order.application.shared.OrderRequest
 import devcoop.occount.order.application.shared.OrderResponse
+import devcoop.occount.order.application.support.GuestOrderToken
 import devcoop.occount.order.application.support.OrderMutationExecutor
 import devcoop.occount.order.domain.order.OrderAggregate
 import devcoop.occount.order.domain.order.OrderPayment
@@ -27,6 +28,7 @@ class CreateOrderUseCase(
 ) {
     fun placeOrder(request: OrderRequest, userId: Long?, kioskId: String): OrderResponse {
         val requestedLines = request.items.map { RequestedOrderLine(itemId = it.itemId, quantity = it.quantity) }
+        val guestOrderToken = if (userId == null) GuestOrderToken.generate() else null
 
         val createdOrder = orderMutationExecutor.executeInNewTransaction {
             val now = Instant.now()
@@ -41,6 +43,7 @@ class CreateOrderUseCase(
                     status = OrderStatus.PROCESSING,
                     kioskId = kioskId,
                     expiresAt = now.plusSeconds(orderTimeoutConfig.timeoutSeconds),
+                    guestOrderTokenHash = guestOrderToken?.let(GuestOrderToken::hash),
                 ),
             )
             publishOrderRequested(createdOrder, userId)
@@ -48,7 +51,7 @@ class CreateOrderUseCase(
         }
         log.info("주문 생성 완료 - 주문={} 사용자={}", createdOrder.orderId, userId)
 
-        return OrderResponse(orderId = createdOrder.orderId, status = createdOrder.status)
+        return OrderResponse(orderId = createdOrder.orderId, status = createdOrder.status, guestOrderToken = guestOrderToken)
     }
 
     private fun publishOrderRequested(createdOrder: OrderAggregate, userId: Long?) {

@@ -5,9 +5,11 @@ import devcoop.occount.order.application.output.OrderRepository
 import devcoop.occount.order.application.shared.OrderHistoryListResponse
 import devcoop.occount.order.application.shared.OrderResponse
 import devcoop.occount.order.application.shared.OrderStreamEvent
+import devcoop.occount.order.application.support.OrderAccessValidator
 import devcoop.occount.order.application.support.OrderHistoryMapper
 import devcoop.occount.order.application.support.OrderResponseMapper
 import devcoop.occount.order.application.support.OrderStreamEventMapper
+import devcoop.occount.order.domain.order.OrderAggregate
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,8 +21,8 @@ class OrderQueryService(
     private val orderStreamEventMapper: OrderStreamEventMapper,
     private val orderHistoryMapper: OrderHistoryMapper,
 ) {
-    fun getOrder(orderId: Long): OrderResponse {
-        val order = orderRepository.findById(orderId) ?: throw OrderNotFoundException()
+    fun getOrder(orderId: Long, userId: Long?, guestOrderToken: String?): OrderResponse {
+        val order = findAccessibleOrder(orderId, userId, guestOrderToken)
         return orderResponseMapper.toResponse(order)
     }
 
@@ -31,8 +33,18 @@ class OrderQueryService(
         return OrderHistoryListResponse.from(page)
     }
 
-    fun getOrderStreamEvent(orderId: Long): OrderStreamEvent {
-        val order = orderRepository.findById(orderId) ?: throw OrderNotFoundException()
+    fun validateOrderAccess(orderId: Long, userId: Long?, guestOrderToken: String?) {
+        findAccessibleOrder(orderId, userId, guestOrderToken)
+    }
+
+    fun getOrderStreamEvent(orderId: Long, userId: Long?, guestOrderToken: String?): OrderStreamEvent {
+        val order = findAccessibleOrder(orderId, userId, guestOrderToken)
         return orderStreamEventMapper.toStreamEvent(order)
+    }
+
+    private fun findAccessibleOrder(orderId: Long, userId: Long?, guestOrderToken: String?): OrderAggregate {
+        val order = orderRepository.findById(orderId) ?: throw OrderNotFoundException()
+        OrderAccessValidator.validate(order, userId, guestOrderToken)
+        return order
     }
 }

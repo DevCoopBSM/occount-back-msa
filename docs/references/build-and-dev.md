@@ -42,6 +42,12 @@ For pull requests:
 - include test/compile results,
 - add request/response examples when changing API behavior.
 
+## Guest order access deployment
+
+- On an existing order database, apply `docker/mysql/migrations/20261123_guest_order_token.sql` before deploying the new order API. Existing rows retain a null hash; fresh databases get the column from entity metadata.
+- Update kiosks before enabling order token enforcement. Stop accepting new orders and let active orders finish before switching the order API. Old guest orders have no token and cannot use the protected endpoints after cutover; historical records are retained.
+- Route external order traffic only through the gateway, which supplies the trusted user ID. Do not log order access headers or guest creation response bodies.
+
 ## Contribution Review Deployment
 
 - Contribution amounts and balances use signed `BIGINT` / Kotlin `Long` (KRW). Clients must preserve 64-bit integers; JavaScript `number` cannot exactly represent every supported value. Reject amounts outside signed 64-bit range; balance overflow fails without committing the request or ledger.

@@ -16,6 +16,8 @@ import devcoop.occount.order.domain.order.RequestedOrderLine
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import java.time.Instant
 
 class GetReceiptQueryServiceTest {
@@ -23,7 +25,7 @@ class GetReceiptQueryServiceTest {
     fun `completed member order returns receipt`() {
         val service = getReceiptQueryService(FakeOrderRepository(orderFixture()))
 
-        val receipt = service.getReceipt(ORDER_ID, USER_ID, null)
+        val receipt = service.getReceipt(ORDER_ID, USER_ID)
 
         assertEquals(ORDER_ID, receipt.orderId)
         assertEquals(OrderStatus.COMPLETED, receipt.orderStatus)
@@ -39,29 +41,20 @@ class GetReceiptQueryServiceTest {
     }
 
     @Test
-    fun `guest order allows matching kiosk id`() {
-        val service = getReceiptQueryService(FakeOrderRepository(orderFixture(userId = null)))
-
-        val receipt = service.getReceipt(ORDER_ID, null, KIOSK_ID)
-
-        assertEquals(ORDER_ID, receipt.orderId)
-    }
-
-    @Test
     fun `member order denies different user`() {
         val service = getReceiptQueryService(FakeOrderRepository(orderFixture()))
 
         assertThrows(OrderAccessDeniedException::class.java) {
-            service.getReceipt(ORDER_ID, userId = 999L, kioskId = KIOSK_ID)
+            service.getReceipt(ORDER_ID, userId = 999L)
         }
     }
 
     @Test
-    fun `guest order denies different kiosk`() {
+    fun `guest order denies authenticated receipt access`() {
         val service = getReceiptQueryService(FakeOrderRepository(orderFixture(userId = null)))
 
         assertThrows(OrderAccessDeniedException::class.java) {
-            service.getReceipt(ORDER_ID, userId = null, kioskId = "other-kiosk")
+            service.getReceipt(ORDER_ID, USER_ID)
         }
     }
 
@@ -70,7 +63,7 @@ class GetReceiptQueryServiceTest {
         val service = getReceiptQueryService(FakeOrderRepository(orderFixture(status = OrderStatus.PROCESSING)))
 
         assertThrows(OrderReceiptNotAvailableException::class.java) {
-            service.getReceipt(ORDER_ID, USER_ID, KIOSK_ID)
+            service.getReceipt(ORDER_ID, USER_ID)
         }
     }
 
@@ -79,7 +72,7 @@ class GetReceiptQueryServiceTest {
         val service = getReceiptQueryService(FakeOrderRepository())
 
         assertThrows(OrderNotFoundException::class.java) {
-            service.getReceipt(ORDER_ID, USER_ID, KIOSK_ID)
+            service.getReceipt(ORDER_ID, USER_ID)
         }
     }
 
@@ -89,7 +82,7 @@ class GetReceiptQueryServiceTest {
             FakeOrderRepository(orderFixture(pointsUsed = 4000, cardAmount = 0, approvalNumber = null, transactionId = null)),
         )
 
-        val receipt = service.getReceipt(ORDER_ID, USER_ID, KIOSK_ID)
+        val receipt = service.getReceipt(ORDER_ID, USER_ID)
 
         assertEquals(ReceiptPaymentType.POINT, receipt.payment.type)
     }
@@ -98,7 +91,7 @@ class GetReceiptQueryServiceTest {
     fun `mixed payment type is mixed`() {
         val service = getReceiptQueryService(FakeOrderRepository(orderFixture(pointsUsed = 1000, cardAmount = 3000)))
 
-        val receipt = service.getReceipt(ORDER_ID, USER_ID, KIOSK_ID)
+        val receipt = service.getReceipt(ORDER_ID, USER_ID)
 
         assertEquals(ReceiptPaymentType.MIXED, receipt.payment.type)
     }
@@ -108,7 +101,7 @@ class GetReceiptQueryServiceTest {
         val service = getReceiptQueryService(FakeOrderRepository(orderFixture(pointsUsed = 0, cardAmount = 0)))
 
         assertThrows(OrderReceiptNotAvailableException::class.java) {
-            service.getReceipt(ORDER_ID, USER_ID, KIOSK_ID)
+            service.getReceipt(ORDER_ID, USER_ID)
         }
     }
 
@@ -153,6 +146,7 @@ class GetReceiptQueryServiceTest {
         private val order: OrderAggregate? = null,
     ) : OrderRepository {
         override fun findById(orderId: Long): OrderAggregate? = order?.takeIf { it.orderId == orderId }
+        override fun findByUserId(userId: Long, pageable: Pageable): Page<OrderAggregate> = Page.empty(pageable)
         override fun findPersistedById(orderId: Long): PersistedOrder? = null
         override fun save(order: OrderAggregate): OrderAggregate = order
         override fun save(order: OrderAggregate, persistenceVersion: Long): OrderAggregate = order

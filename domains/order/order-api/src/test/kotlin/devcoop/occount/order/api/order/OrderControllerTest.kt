@@ -23,6 +23,8 @@ import devcoop.occount.order.application.query.receipt.GetReceiptQueryService
 import devcoop.occount.order.application.query.SalesRankingQueryParser
 import devcoop.occount.order.application.query.SalesRankingQueryService
 import devcoop.occount.order.application.output.SalesRankingItem
+import devcoop.occount.order.application.shared.OrderStreamEvent
+import devcoop.occount.order.application.shared.OrderStreamEventType
 import devcoop.occount.order.application.usecase.order.cancel.CancelOrderUseCase
 import devcoop.occount.order.application.usecase.order.create.CreateOrderUseCase
 import devcoop.occount.order.domain.order.OrderLine
@@ -34,14 +36,18 @@ import org.hamcrest.Matchers.containsString
 import org.springframework.test.web.servlet.MockMvc
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.request
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.security.MessageDigest
+import java.util.Base64
 
 @DisplayName("OrderController 웹 테스트")
 class OrderControllerTest {
@@ -94,6 +100,8 @@ class OrderControllerTest {
                     """.trimIndent(),
                 ),
         ).andExpect(status().isAccepted)
+            .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
+            .andExpect(jsonPath("$.guestOrderToken").isString())
             .andExpect(jsonPath("$.orderId").value(1))
             .andExpect(jsonPath("$.status").value(OrderStatus.PROCESSING.name))
     }
@@ -107,10 +115,68 @@ class OrderControllerTest {
             ),
         )
 
-        mockMvc.perform(get("/orders/1"))
+        mockMvc.perform(get("/orders/1").header(AuthHeaders.AUTHENTICATED_USER_ID, "7"))
             .andExpect(status().isOk)
+            .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
             .andExpect(jsonPath("$.orderId").value(1))
             .andExpect(jsonPath("$.status").value(OrderStatus.COMPLETED.name))
+    }
+
+    @Test
+    fun `only an order owner or its guest token grants access to checkout endpoints`() {
+        val guestOrder = guestOrderFixture()
+        val mockMvc = buildMockMvc(
+            initialOrders = listOf(
+                orderFixture(orderId = 1L).copy(guestOrderTokenHash = guestOrder.guestOrderTokenHash),
+                guestOrder,
+                orderFixture(orderId = 3L, userId = null),
+            ),
+        )
+        val requests = listOf(
+            { id: Long -> get("/orders/$id") },
+            { id: Long -> get("/orders/$id/stream").accept(MediaType.TEXT_EVENT_STREAM) },
+            { id: Long -> post("/orders/$id/cancel").header(AuthHeaders.KIOSK_ID, "kiosk-1") },
+        )
+
+        for (endpoint in requests) {
+            val deniedRequests = listOf(
+                endpoint(1L),
+                endpoint(1L).header(AuthHeaders.AUTHENTICATED_USER_ID, "999"),
+                endpoint(1L).header(AuthHeaders.AUTHENTICATED_USER_ID, "999").header(ORDER_TOKEN_HEADER, guestToken),
+                endpoint(2L),
+                endpoint(2L).header(AuthHeaders.AUTHENTICATED_USER_ID, "7"),
+                endpoint(2L).header(ORDER_TOKEN_HEADER, "B".repeat(43)),
+                endpoint(2L).header(AuthHeaders.AUTHENTICATED_USER_ID, "invalid").header(ORDER_TOKEN_HEADER, guestToken),
+                endpoint(3L).header(ORDER_TOKEN_HEADER, guestToken),
+            )
+            for (denied in deniedRequests) {
+                mockMvc.perform(denied)
+                    .andExpect(status().isForbidden)
+                    .andExpect(request().asyncNotStarted())
+                    .andExpect(jsonPath("$.message").value("해당 주문에 접근할 수 없습니다."))
+            }
+            mockMvc.perform(endpoint(999L).header(AuthHeaders.AUTHENTICATED_USER_ID, "7"))
+                .andExpect(status().isNotFound)
+                .andExpect(request().asyncNotStarted())
+        }
+    }
+
+    @Test
+    fun `guest token grants access without being echoed`() {
+        val mockMvc = buildMockMvc(initialOrders = listOf(guestOrderFixture()))
+
+        mockMvc.perform(get("/orders/2").header(ORDER_TOKEN_HEADER, guestToken))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.orderId").value(2))
+            .andExpect(jsonPath("$.guestOrderToken").doesNotExist())
+
+        mockMvc.perform(
+            post("/orders/2/cancel")
+                .header(AuthHeaders.KIOSK_ID, "kiosk-1")
+                .header(ORDER_TOKEN_HEADER, guestToken),
+        ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.status").value(OrderStatus.CANCEL_REQUESTED.name))
+            .andExpect(jsonPath("$.guestOrderToken").doesNotExist())
     }
 
     @Test
@@ -150,6 +216,14 @@ class OrderControllerTest {
     }
 
     @Test
+    fun `getReceipt requires authentication even with matching kiosk id`() {
+        val mockMvc = buildMockMvc(initialOrders = listOf(receiptOrderFixture().copy(userId = null)))
+
+        mockMvc.perform(get("/orders/1/receipt").header(AuthHeaders.KIOSK_ID, "kiosk-1"))
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
     @DisplayName("다른 사용자가 영수증을 조회하면 403을 반환한다")
     fun `getReceipt returns 403 for different member`() {
         val mockMvc = buildMockMvc(
@@ -186,13 +260,37 @@ class OrderControllerTest {
             ),
         )
 
-        val asyncResult = mockMvc.perform(get("/orders/1/stream"))
+        val asyncResult = mockMvc.perform(
+            get("/orders/1/stream")
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .header(AuthHeaders.AUTHENTICATED_USER_ID, "7"),
+        )
             .andExpect(request().asyncStarted())
             .andReturn()
 
         mockMvc.perform(asyncDispatch(asyncResult))
             .andExpect(status().isOk)
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
+            .andExpect(content().string(containsString("event:completed")))
+    }
+
+    @Test
+    fun `an unauthorized stream cannot replace an active guest subscription`() {
+        val registry = OrderSseRegistry(DefaultOrderSseEmitterSupport())
+        val mockMvc = buildMockMvc(initialOrders = listOf(guestOrderFixture()), orderSseRegistry = registry)
+        val authorized = mockMvc.perform(
+            get("/orders/2/stream").accept(MediaType.TEXT_EVENT_STREAM).header(ORDER_TOKEN_HEADER, guestToken),
+        ).andExpect(request().asyncStarted()).andReturn()
+
+        mockMvc.perform(get("/orders/2/stream").accept(MediaType.TEXT_EVENT_STREAM))
+            .andExpect(status().isForbidden)
+            .andExpect(request().asyncNotStarted())
+
+        registry.notify(OrderStreamEvent(type = OrderStreamEventType.COMPLETED, orderId = 2L))
+
+        mockMvc.perform(asyncDispatch(authorized))
+            .andExpect(status().isOk)
+            .andExpect(content().string(containsString("event:order_accepted")))
             .andExpect(content().string(containsString("event:completed")))
     }
 
@@ -205,7 +303,7 @@ class OrderControllerTest {
             ),
         )
 
-        mockMvc.perform(post("/orders/1/cancel"))
+        mockMvc.perform(post("/orders/1/cancel").header(AuthHeaders.AUTHENTICATED_USER_ID, "7"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.orderId").value(1))
             .andExpect(jsonPath("$.status").value(OrderStatus.CANCEL_REQUESTED.name))
@@ -222,6 +320,7 @@ class OrderControllerTest {
 
         mockMvc.perform(
             post("/orders/1/cancel")
+                .header(AuthHeaders.AUTHENTICATED_USER_ID, "7")
                 .header(AuthHeaders.KIOSK_ID, "kiosk-2"),
         ).andExpect(status().isForbidden)
             .andExpect(jsonPath("$.message").value("해당 주문에 접근할 수 없습니다."))
@@ -289,6 +388,7 @@ class OrderControllerTest {
     private fun buildMockMvc(
         initialOrders: List<devcoop.occount.order.domain.order.OrderAggregate> = emptyList(),
         salesRankingRepository: FakeSalesRankingRepository = FakeSalesRankingRepository(),
+        orderSseRegistry: OrderSseRegistry = OrderSseRegistry(DefaultOrderSseEmitterSupport()),
     ): MockMvc {
         val orderRepository = FakeOrderRepository(initialOrders)
         val eventPublisher = FakeEventPublisher()
@@ -324,7 +424,7 @@ class OrderControllerTest {
                     salesRankingRepository = salesRankingRepository,
                     salesRankingQueryParser = SalesRankingQueryParser(),
                 ),
-                orderSseRegistry = OrderSseRegistry(DefaultOrderSseEmitterSupport()),
+                orderSseRegistry = orderSseRegistry,
             ),
         )
     }
@@ -354,5 +454,16 @@ class OrderControllerTest {
                 transactionId = "tx-1",
             ),
         )
+    }
+
+    private fun guestOrderFixture() = orderFixture(orderId = 2L, userId = null).copy(
+        guestOrderTokenHash = Base64.getUrlEncoder().withoutPadding().encodeToString(
+            MessageDigest.getInstance("SHA-256").digest(guestToken.toByteArray(Charsets.UTF_8)),
+        ),
+    )
+
+    private companion object {
+        const val ORDER_TOKEN_HEADER = "X-Order-Token"
+        val guestToken = "A".repeat(43)
     }
 }

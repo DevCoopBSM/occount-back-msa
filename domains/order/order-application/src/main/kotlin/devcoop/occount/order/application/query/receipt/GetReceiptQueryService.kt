@@ -14,20 +14,11 @@ class GetReceiptQueryService(
     private val orderRepository: OrderRepository,
     private val receiptResponseMapper: ReceiptResponseMapper,
 ) {
-    fun getReceipt(orderId: Long, userId: Long?, kioskId: String?): ReceiptResponse {
+    fun getReceipt(orderId: Long, userId: Long): ReceiptResponse {
         val order = orderRepository.findById(orderId) ?: throw OrderNotFoundException()
-        validateAccess(order, userId, kioskId)
+        if (order.userId != userId) throw OrderAccessDeniedException()
         validateReceiptAvailable(order)
         return receiptResponseMapper.toResponse(order, resolvePaymentType(order))
-    }
-
-    private fun validateAccess(order: OrderAggregate, userId: Long?, kioskId: String?) {
-        if (order.userId != null) {
-            if (order.userId != userId) throw OrderAccessDeniedException()
-            return
-        }
-
-        if (order.kioskId != kioskId) throw OrderAccessDeniedException()
     }
 
     private fun validateReceiptAvailable(order: OrderAggregate) {

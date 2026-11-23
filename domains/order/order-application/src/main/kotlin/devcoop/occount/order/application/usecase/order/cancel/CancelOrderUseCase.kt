@@ -3,6 +3,7 @@ package devcoop.occount.order.application.usecase.order.cancel
 import devcoop.occount.order.application.exception.OrderAccessDeniedException
 import devcoop.occount.order.application.exception.OrderCannotCancelException
 import devcoop.occount.order.application.shared.OrderResponse
+import devcoop.occount.order.application.support.OrderAccessValidator
 import devcoop.occount.order.application.support.OrderLifecycleProcessor
 import devcoop.occount.order.application.support.OrderMutationExecutor
 import devcoop.occount.order.application.support.OrderPaymentCancellationEventPublisher
@@ -18,10 +19,11 @@ class CancelOrderUseCase(
     private val orderPaymentCancellationEventPublisher: OrderPaymentCancellationEventPublisher,
     private val orderResponseMapper: OrderResponseMapper,
 ) {
-    fun cancel(orderId: Long, kioskId: String): OrderResponse {
+    fun cancel(orderId: Long, kioskId: String, userId: Long?, guestOrderToken: String?): OrderResponse {
         val updated = orderMutationExecutor.updateOrder(
             orderId = orderId,
             update = { order ->
+                OrderAccessValidator.validate(order, userId, guestOrderToken)
                 if (order.kioskId != kioskId) throw OrderAccessDeniedException()
                 if (!order.status.canCancel()) throw OrderCannotCancelException()
                 val cancelledOrder = order.copy(
